@@ -1035,17 +1035,19 @@ body {
     /* Sidebar vira drawer lateral */
     .sidebar {
         position: fixed !important;
-        left: -300px !important;
         top: 0 !important;
+        left: 0 !important;
         height: 100vh !important;
         width: 270px !important;
-        z-index: 300 !important;   /* acima da topbar (200) e overlay (99) */
-        transition: left 0.3s ease !important;
-        box-shadow: none;
+        z-index: 300 !important;
+        transform: translateX(-100%) !important;  /* esconde fora da tela */
+        transition: transform 0.3s ease !important;
+        box-shadow: none !important;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
     .sidebar.open {
-        left: 0 !important;
+        transform: translateX(0) !important;  /* aparece na tela */
         box-shadow: 6px 0 24px rgba(0,0,0,0.4) !important;
     }
 
