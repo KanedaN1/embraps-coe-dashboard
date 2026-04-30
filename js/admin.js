@@ -29,6 +29,25 @@ document.addEventListener('DOMContentLoaded', () => {
         location.reload();
     });
 
+    // ---- Menu Mobile (Hamburger) ----
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const menuToggle = document.getElementById('btn-menu-toggle');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (menuToggle) menuToggle.addEventListener('click', openSidebar);
+    if (overlay)    overlay.addEventListener('click', closeSidebar);
+
     // --- ACOES DO PAINEL (só registradas se elementos existirem) ---
     const btnLoad   = document.getElementById('btn-load');
     const dataForm  = document.getElementById('data-form');
