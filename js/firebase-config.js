@@ -1,67 +1,109 @@
 // =====================================================================
-// firebase-config.js — Inicialização do Firebase e funções de dados
-// Substitui o localStorage pelas chamadas ao Firestore
+// firebase-config.js
+// Tenta usar Firebase Firestore. Se falhar por qualquer motivo,
+// cai automaticamente para localStorage (offline/fallback).
 // =====================================================================
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDx1SZydHPaBfMWp0zJG9xwP558Chn0_Kw",
-    authDomain: "embraps-coe-dashboard.firebaseapp.com",
-    projectId: "embraps-coe-dashboard",
-    storageBucket: "embraps-coe-dashboard.firebasestorage.app",
-    messagingSenderId: "1022634528388",
-    appId: "1:1022634528388:web:6d5a960d6040c4fe467cd1"
-};
+const LS_KEY = 'embraps_coe_data';
+let db = null;
+let useFirebase = false;
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const COLLECTION = 'indicadores';
+(function initFirebase() {
+    try {
+        if (typeof firebase === 'undefined') {
+            console.warn('[COE] Firebase SDK não carregado — usando localStorage.');
+            return;
+        }
+        // Evita inicializar duas vezes (hot-reload)
+        if (!firebase.apps.length) {
+            firebase.initializeApp({
+                apiKey: "AIzaSyDx1SZydHPaBfMWp0zJG9xwP558Chn0_Kw",
+                authDomain: "embraps-coe-dashboard.firebaseapp.com",
+                projectId: "embraps-coe-dashboard",
+                storageBucket: "embraps-coe-dashboard.firebasestorage.app",
+                messagingSenderId: "1022634528388",
+                appId: "1:1022634528388:web:6d5a960d6040c4fe467cd1"
+            });
+        }
+        db = firebase.firestore();
+        useFirebase = true;
+        console.log('[COE] Firebase conectado com sucesso ✅');
+    } catch (err) {
+        console.warn('[COE] Firebase falhou — usando localStorage como fallback.', err.message);
+        useFirebase = false;
+    }
+})();
 
-// Retorna todos os dados do ano (objeto { "2026-04": {...}, ... })
+// ---------- Helpers localStorage ----------
+
+function _lsGetAll() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
+    catch { return {}; }
+}
+function _lsSetAll(data) {
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+}
+
+// ---------- Funções públicas (async) ----------
+
 async function getAllData() {
-    try {
-        const snapshot = await db.collection(COLLECTION).get();
-        const data = {};
-        snapshot.forEach(doc => {
-            data[doc.id] = doc.data();
-        });
-        return data;
-    } catch (err) {
-        console.error('Erro ao buscar dados do Firestore:', err);
-        return {};
+    if (useFirebase && db) {
+        try {
+            const snapshot = await db.collection('indicadores').get();
+            const data = {};
+            snapshot.forEach(doc => { data[doc.id] = doc.data(); });
+            return data;
+        } catch (err) {
+            console.warn('[COE] Firestore getAllData falhou — usando localStorage.', err.message);
+        }
     }
+    return _lsGetAll();
 }
 
-// Retorna os dados de um mês específico
 async function getDataByMonth(year, month) {
-    try {
-        const key = `${year}-${month.padStart(2, '0')}`;
-        const doc = await db.collection(COLLECTION).doc(key).get();
-        return doc.exists ? doc.data() : null;
-    } catch (err) {
-        console.error('Erro ao buscar mês do Firestore:', err);
-        return null;
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+    if (useFirebase && db) {
+        try {
+            const doc = await db.collection('indicadores').doc(key).get();
+            return doc.exists ? doc.data() : null;
+        } catch (err) {
+            console.warn('[COE] Firestore getDataByMonth falhou — usando localStorage.', err.message);
+        }
     }
+    const all = _lsGetAll();
+    return all[key] || null;
 }
 
-// Salva os dados de um mês no Firestore
 async function saveData(year, month, payload) {
-    try {
-        const key = `${year}-${month.padStart(2, '0')}`;
-        await db.collection(COLLECTION).doc(key).set(payload);
-    } catch (err) {
-        console.error('Erro ao salvar no Firestore:', err);
-        throw err;
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+    if (useFirebase && db) {
+        try {
+            await db.collection('indicadores').doc(key).set(payload);
+            // Atualiza localStorage em sincronia para uso offline
+            const all = _lsGetAll();
+            all[key] = payload;
+            _lsSetAll(all);
+            return;
+        } catch (err) {
+            console.warn('[COE] Firestore saveData falhou — salvando apenas em localStorage.', err.message);
+        }
     }
+    const all = _lsGetAll();
+    all[key] = payload;
+    _lsSetAll(all);
 }
 
-// Exclui os dados de um mês no Firestore
 async function deleteData(year, month) {
-    try {
-        const key = `${year}-${month.padStart(2, '0')}`;
-        await db.collection(COLLECTION).doc(key).delete();
-        return true;
-    } catch (err) {
-        console.error('Erro ao excluir do Firestore:', err);
-        return false;
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+    if (useFirebase && db) {
+        try {
+            await db.collection('indicadores').doc(key).delete();
+        } catch (err) {
+            console.warn('[COE] Firestore deleteData falhou.', err.message);
+        }
     }
+    const all = _lsGetAll();
+    delete all[key];
+    _lsSetAll(all);
+    return true;
 }
