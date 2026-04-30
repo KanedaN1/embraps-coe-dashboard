@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COE Dashboard Operacional</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header" style="text-align: center;">
+                <img src="assets/img/Logo.png" alt="Embraps Logo" style="max-height: 65px; margin-bottom: 10px;">
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-group-title">Principal</li>
+                    <li class="active"><a href="#resumo-geral" class="nav-link"><i class="fa-solid fa-house"></i> Dashboard - Resumo</a></li>
+                    <li><a href="#resumo-anual" class="nav-link"><i class="fa-solid fa-star"></i> Resumo Anual & KPIs</a></li>
+                    
+                    <li class="nav-group-title mt-4">Calendários Diários</li>
+                    <li><a href="#cal-faltas" class="nav-link"><i class="fa-regular fa-calendar-xmark"></i> Calendário de Faltas</a></li>
+                    <li><a href="#cal-demissoes" class="nav-link"><i class="fa-regular fa-calendar-minus"></i> Calendário de Demissões</a></li>
+                    
+                    <li class="nav-group-title mt-4">Visão Geral</li>
+                    <li><a href="#vg-reserva" class="nav-link"><i class="fa-solid fa-users-gear"></i> Reserva Operacional</a></li>
+                    <li><a href="#vg-folgas" class="nav-link"><i class="fa-solid fa-calendar-check"></i> Folga Trabalhada</a></li>
+                    <li><a href="#vg-punicoes" class="nav-link"><i class="fa-solid fa-gavel"></i> Punições</a></li>
+                    <li><a href="#vg-ponto" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i> Cartão de Ponto</a></li>
+                    <li><a href="#vg-app99" class="nav-link"><i class="fa-solid fa-car"></i> App 99</a></li>
+                    <li><a href="#vg-he" class="nav-link"><i class="fa-solid fa-stopwatch"></i> Horas Extras</a></li>
+                    <li><a href="#vg-vt" class="nav-link"><i class="fa-solid fa-bus"></i> Vale Transporte</a></li>
+                    <li><a href="#vg-contele" class="nav-link"><i class="fa-solid fa-map-location-dot"></i> Contele</a></li>
+                    <li><a href="#vg-divergencia" class="nav-link"><i class="fa-solid fa-code-branch"></i> Divergência de Função</a></li>
+                    <li><a href="#vg-faltas" class="nav-link"><i class="fa-solid fa-user-xmark"></i> Faltas</a></li>
+                    <li><a href="#vg-demissoes" class="nav-link"><i class="fa-solid fa-user-minus"></i> Demissões</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="btn-tv-mode" class="btn-primary w-100 mb-2"><i class="fa-solid fa-tv"></i> Modo TV</button>
+                <a href="admin.html" class="btn-admin w-100"><i class="fa-solid fa-lock"></i> Modo Admin</a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header with Filters -->
+            <header class="top-header">
+                <div class="header-title">
+                    <h1>Indicadores Operacionais</h1>
+                    <p>Visão estratégica e análise de dados mensais</p>
+                </div>
+                <div class="global-filters">
+                    <div class="filter-group">
+                        <label for="filter-year">Ano</label>
+                        <select id="filter-year">
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-month">Mês de Referência</label>
+                        <select id="filter-month">
+                            <option value="01">Janeiro</option>
+                            <option value="02">Fevereiro</option>
+                            <option value="03">Março</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Maio</option>
+                            <option value="06">Junho</option>
+                            <option value="07">Julho</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-body">
+                <!-- Alerts Area -->
+                <div id="alerts-container" class="alerts-container mb-4"></div>
+
+                <!-- SECTION: Dashboard - Resumo Geral -->
+                <section id="resumo-geral" class="dashboard-section active-section">
+                    <h2 class="section-title"><i class="fa-solid fa-house"></i> Dashboard - Resumo Geral</h2>
+                    
+                    <section class="kpi-cards mb-4">
+                        <div class="card kpi-card">
+                            <div class="kpi-icon bg-purple"><i class="fa-solid fa-calendar-xmark"></i></div>
+                            <div class="kpi-info">
+                                <h3>Média Faltas/Dia (Mês)</h3>
+                                <h2 id="kpi-media-faltas">0</h2>
+                            </div>
+                        </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-icon bg-blue"><i class="fa-solid fa-sun"></i></div>
+                            <div class="kpi-info">
+                                <h3>Reservas Diurna</h3>
+                                <h2 id="kpi-reservas-diurna">0</h2>
+                            </div>
+                        </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-icon bg-dark-blue"><i class="fa-solid fa-moon"></i></div>
+                            <div class="kpi-info">
+                                <h3>Reservas Noturna</h3>
+                                <h2 id="kpi-reservas-noturna">0</h2>
+                            </div>
+                        </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-icon bg-green"><i class="fa-solid fa-broom"></i></div>
+                            <div class="kpi-info">
+                                <h3>Reservas Limpeza</h3>
+                                <h2 id="kpi-reservas-limpeza">0</h2>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="charts-grid two-cols">
+                        <div class="card chart-container">
+                            <h3>Faltas Mensais (Visão Anual)</h3>
+                            <canvas id="chartResumoFaltas"></canvas>
+                        </div>
+                        <div class="card chart-container">
+                            <h3>Folgas Trabalhadas - Fts (Visão Anual)</h3>
+                            <canvas id="chartResumoFts"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CALENDARS SECTIONS -->
+                <section id="cal-faltas" class="dashboard-section mt-5">
+                    <h2 class="section-title"><i class="fa-regular fa-calendar-xmark"></i> Calendário Mensal de Faltas</h2>
+                    
+                    <div class="kpi-cards mb-4">
+                        <div class="card kpi-card">
+                            <div class="kpi-info w-100 text-center">
+                                <h3>Total Faltas (Mês)</h3>
+                                <h2 id="cal-faltas-total">0</h2>
+                            </div>
+                        </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-info w-100 text-center">
+                                <h3>Média Faltas/Dia</h3>
+                                <h2 id="cal-faltas-media">0</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4" style="padding: 24px;">
+                        <h3 style="margin-bottom: 16px; color: var(--primary-color);">Totais por Semana</h3>
+                        <div id="cal-faltas-semanas" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+
+                    <div class="card chart-container" style="height: auto;">
+                        <h3 style="margin-bottom: 20px;">Visão do Mês</h3>
+                        <div id="cal-faltas-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center;">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <section id="cal-demissoes" class="dashboard-section mt-5">
+                    <h2 class="section-title"><i class="fa-regular fa-calendar-minus"></i> Calendário Mensal de Demissões</h2>
+                    
+                    <div class="kpi-cards mb-4">
+                        <div class="card kpi-card">
+                            <div class="kpi-info w-100 text-center">
+                                <h3>Total Demissões (Mês)</h3>
+                                <h2 id="cal-demissoes-total">0</h2>
+                            </div>
+                        </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-info w-100 text-center">
+                                <h3>Média Demissões/Dia</h3>
+                                <h2 id="cal-demissoes-media">0</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4" style="padding: 24px;">
+                        <h3 style="margin-bottom: 16px; color: var(--primary-color);">Totais por Semana</h3>
+                        <div id="cal-demissoes-semanas" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+
+                    <div class="card chart-container" style="height: auto;">
+                        <h3 style="margin-bottom: 20px;">Visão do Mês</h3>
+                        <div id="cal-demissoes-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center;">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VISÃO GERAL SECTIONS -->
+                <div id="visao-geral-container">
+                    
+                    <!-- Reserva Operacional -->
+                    <section id="vg-reserva" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-users-gear"></i> Reserva Operacional</h2>
+                        <div class="reserva-grid" id="reserva-container">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </section>
+
+                    <!-- Folga Trabalhada -->
+                    <section id="vg-folgas" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-calendar-check"></i> Folga Trabalhada</h2>
+                        <div class="card chart-container mb-4">
+                            <h3>Gastos em Reais com Folgas Trabalhadas (Anual)</h3>
+                            <canvas id="chartVgFolgas"></canvas>
+                        </div>
+                        
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Gastos Semanais FT - Portaria (Mês)</h3>
+                                <canvas id="chartVgFolgasPortaria"></canvas>
+                            </div>
+                            <div class="card chart-container" style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); border: 2px dashed #94a3b8;">
+                                <h3><i class="fa-solid fa-broom" style="color: var(--success);"></i> Gastos Semanais FT - Limpeza (Mês)</h3>
+                                <canvas id="chartVgFolgasLimpeza"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Punições -->
+                    <section id="vg-punicoes" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-gavel"></i> Punições</h2>
+                        <div class="card chart-container">
+                            <h3>Quantidade de Punições Aplicadas (Anual)</h3>
+                            <canvas id="chartVgPunicoes"></canvas>
+                        </div>
+                    </section>
+
+                    <!-- Cartão de Ponto -->
+                    <section id="vg-ponto" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Cartão de Ponto</h2>
+                        <div class="card chart-container">
+                            <h3>Pendências de Cartão de Ponto (Anual)</h3>
+                            <canvas id="chartVgPonto"></canvas>
+                        </div>
+                    </section>
+
+                    <!-- App 99 -->
+                    <section id="vg-app99" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-car"></i> App 99</h2>
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Gastos Mensais com App 99 em R$ (Anual)</h3>
+                                <canvas id="chartVgApp99"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Gastos por Supervisor no App 99 (Mês Selecionado)</h3>
+                                <canvas id="chartVgApp99Supervisor"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Horas Extras -->
+                    <section id="vg-he" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-stopwatch"></i> Horas Extras</h2>
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Gastos com HE Geral em R$ (Anual)</h3>
+                                <canvas id="chartVgHeGeral"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Gastos com HE 100% em R$ (Anual)</h3>
+                                <canvas id="chartVgHe100"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Gastos com HE Intrajornada em R$ (Anual)</h3>
+                                <canvas id="chartVgHeIntra"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Vale Transporte -->
+                    <section id="vg-vt" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-bus"></i> Vale Transporte</h2>
+                        <div class="card chart-container">
+                            <h3>Gastos com Vale Transporte em R$ (Visão Anual Bimestral)</h3>
+                            <canvas id="chartVgVt"></canvas>
+                        </div>
+                    </section>
+
+                    <!-- Contele -->
+                    <section id="vg-contele" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-map-location-dot"></i> Contele</h2>
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Visitas Realizadas no App Contele (Anual)</h3>
+                                <canvas id="chartVgContele"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Visitas por Supervisor (Mês Selecionado)</h3>
+                                <canvas id="chartVgConteleSupervisor"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Podium Top 3 Contele -->
+                        <div class="card mt-4 podium-container text-center">
+                            <h3>Pódio: Top 3 Supervisores com Mais Visitas (Mês Selecionado)</h3>
+                            <div class="podium" id="contele-podium">
+                                <!-- Preenchido via JS -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Divergência de Função -->
+                    <section id="vg-divergencia" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-code-branch"></i> Divergência de Função</h2>
+                        
+                        <!-- Mini Blocks -->
+                        <div class="info-blocks mb-4">
+                            <div class="info-block block-warning">
+                                <h4>Quantidade de divergências no mês</h4>
+                                <span id="block-div-total">0</span>
+                            </div>
+                            <div class="info-block block-success">
+                                <h4>Quantidade de divergências resolvidas</h4>
+                                <span id="block-div-resolvidas">0</span>
+                            </div>
+                        </div>
+
+                        <div class="card chart-container">
+                            <h3>Divergências de Função (Anual)</h3>
+                            <canvas id="chartVgDivergencia"></canvas>
+                        </div>
+                    </section>
+
+                    <!-- Faltas -->
+                    <section id="vg-faltas" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-user-xmark"></i> Faltas</h2>
+                        
+                        <!-- Bilhete Média Faltas -->
+                        <div class="note-card mb-4">
+                            <i class="fa-solid fa-thumbtack note-pin"></i>
+                            <h4>Lembrete da Operação</h4>
+                            <p>A média de faltas por dia no mês de referência foi de <strong id="note-media-faltas">0</strong> faltas.</p>
+                        </div>
+
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Faltas Mensais (Anual)</h3>
+                                <canvas id="chartVgFaltas"></canvas>
+                            </div>
+                        <div class="charts-grid two-cols mt-4">
+                            <div class="card chart-container">
+                                <h3>Top 10 Clientes com Mais Faltas (Quantitativo)</h3>
+                                <canvas id="chartVgTopClientes"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Top 10 Clientes com Mais Faltas (Percentual)</h3>
+                                <canvas id="chartVgTopClientesPerc"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Demissões -->
+                    <section id="vg-demissoes" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-user-minus"></i> Demissões</h2>
+                        <div class="card chart-container mb-4">
+                            <h3>Quantidade de Demissões (Anual)</h3>
+                            <canvas id="chartVgDemissoes"></canvas>
+                        </div>
+
+                        <div class="card chart-container mb-4" style="height: auto; max-height: 450px;">
+                            <h3>Distribuição Diária de Motivos</h3>
+                            <canvas id="chartVgDemissoesMotivosDiarios"></canvas>
+                        </div>
+
+                        <div class="charts-grid two-cols mb-4">
+                            <div class="card chart-container">
+                                <h3>Motivos de Demissão (Mês Selecionado)</h3>
+                                <canvas id="chartVgDemissoesMotivos"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Top 10 Clientes com Mais Demissões (Quantitativo)</h3>
+                                <canvas id="chartVgTopDemissoes"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="charts-grid two-cols mt-4">
+                            <div class="card chart-container">
+                                <h3>Top 10 Clientes com Mais Demissões (Percentual)</h3>
+                                <canvas id="chartVgTopDemissoesPerc"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                </div> <!-- End Visao Geral -->
+
+                <!-- SECTION: Resumo Anual & KPIs -->
+                <section id="resumo-anual" class="dashboard-section">
+                    <h2 class="section-title"><i class="fa-solid fa-star"></i> Resumo Anual & KPIs</h2>
+
+                    <!-- KPI Scorecards -->
+                    <div class="anual-kpi-grid mb-4">
+                        <div class="anual-kpi-card" id="kpi-anual-faltas-card">
+                            <div class="anual-kpi-icon"><i class="fa-solid fa-user-xmark"></i></div>
+                            <div class="anual-kpi-info">
+                                <span class="anual-kpi-label">Total Faltas no Ano</span>
+                                <span class="anual-kpi-value" id="kpi-anual-faltas">0</span>
+                                <span class="anual-kpi-sla" id="kpi-anual-faltas-sla"></span>
+                            </div>
+                        </div>
+                        <div class="anual-kpi-card" id="kpi-anual-demissoes-card">
+                            <div class="anual-kpi-icon"><i class="fa-solid fa-user-minus"></i></div>
+                            <div class="anual-kpi-info">
+                                <span class="anual-kpi-label">Total Demiss&otilde;es no Ano</span>
+                                <span class="anual-kpi-value" id="kpi-anual-demissoes">0</span>
+                                <span class="anual-kpi-sla" id="kpi-anual-demissoes-sla"></span>
+                            </div>
+                        </div>
+                        <div class="anual-kpi-card" id="kpi-anual-custos-card">
+                            <div class="anual-kpi-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                            <div class="anual-kpi-info">
+                                <span class="anual-kpi-label">Custo Extra Total (App99 + Folgas + HE)</span>
+                                <span class="anual-kpi-value" id="kpi-anual-custos">R$ 0</span>
+                                <span class="anual-kpi-sla" id="kpi-anual-custos-sla"></span>
+                            </div>
+                        </div>
+                        <div class="anual-kpi-card" id="kpi-anual-divergencia-card">
+                            <div class="anual-kpi-icon"><i class="fa-solid fa-check-circle"></i></div>
+                            <div class="anual-kpi-info">
+                                <span class="anual-kpi-label">SLA Diverg&ecirc;ncias Resolvidas</span>
+                                <span class="anual-kpi-value" id="kpi-anual-divergencia">0%</span>
+                                <span class="anual-kpi-sla" id="kpi-anual-divergencia-sla"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tendencia de Custos -->
+                    <div class="card chart-container mb-4" style="height: 380px;">
+                        <h3><i class="fa-solid fa-chart-line"></i> Tend&ecirc;ncia de Custos Extras (Ano)</h3>
+                        <canvas id="chartAnualCustos"></canvas>
+                    </div>
+
+                    <!-- Termometro Faltas x Demissoes -->
+                    <div class="card chart-container mb-4" style="height: 340px;">
+                        <h3><i class="fa-solid fa-thermometer-half"></i> Term&ocirc;metro: Faltas vs Demiss&otilde;es (Mensal)</h3>
+                        <canvas id="chartAnualFaltasDemissoes"></canvas>
+                    </div>
+
+                    <!-- Punicoes e Divergencias Anuais -->
+                    <div class="charts-grid two-cols mb-4">
+                        <div class="card chart-container">
+                            <h3><i class="fa-solid fa-gavel"></i> Puni&ccedil;&otilde;es por M&ecirc;s</h3>
+                            <canvas id="chartAnualPunicoes"></canvas>
+                        </div>
+                        <div class="card chart-container">
+                            <h3><i class="fa-solid fa-code-branch"></i> Diverg&ecirc;ncias por M&ecirc;s</h3>
+                            <canvas id="chartAnualDivergencias"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Motivos de Demissoes Anual -->
+                    <div class="card chart-container mb-4" style="height: 320px;">
+                        <h3><i class="fa-solid fa-list-check"></i> Motivos de Demiss&atilde;o Acumulados (Ano)</h3>
+                        <canvas id="chartAnualMotivos"></canvas>
+                    </div>
+
+                    <!-- Ranking Top Ofensores -->
+                    <div class="card mb-4">
+                        <h3 style="padding: 20px 20px 10px; font-size: 1rem; color: var(--primary-color);"><i class="fa-solid fa-trophy"></i> Ranking: Top Ofensores do Ano</h3>
+                        <p style="padding: 0 20px 16px; font-size: 0.85rem; color: var(--text-muted);">Clientes com maior volume acumulado de faltas ao longo dos 12 meses.</p>
+                        <div style="overflow-x: auto; padding: 0 20px 20px;">
+                            <table class="reserva-table" id="table-top-ofensores">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">#</th>
+                                        <th>Cliente</th>
+                                        <th>Total Faltas</th>
+                                        <th>Representatividade</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-top-ofensores">
+                                    <!-- Gerado via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

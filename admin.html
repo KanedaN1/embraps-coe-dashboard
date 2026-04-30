@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modo Admin - COE Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-body">
+
+    <!-- Login Area -->
+    <div id="login-section" class="admin-login">
+        <div class="login-card">
+            <h2><i class="fa-solid fa-lock"></i> Área Restrita</h2>
+            <p style="margin-bottom: 20px; color: var(--text-muted);">Faça login para gerenciar os dados (admin/admin)</p>
+            <div id="login-error" class="alert alert-danger" style="display: none; margin-bottom: 15px;">
+                Usuário ou senha inválidos.
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn-primary w-100">Entrar</button>
+                <a href="index.html" style="display: block; margin-top: 15px; color: var(--accent-color); text-decoration: none;">Voltar para Dashboard</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="dashboard-container" style="display: none;">
+        <aside class="sidebar">
+            <div class="sidebar-header" style="text-align: center;">
+                <img src="assets/img/Logo.png" alt="Embraps Logo" style="max-height: 65px; margin-bottom: 10px;">
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html" class="nav-link"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+                    <li class="active"><a href="#" class="nav-link"><i class="fa-solid fa-database"></i> Gerenciar Dados</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="btn-logout" class="btn-primary w-100"><i class="fa-solid fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="admin-header">
+                <div>
+                    <h1>Gerenciamento de Dados</h1>
+                    <p>Insira ou edite dados referentes a um mês específico</p>
+                </div>
+                <div class="global-filters">
+                    <div class="filter-group">
+                        <label for="data-year">Ano</label>
+                        <select id="data-year">
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="data-month">Mês</label>
+                        <select id="data-month">
+                            <option value="01">Janeiro</option>
+                            <option value="02">Fevereiro</option>
+                            <option value="03">Março</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Maio</option>
+                            <option value="06">Junho</option>
+                            <option value="07">Julho</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" style="justify-content: flex-end;">
+                        <button id="btn-load" class="btn-primary"><i class="fa-solid fa-search"></i> Carregar Mês</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-alerts" class="alerts-container mb-4"></div>
+
+            <form id="data-form" style="display: none;">
+                
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-users"></i> Pessoas & RH (Totais Mensais)</h3>
+                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">Obs: O total de faltas e demissões agora é calculado automaticamente através do lançamento diário abaixo.</p>
+                    <div class="admin-form-grid">
+                        <div class="form-group">
+                            <label>Faltas Mensais (Automático)</label>
+                            <input type="number" id="faltas" min="0" readonly style="background-color: #f1f5f9; cursor: not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label>Demissões (Automático)</label>
+                            <input type="number" id="demissoes" min="0" readonly style="background-color: #f1f5f9; cursor: not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label>Punições Aplicadas</label>
+                            <input type="number" id="punicoes" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Divergências Ocorridas</label>
+                            <input type="number" id="divergenciaFuncao" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Divergências Resolvidas</label>
+                            <input type="number" id="divergenciasResolvidas" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Pendências Cartão Ponto</label>
+                            <input type="number" id="pendenciasPonto" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-calendar-days"></i> Faltas Diárias</h3>
+                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">Preencha o total de faltas para cada dia do mês. Dias não preenchidos serão considerados como 0.</p>
+                    <div id="grid-faltas-diarias" class="daily-grid" style="max-width: 100%;">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-user-minus"></i> Demissões Diárias (Detalhadas)</h3>
+                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">Preencha os motivos de demissão ocorridos em cada dia. O total diário e mensal é calculado automaticamente.</p>
+                    <div style="overflow-x: auto;">
+                        <table class="reserva-table" id="table-demissoes-diarias" style="min-width: 600px;">
+                            <thead>
+                                <tr>
+                                    <th>Dia</th>
+                                    <th>Empresa</th>
+                                    <th>Pedido</th>
+                                    <th>Experiência</th>
+                                    <th>Justa Causa</th>
+                                    <th style="color: var(--danger);">TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Gerado via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-users-gear"></i> Reserva Operacional</h3>
+                    
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Limpeza</h4>
+                    <div class="admin-form-grid" style="margin-bottom: 20px;">
+                        <div class="form-group"><label>Aux. limp. 5x1 diurno (Atual)</label><input type="number" id="res_limp_diurno_atual" min="0"></div>
+                        <div class="form-group"><label>Aux. limp. 5x1 diurno (Ideal)</label><input type="number" id="res_limp_diurno_ideal" min="0"></div>
+                        <div class="form-group"><label>Aux. limp. 5x1 vesp. (Atual)</label><input type="number" id="res_limp_vesp_atual" min="0"></div>
+                        <div class="form-group"><label>Aux. limp. 5x1 vesp. (Ideal)</label><input type="number" id="res_limp_vesp_ideal" min="0"></div>
+                        <div class="form-group"><label>Aux. limp. 5x2 (Atual)</label><input type="number" id="res_limp_5x2_atual" min="0"></div>
+                        <div class="form-group"><label>Aux. limp. 5x2 (Ideal)</label><input type="number" id="res_limp_5x2_ideal" min="0"></div>
+                        <div class="form-group"><label>Aux. limp. 12x36 (Atual)</label><input type="number" id="res_limp_12x36_atual" min="0"></div>
+                        <div class="form-group"><label>Aux. limp. 12x36 (Ideal)</label><input type="number" id="res_limp_12x36_ideal" min="0"></div>
+                        <div class="form-group"><label>Coringas Limpeza (Atual)</label><input type="number" id="res_limp_coringa_atual" min="0"></div>
+                        <div class="form-group"><label>Coringas Limpeza (Ideal)</label><input type="number" id="res_limp_coringa_ideal" min="0"></div>
+                    </div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Portaria Diurna</h4>
+                    <div class="admin-form-grid" style="margin-bottom: 20px;">
+                        <div class="form-group"><label>Porteiro Par (Atual)</label><input type="number" id="res_portdia_par_atual" min="0"></div>
+                        <div class="form-group"><label>Porteiro Par (Ideal)</label><input type="number" id="res_portdia_par_ideal" min="0"></div>
+                        <div class="form-group"><label>Porteiro Impar (Atual)</label><input type="number" id="res_portdia_impar_atual" min="0"></div>
+                        <div class="form-group"><label>Porteiro Impar (Ideal)</label><input type="number" id="res_portdia_impar_ideal" min="0"></div>
+                        <div class="form-group"><label>Aux. Manutenção (Atual)</label><input type="number" id="res_portdia_manu_atual" min="0"></div>
+                        <div class="form-group"><label>Aux. Manutenção (Ideal)</label><input type="number" id="res_portdia_manu_ideal" min="0"></div>
+                        <div class="form-group"><label>Zelador (Atual)</label><input type="number" id="res_portdia_zel_atual" min="0"></div>
+                        <div class="form-group"><label>Zelador (Ideal)</label><input type="number" id="res_portdia_zel_ideal" min="0"></div>
+                        <div class="form-group"><label>Coringas Port. Dia (Atual)</label><input type="number" id="res_portdia_coringa_atual" min="0"></div>
+                        <div class="form-group"><label>Coringas Port. Dia (Ideal)</label><input type="number" id="res_portdia_coringa_ideal" min="0"></div>
+                    </div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Portaria Noturna</h4>
+                    <div class="admin-form-grid">
+                        <div class="form-group"><label>Porteiro Par (Atual)</label><input type="number" id="res_portnoite_par_atual" min="0"></div>
+                        <div class="form-group"><label>Porteiro Par (Ideal)</label><input type="number" id="res_portnoite_par_ideal" min="0"></div>
+                        <div class="form-group"><label>Porteiro Impar (Atual)</label><input type="number" id="res_portnoite_impar_atual" min="0"></div>
+                        <div class="form-group"><label>Porteiro Impar (Ideal)</label><input type="number" id="res_portnoite_impar_ideal" min="0"></div>
+                        <div class="form-group"><label>Aux. Limp. Noturno (Atual)</label><input type="number" id="res_portnoite_limp_atual" min="0"></div>
+                        <div class="form-group"><label>Aux. Limp. Noturno (Ideal)</label><input type="number" id="res_portnoite_limp_ideal" min="0"></div>
+                        <div class="form-group"><label>Coringas Port. Noite (Atual)</label><input type="number" id="res_portnoite_coringa_atual" min="0"></div>
+                        <div class="form-group"><label>Coringas Port. Noite (Ideal)</label><input type="number" id="res_portnoite_coringa_ideal" min="0"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-money-bill"></i> Custos Globais</h3>
+                    <div class="admin-form-grid">
+                        <div class="form-group">
+                            <label>Gastos Folgas (R$)</label>
+                            <input type="number" id="gastosFolgas" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Vale Transporte Bimestral (R$)</label>
+                            <input type="number" id="valeTransporte" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Custo Global App 99 (R$)</label>
+                            <input type="number" id="custo99" min="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-stopwatch"></i> Horas Extras (R$)</h3>
+                    <div class="admin-form-grid">
+                        <div class="form-group">
+                            <label>Geral</label>
+                            <input type="number" id="horasExtrasGeral" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Intrajornada</label>
+                            <input type="number" id="horasExtrasIntra" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>100%</label>
+                            <input type="number" id="horasExtras100" min="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-gears"></i> Operacional Geral</h3>
+                    <div class="admin-form-grid">
+                        <div class="form-group">
+                            <label>Total Visitas Contele</label>
+                            <input type="number" id="visitasContele" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Reservas Diurna</label>
+                            <input type="number" id="reservasDiurna" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Reservas Noturna</label>
+                            <input type="number" id="reservasNoturna" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Reservas Limpeza</label>
+                            <input type="number" id="reservasLimpeza" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-car"></i> Supervisores App 99</h3>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addSupervisor99()">+ Adicionar Supervisor</button>
+                    <div id="list-supervisores99" class="dynamic-list-container">
+                        <!-- Itens renderizados no JS -->
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-map-location-dot"></i> Supervisores Contele (Pódio)</h3>
+                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 10px;">Insira o nome do arquivo da foto (ex: <b>joao.png</b>). Certifique-se de que a imagem está na pasta <code>assets/img/supervisores/</code> do projeto.</p>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addSupervisorContele()">+ Adicionar Supervisor</button>
+                    <div id="list-supervisoresContele" class="dynamic-list-container">
+                        <!-- Itens renderizados no JS -->
+                    </div>
+                </div>
+
+                <div class="admin-actions">
+                    <button type="submit" class="btn-primary" style="padding: 12px 30px;"><i class="fa-solid fa-save"></i> Salvar Dados do Mês</button>
+                    <button type="button" id="btn-delete" class="btn-danger"><i class="fa-solid fa-trash"></i> Excluir Mês</button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
