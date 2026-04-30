@@ -28,6 +28,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('btn-tv-mode').addEventListener('click', toggleTvMode);
 
+    // ---- Menu Mobile (Hamburger) ----
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const menuToggle = document.getElementById('btn-menu-toggle');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (menuToggle) menuToggle.addEventListener('click', openSidebar);
+    if (overlay)    overlay.addEventListener('click', closeSidebar);
+
     // Navegação Sidebar (Tabs)
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
@@ -47,6 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if(targetSection) {
                 targetSection.classList.add('active-section');
             }
+
+            // Fechar sidebar no mobile ao clicar num link
+            if (window.innerWidth <= 768) closeSidebar();
         });
     });
     
@@ -127,16 +149,16 @@ function toggleTvMode() {
     }
 }
 
-function updateDashboard() {
+async function updateDashboard() {
     const year = document.getElementById('filter-year').value;
     const month = document.getElementById('filter-month').value;
-    
-    const allData = getAllData();
-    
+
+    const allData = await getAllData();
+
     let yearlyData = [];
     const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
     const monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    
+
     months.forEach((m) => {
         const key = `${year}-${m}`;
         if (allData[key]) {
@@ -146,7 +168,7 @@ function updateDashboard() {
         }
     });
 
-    document.getElementById('alerts-container').innerHTML = ''; 
+    document.getElementById('alerts-container').innerHTML = '';
     const currentData = yearlyData.find(d => d.month === month);
 
     updateKPIs(currentData);
@@ -155,11 +177,11 @@ function updateDashboard() {
     renderContelePodium(currentData);
     updateDivergenciaBlocks(currentData);
     renderReservaOperacional(currentData);
-    
+
     // Render Calendars
     const faltasDiarias = (currentData && currentData.faltasDiarias) ? currentData.faltasDiarias : {};
     const demissoesDiarias = (currentData && currentData.demissoesDiarias) ? currentData.demissoesDiarias : {};
-    
+
     renderCalendar('cal-faltas', faltasDiarias, year, month, 'Faltas');
     renderCalendar('cal-demissoes', demissoesDiarias, year, month, 'Demissões');
 

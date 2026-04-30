@@ -47,11 +47,12 @@ const formFields = [
 let stateSupervisores99 = [];
 let stateSupervisoresContele = [];
 
-function loadMonthData() {
+async function loadMonthData() {
     const year = document.getElementById('data-year').value;
     const month = document.getElementById('data-month').value;
 
-    const data = getDataByMonth(year, month);
+    showAdminAlert('Carregando dados...', 'info');
+    const data = await getDataByMonth(year, month);
 
     const form = document.getElementById('data-form');
     form.style.display = 'block';
@@ -342,18 +343,23 @@ function saveMonthData(e) {
     payload.supervisores99 = [...stateSupervisores99];
     payload.supervisoresContele = [...stateSupervisoresContele];
 
-    saveData(year, month, payload);
-    showAdminAlert(`Dados de ${month}/${year} salvos com sucesso! A Dashboard foi atualizada.`, 'success');
+    try {
+        await saveData(year, month, payload);
+        showAdminAlert(`Dados de ${month}/${year} salvos com sucesso! A Dashboard foi atualizada.`, 'success');
+    } catch(err) {
+        showAdminAlert(`Erro ao salvar dados: ${err.message}`, 'warning');
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function deleteMonthData() {
+async function deleteMonthData() {
     const year = document.getElementById('data-year').value;
     const month = document.getElementById('data-month').value;
 
     if (confirm(`Tem certeza que deseja excluir TODOS os dados de ${month}/${year}?`)) {
-        if (deleteData(year, month)) {
+        const ok = await deleteData(year, month);
+        if (ok) {
             showAdminAlert(`Dados de ${month}/${year} foram excluídos.`, 'success');
             document.getElementById('data-form').style.display = 'none';
         } else {

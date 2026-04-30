@@ -13,8 +13,19 @@
 </head>
 <body>
     <div class="dashboard-container">
+        <!-- Mobile top bar -->
+        <div class="mobile-topbar">
+            <button id="btn-menu-toggle" class="btn-menu-toggle" aria-label="Abrir menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <img src="assets/img/Logo.png" alt="Embraps" style="height:36px;">
+        </div>
+
+        <!-- Sidebar overlay (mobile) -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
         <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header" style="text-align: center;">
                 <img src="assets/img/Logo.png" alt="Embraps Logo" style="max-height: 65px; margin-bottom: 10px;">
             </div>
@@ -22,7 +33,7 @@
                 <ul>
                     <li class="nav-group-title">Principal</li>
                     <li class="active"><a href="#resumo-geral" class="nav-link"><i class="fa-solid fa-house"></i> Dashboard - Resumo</a></li>
-                    <li><a href="#resumo-anual" class="nav-link"><i class="fa-solid fa-star"></i> Resumo Anual & KPIs</a></li>
+                    <li><a href="#resumo-anual" class="nav-link"><i class="fa-solid fa-star"></i> Resumo Anual &amp; KPIs</a></li>
                     
                     <li class="nav-group-title mt-4">Calendários Diários</li>
                     <li><a href="#cal-faltas" class="nav-link"><i class="fa-regular fa-calendar-xmark"></i> Calendário de Faltas</a></li>
@@ -498,10 +509,13 @@
         </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <!-- App Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="js/data.js"></script>
+    <script src="js/firebase-config.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
