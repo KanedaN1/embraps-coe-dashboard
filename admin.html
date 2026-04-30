@@ -8,26 +8,35 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-body">
+    <!-- Mobile top bar (sempre visível no mobile) -->
+    <div class="mobile-topbar" id="mobile-topbar-admin" style="display:none;">
+        <button id="btn-menu-toggle" class="btn-menu-toggle" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <img src="assets/img/Logo.png" alt="Embraps" style="height:36px;">
+    </div>
+
+    <!-- Sidebar overlay (mobile) -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
     <!-- Login Area -->
     <div id="login-section" class="admin-login">
         <div class="login-card">
-            <h2><i class="fa-solid fa-lock"></i> Área Restrita</h2>
-            <p style="margin-bottom: 20px; color: var(--text-muted);">Faça login para gerenciar os dados (admin/admin)</p>
+            <h2><i class="fa-solid fa-lock"></i> &Aacute;rea Restrita</h2>
+            <p style="margin-bottom: 20px; color: var(--text-muted);">Fa&ccedil;a login para gerenciar os dados (admin/admin)</p>
             <div id="login-error" class="alert alert-danger" style="display: none; margin-bottom: 15px;">
-                Usuário ou senha inválidos.
+                Usu&aacute;rio ou senha inv&aacute;lidos.
             </div>
-            <form id="login-form">
+            <form id="login-form" onsubmit="return false;">
                 <div class="form-group">
-                    <label for="username">Usuário</label>
-                    <input type="text" id="username" required>
+                    <label for="username">Usu&aacute;rio</label>
+                    <input type="text" id="username" autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label for="password">Senha</label>
-                    <input type="password" id="password" required>
+                    <input type="password" id="password" autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn-primary w-100">Entrar</button>
+                <button type="button" id="btn-login" class="btn-primary w-100">Entrar</button>
                 <a href="index.html" style="display: block; margin-top: 15px; color: var(--accent-color); text-decoration: none;">Voltar para Dashboard</a>
             </form>
         </div>
@@ -35,16 +44,6 @@
 
     <!-- Admin Panel -->
     <div id="admin-panel" class="dashboard-container" style="display: none;">
-        <!-- Mobile top bar -->
-        <div class="mobile-topbar">
-            <button id="btn-menu-toggle" class="btn-menu-toggle" aria-label="Abrir menu">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <img src="assets/img/Logo.png" alt="Embraps" style="height:36px;">
-        </div>
-
-        <!-- Sidebar overlay (mobile) -->
-        <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header" style="text-align: center;">

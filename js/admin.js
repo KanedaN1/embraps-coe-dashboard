@@ -1,28 +1,43 @@
-document.addEventListener('DOMContentLoaded', () => {
+console.log('[DEBUG] admin.js parse started');
 
-    // --- LOGIN (isolado, sem deps de outros elementos) ---
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const user = document.getElementById('username').value.trim();
-            const pass = document.getElementById('password').value.trim();
-            if (user === 'admin' && pass === 'admin') {
-                sessionStorage.setItem('admin_logged', 'true');
-                showAdminPanel();
-            } else {
-                const errEl = document.getElementById('login-error');
-                if (errEl) errEl.style.display = 'block';
-            }
+function doLogin() {
+    console.log('[DEBUG] doLogin() called');
+    const user = (document.getElementById('username') || {}).value || '';
+    const pass = (document.getElementById('password') || {}).value || '';
+    console.log('[DEBUG] user:', user, 'pass:', pass);
+    if (user.trim() === 'admin' && pass.trim() === 'admin') {
+        sessionStorage.setItem('admin_logged', 'true');
+        showAdminPanel();
+    } else {
+        const errEl = document.getElementById('login-error');
+        if (errEl) errEl.style.display = 'block';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('[DEBUG] DOMContentLoaded fired in admin.js');
+
+    // Login via botão dedicado (sem form submit)
+    const btnLogin = document.getElementById('btn-login');
+    console.log('[DEBUG] btn-login element:', btnLogin);
+    if (btnLogin) {
+        btnLogin.addEventListener('click', doLogin);
+    }
+
+    // Fallback: enter key no campo de senha
+    const passField = document.getElementById('password');
+    if (passField) {
+        passField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doLogin();
         });
     }
 
-    // --- SESSAO ATIVA ---
+    // Sessão ativa
     if (sessionStorage.getItem('admin_logged') === 'true') {
         showAdminPanel();
     }
 
-    // --- LOGOUT ---
+    // Logout
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) btnLogout.addEventListener('click', () => {
         sessionStorage.removeItem('admin_logged');
@@ -60,6 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
 function showAdminPanel() {
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'flex';
+
+    // Mostrar barra mobile
+    const mobileTopbar = document.getElementById('mobile-topbar-admin');
+    if (mobileTopbar) mobileTopbar.style.display = '';
 
     // Inicializa filtros de ano/mês ao mostrar o painel
     const yearEl  = document.getElementById('data-year');
