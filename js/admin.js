@@ -1,40 +1,52 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    // --- LOGIN (isolado, sem deps de outros elementos) ---
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            if (user === 'admin' && pass === 'admin') {
+                sessionStorage.setItem('admin_logged', 'true');
+                showAdminPanel();
+            } else {
+                const errEl = document.getElementById('login-error');
+                if (errEl) errEl.style.display = 'block';
+            }
+        });
+    }
 
-    document.getElementById('data-year').value = "2026";
-    document.getElementById('data-month').value = currentMonth;
-
+    // --- SESSAO ATIVA ---
     if (sessionStorage.getItem('admin_logged') === 'true') {
         showAdminPanel();
     }
 
-    document.getElementById('login-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const user = document.getElementById('username').value;
-        const pass = document.getElementById('password').value;
-
-        if (user === 'admin' && pass === 'admin') {
-            sessionStorage.setItem('admin_logged', 'true');
-            showAdminPanel();
-        } else {
-            document.getElementById('login-error').style.display = 'block';
-        }
-    });
-
-    document.getElementById('btn-logout').addEventListener('click', () => {
+    // --- LOGOUT ---
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) btnLogout.addEventListener('click', () => {
         sessionStorage.removeItem('admin_logged');
         location.reload();
     });
 
-    document.getElementById('btn-load').addEventListener('click', loadMonthData);
-    document.getElementById('data-form').addEventListener('submit', saveMonthData);
-    document.getElementById('btn-delete').addEventListener('click', deleteMonthData);
+    // --- ACOES DO PAINEL (só registradas se elementos existirem) ---
+    const btnLoad   = document.getElementById('btn-load');
+    const dataForm  = document.getElementById('data-form');
+    const btnDelete = document.getElementById('btn-delete');
+    if (btnLoad)   btnLoad.addEventListener('click', loadMonthData);
+    if (dataForm)  dataForm.addEventListener('submit', saveMonthData);
+    if (btnDelete) btnDelete.addEventListener('click', deleteMonthData);
 });
 
 function showAdminPanel() {
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'flex';
+
+    // Inicializa filtros de ano/mês ao mostrar o painel
+    const yearEl  = document.getElementById('data-year');
+    const monthEl = document.getElementById('data-month');
+    if (yearEl)  yearEl.value  = '2026';
+    if (monthEl) monthEl.value = (new Date().getMonth() + 1).toString().padStart(2, '0');
 }
 
 const formFields = [
