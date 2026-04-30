@@ -61,14 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (menuToggle) menuToggle.addEventListener('click', openSidebar);
-    if (overlay)    overlay.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
 
     // --- ACOES DO PAINEL (só registradas se elementos existirem) ---
-    const btnLoad   = document.getElementById('btn-load');
-    const dataForm  = document.getElementById('data-form');
+    const btnLoad = document.getElementById('btn-load');
+    const dataForm = document.getElementById('data-form');
     const btnDelete = document.getElementById('btn-delete');
-    if (btnLoad)   btnLoad.addEventListener('click', loadMonthData);
-    if (dataForm)  dataForm.addEventListener('submit', saveMonthData);
+    if (btnLoad) btnLoad.addEventListener('click', loadMonthData);
+    if (dataForm) dataForm.addEventListener('submit', saveMonthData);
     if (btnDelete) btnDelete.addEventListener('click', deleteMonthData);
 });
 
@@ -81,9 +81,9 @@ function showAdminPanel() {
     if (mobileTopbar) mobileTopbar.style.display = '';
 
     // Inicializa filtros de ano/mês ao mostrar o painel
-    const yearEl  = document.getElementById('data-year');
+    const yearEl = document.getElementById('data-year');
     const monthEl = document.getElementById('data-month');
-    if (yearEl)  yearEl.value  = '2026';
+    if (yearEl) yearEl.value = '2026';
     if (monthEl) monthEl.value = (new Date().getMonth() + 1).toString().padStart(2, '0');
 }
 
@@ -317,7 +317,7 @@ function recalcDemissoesTabela() {
     if (demEl) demEl.value = totalMes;
 }
 
-function saveMonthData(e) {
+async function saveMonthData(e) {
     e.preventDefault();
     const year = document.getElementById('data-year').value;
     const month = document.getElementById('data-month').value;
@@ -396,7 +396,7 @@ function saveMonthData(e) {
     try {
         await saveData(year, month, payload);
         showAdminAlert(`Dados de ${month}/${year} salvos com sucesso! A Dashboard foi atualizada.`, 'success');
-    } catch(err) {
+    } catch (err) {
         showAdminAlert(`Erro ao salvar dados: ${err.message}`, 'warning');
     }
 
