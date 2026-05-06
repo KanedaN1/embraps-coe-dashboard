@@ -556,6 +556,17 @@ body {
         margin-left: 0;
         padding: 16px;
     }
+    .charts-grid.two-cols {
+        grid-template-columns: 1fr;
+    }
+    .top-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .global-filters {
+        width: 100%;
+        justify-content: space-between;
+    }
 }
 
 /* Admin Styles specific */
@@ -726,6 +737,45 @@ body {
     flex-direction: column;
     justify-content: space-between;
     transition: transform 0.2s;
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background-color: white;
+        color: black;
+    }
+    .sidebar, .mobile-topbar, .top-header, .btn-primary.print-btn {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0;
+        padding: 0;
+    }
+    .dashboard-section {
+        display: none;
+    }
+    .dashboard-section.active-section {
+        display: block !important;
+        width: 100%;
+    }
+    .charts-grid {
+        display: block;
+    }
+    .chart-container {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+    .card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
 }
 
 .cal-day-cell:hover {

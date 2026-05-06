@@ -681,6 +681,61 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         backgroundColor: chartColors.warning,
         borderRadius: 4
     }], { indexAxis: 'y', isPercentage: true });
+
+    // Movimentação Operacional
+    if (currentData && !currentData.isEmpty) {
+        document.getElementById('kpi-movimentacao-total').textContent = currentData.movTotal || 0;
+
+        let movMotivosLabels = [];
+        let movMotivosData = [];
+        if (currentData.movMotivos) {
+            currentData.movMotivos.forEach(m => {
+                movMotivosLabels.push(m.nome);
+                movMotivosData.push(m.qtd);
+            });
+        }
+        renderBarChart('chartMovMotivos', movMotivosLabels, [{
+            label: 'Motivos',
+            data: movMotivosData,
+            backgroundColor: chartColors.primary,
+            borderRadius: 4
+        }]);
+
+        let movSupLabels = [];
+        let movSupData = [];
+        if (currentData.movSupervisores) {
+            currentData.movSupervisores.forEach(s => {
+                movSupLabels.push(s.nome);
+                movSupData.push(s.qtd);
+            });
+        }
+        renderBarChart('chartMovSupervisores', movSupLabels, [{
+            label: 'Movimentações',
+            data: movSupData,
+            backgroundColor: chartColors.secondary,
+            borderRadius: 4
+        }]);
+
+        let movTranspLabels = [];
+        let movTranspData = [];
+        if (currentData.movTransportes) {
+            currentData.movTransportes.forEach(t => {
+                movTranspLabels.push(t.nome);
+                movTranspData.push(t.qtd);
+            });
+        }
+        renderBarChart('chartMovTransportes', movTranspLabels, [{
+            label: 'Transportes',
+            data: movTranspData,
+            backgroundColor: chartColors.info,
+            borderRadius: 4
+        }]);
+    } else {
+        document.getElementById('kpi-movimentacao-total').textContent = 0;
+        renderBarChart('chartMovMotivos', [], []);
+        renderBarChart('chartMovSupervisores', [], []);
+        renderBarChart('chartMovTransportes', [], []);
+    }
 }
 
 function renderReservaOperacional(currentData) {

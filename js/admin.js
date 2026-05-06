@@ -91,11 +91,15 @@ const formFields = [
     'faltas', 'demissoes', 'punicoes', 'divergenciaFuncao', 'divergenciasResolvidas', 'pendenciasPonto',
     'gastosFolgas', 'valeTransporte', 'custo99',
     'horasExtrasGeral', 'horasExtrasIntra', 'horasExtras100',
-    'visitasContele', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza'
+    'visitasContele', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
+    'movTotal'
 ];
 
 let stateSupervisores99 = [];
 let stateSupervisoresContele = [];
+let stateMovMotivos = [];
+let stateMovSupervisores = [];
+let stateMovTransportes = [];
 
 async function loadMonthData() {
     const year = document.getElementById('data-year').value;
@@ -115,6 +119,9 @@ async function loadMonthData() {
 
         stateSupervisores99 = data.supervisores99 ? [...data.supervisores99] : [];
         stateSupervisoresContele = data.supervisoresContele ? [...data.supervisoresContele] : [];
+        stateMovMotivos = data.movMotivos ? [...data.movMotivos] : [];
+        stateMovSupervisores = data.movSupervisores ? [...data.movSupervisores] : [];
+        stateMovTransportes = data.movTransportes ? [...data.movTransportes] : [];
 
         renderDemissoesGridTabela(data.demissoesMotivosDiarios || {});
 
@@ -161,6 +168,9 @@ async function loadMonthData() {
 
         stateSupervisores99 = [];
         stateSupervisoresContele = [];
+        stateMovMotivos = [];
+        stateMovSupervisores = [];
+        stateMovTransportes = [];
 
         renderDemissoesGridTabela({});
         const resIds = ['res_limp_diurno', 'res_limp_vesp', 'res_limp_5x2', 'res_limp_12x36', 'res_limp_coringa', 'res_portdia_par', 'res_portdia_impar', 'res_portdia_manu', 'res_portdia_zel', 'res_portdia_coringa', 'res_portnoite_par', 'res_portnoite_impar', 'res_portnoite_limp', 'res_portnoite_coringa'];
@@ -179,6 +189,9 @@ async function loadMonthData() {
 
     renderSupervisores99();
     renderSupervisoresContele();
+    renderMovMotivos();
+    renderMovSupervisores();
+    renderMovTransportes();
 }
 
 // ---- Supervisores 99 ----
@@ -254,6 +267,89 @@ function renderSupervisoresContele() {
         container.appendChild(div);
     });
 }
+
+// ---- Movimentação Operacional ----
+function addMovMotivo() {
+    stateMovMotivos.push({ nome: '', qtd: 0 });
+    renderMovMotivos();
+}
+function removeMovMotivo(index) {
+    stateMovMotivos.splice(index, 1);
+    renderMovMotivos();
+}
+function renderMovMotivos() {
+    const container = document.getElementById('list-movMotivos');
+    container.innerHTML = '';
+    if (stateMovMotivos.length === 0) {
+        container.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum motivo adicionado.</p>';
+        return;
+    }
+    stateMovMotivos.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Motivo" value="${item.nome}" onchange="stateMovMotivos[${index}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd" value="${item.qtd}" onchange="stateMovMotivos[${index}].qtd = parseInt(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeMovMotivo(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function addMovSupervisor() {
+    stateMovSupervisores.push({ nome: '', qtd: 0 });
+    renderMovSupervisores();
+}
+function removeMovSupervisor(index) {
+    stateMovSupervisores.splice(index, 1);
+    renderMovSupervisores();
+}
+function renderMovSupervisores() {
+    const container = document.getElementById('list-movSupervisores');
+    container.innerHTML = '';
+    if (stateMovSupervisores.length === 0) {
+        container.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum supervisor adicionado.</p>';
+        return;
+    }
+    stateMovSupervisores.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Supervisor" value="${item.nome}" onchange="stateMovSupervisores[${index}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd" value="${item.qtd}" onchange="stateMovSupervisores[${index}].qtd = parseInt(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeMovSupervisor(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function addMovTransporte() {
+    stateMovTransportes.push({ nome: '', qtd: 0 });
+    renderMovTransportes();
+}
+function removeMovTransporte(index) {
+    stateMovTransportes.splice(index, 1);
+    renderMovTransportes();
+}
+function renderMovTransportes() {
+    const container = document.getElementById('list-movTransportes');
+    container.innerHTML = '';
+    if (stateMovTransportes.length === 0) {
+        container.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum transporte adicionado.</p>';
+        return;
+    }
+    stateMovTransportes.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Transporte" value="${item.nome}" onchange="stateMovTransportes[${index}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd" value="${item.qtd}" onchange="stateMovTransportes[${index}].qtd = parseInt(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeMovTransporte(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        container.appendChild(div);
+    });
+}
+
 
 function renderDailyGrid(type, dataObj) {
     const container = document.getElementById(`grid-${type}`);
@@ -392,6 +488,9 @@ async function saveMonthData(e) {
 
     payload.supervisores99 = [...stateSupervisores99];
     payload.supervisoresContele = [...stateSupervisoresContele];
+    payload.movMotivos = [...stateMovMotivos];
+    payload.movSupervisores = [...stateMovSupervisores];
+    payload.movTransportes = [...stateMovTransportes];
 
     try {
         await saveData(year, month, payload);

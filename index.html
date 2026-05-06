@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COE Dashboard Operacional</title>
+    <!-- Open Graph Meta Tags para o WhatsApp -->
+    <meta property="og:title" content="COE Dashboard Operacional - Embraps">
+    <meta property="og:description" content="Visão estratégica e análise de dados mensais operacionais.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/KanedaN1/embraps-coe-dashboard/main/assets/img/Logo.png">
+    <meta property="og:url" content="https://kanedan1.github.io/embraps-coe-dashboard/">
+    <meta property="og:type" content="website">
+    
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Icons -->
@@ -51,6 +58,7 @@
                     <li><a href="#vg-divergencia" class="nav-link"><i class="fa-solid fa-code-branch"></i> Divergência de Função</a></li>
                     <li><a href="#vg-faltas" class="nav-link"><i class="fa-solid fa-user-xmark"></i> Faltas</a></li>
                     <li><a href="#vg-demissoes" class="nav-link"><i class="fa-solid fa-user-minus"></i> Demissões</a></li>
+                    <li><a href="#vg-movimentacao" class="nav-link"><i class="fa-solid fa-people-arrows"></i> Movimentação Operacional</a></li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -406,6 +414,38 @@
                             <div class="card chart-container">
                                 <h3>Top 10 Clientes com Mais Demissões (Percentual)</h3>
                                 <canvas id="chartVgTopDemissoesPerc"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Movimentação Operacional -->
+                    <section id="vg-movimentacao" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-people-arrows"></i> Movimentação Operacional</h2>
+                        
+                        <div class="kpi-cards mb-4">
+                            <div class="card kpi-card" style="margin: 0 auto; max-width: 400px; display: flex; justify-content: center; text-align: center;">
+                                <div class="kpi-info w-100">
+                                    <h3>Total Movimentados no Mês</h3>
+                                    <h2 id="kpi-movimentacao-total" style="font-size: 3rem; margin-top: 10px;">0</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="charts-grid two-cols mb-4">
+                            <div class="card chart-container">
+                                <h3>Motivos das Movimentações</h3>
+                                <canvas id="chartMovMotivos"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Reservas Movimentadas por Supervisor</h3>
+                                <canvas id="chartMovSupervisores"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="charts-grid one-col">
+                            <div class="card chart-container">
+                                <h3>Colaboradores Movimentados por Transporte</h3>
+                                <canvas id="chartMovTransportes"></canvas>
                             </div>
                         </div>
                     </section>
