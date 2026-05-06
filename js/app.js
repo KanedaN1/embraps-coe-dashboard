@@ -191,10 +191,14 @@ async function updateDashboard() {
     renderReservaOperacional(currentData);
 
     // Render Calendars
-    const faltasDiarias = (currentData && currentData.faltasDiarias) ? currentData.faltasDiarias : {};
+    const faltasDiurna = (currentData && currentData.faltasDiurna) ? currentData.faltasDiurna : {};
+    const faltasNoturna = (currentData && currentData.faltasNoturna) ? currentData.faltasNoturna : {};
+    const faltasLimpeza = (currentData && currentData.faltasLimpeza) ? currentData.faltasLimpeza : {};
     const demissoesDiarias = (currentData && currentData.demissoesDiarias) ? currentData.demissoesDiarias : {};
 
-    renderCalendar('cal-faltas', faltasDiarias, year, month, 'Faltas');
+    renderCalendar('cal-faltas-diurna', faltasDiurna, year, month, 'Faltas');
+    renderCalendar('cal-faltas-noturna', faltasNoturna, year, month, 'Faltas');
+    renderCalendar('cal-faltas-limpeza', faltasLimpeza, year, month, 'Faltas');
     renderCalendar('cal-demissoes', demissoesDiarias, year, month, 'Demissões');
 
     // Visão Geral - Coringas
