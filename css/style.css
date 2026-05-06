@@ -728,6 +728,32 @@ body {
 }
 
 /* Visual Calendar (Dashboard) */
+.cal-grid-month {
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    gap: 10px; 
+    text-align: center;
+}
+
+.cal-week-block {
+    background: var(--bg-body);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    flex: 1;
+    min-width: 100px;
+}
+.cal-week-block h4 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+.cal-week-block span {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
 .cal-day-cell {
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -1173,12 +1199,19 @@ body {
     }
 
     /* Calendário compacto */
-    .cal-day {
-        min-height: 42px;
-        font-size: 0.7rem;
+    .cal-day-cell {
+        min-height: 45px;
+        padding: 4px;
     }
     .cal-day-num {
         font-size: 0.65rem;
+    }
+    .cal-grid-month {
+        gap: 4px;
+    }
+    .cal-week-block {
+        padding: 10px;
+        flex: 1 1 45%;
     }
 
     /* Seção title esconde botão imprimir */
