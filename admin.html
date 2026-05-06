@@ -134,11 +134,18 @@
 
                 <div class="form-section">
                 <div class="form-section">
-                    <h3><i class="fa-solid fa-calendar-days"></i> Faltas Diárias</h3>
-                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">Preencha o total de faltas para cada dia do mês. Dias não preenchidos serão considerados como 0.</p>
-                    <div id="grid-faltas-diarias" class="daily-grid" style="max-width: 100%;">
-                        <!-- Gerado via JS -->
-                    </div>
+                    <h3><i class="fa-solid fa-calendar-days"></i> Faltas Diárias (Portaria Diurna)</h3>
+                    <div id="grid-faltas-diurna" class="daily-grid" style="max-width: 100%;"></div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-calendar-days"></i> Faltas Diárias (Portaria Noturna)</h3>
+                    <div id="grid-faltas-noturna" class="daily-grid" style="max-width: 100%;"></div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-calendar-days"></i> Faltas Diárias (Limpeza)</h3>
+                    <div id="grid-faltas-limpeza" class="daily-grid" style="max-width: 100%;"></div>
                 </div>
 
                 <div class="form-section">
@@ -223,6 +230,22 @@
                             <input type="number" id="custo99" min="0" step="0.01">
                         </div>
                     </div>
+
+                    <h4 style="margin-bottom: 10px; margin-top: 20px; color: var(--primary-color);">Folgas Trabalhadas Semanais (Portaria)</h4>
+                    <div class="admin-form-grid">
+                        <div class="form-group"><label>Semana 1 (R$)</label><input type="number" id="folgasPortaria_1" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Semana 2 (R$)</label><input type="number" id="folgasPortaria_2" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Semana 3 (R$)</label><input type="number" id="folgasPortaria_3" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Semana 4 (R$)</label><input type="number" id="folgasPortaria_4" min="0" step="0.01"></div>
+                    </div>
+
+                    <h4 style="margin-bottom: 10px; margin-top: 20px; color: var(--success);">Folgas Trabalhadas Semanais (Limpeza)</h4>
+                    <div class="admin-form-grid">
+                        <div class="form-group"><label>Semana 1 (R$)</label><input type="number" id="folgasLimpeza_1" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Semana 2 (R$)</label><input type="number" id="folgasLimpeza_2" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Semana 3 (R$)</label><input type="number" id="folgasLimpeza_3" min="0" step="0.01"></div>
+                        <div class="form-group"><label>Semana 4 (R$)</label><input type="number" id="folgasLimpeza_4" min="0" step="0.01"></div>
+                    </div>
                 </div>
 
                 <div class="form-section">
@@ -304,11 +327,65 @@
                     <div id="list-movTransportes" class="dynamic-list-container"></div>
                 </div>
 
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-plus"></i> Novas Entradas Mensais</h3>
+                    
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Folgas Trabalhadas (Motivos em R$)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addFolgaMotivo()">+ Adicionar Motivo</button>
+                    <div id="list-folgasMotivos" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Punições (Motivos)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addPunicaoMotivo()">+ Adicionar Motivo</button>
+                    <div id="list-punicoesMotivos" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Punições (Tipos)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addPunicaoTipo()">+ Adicionar Tipo</button>
+                    <div id="list-punicoesTipos" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Cartão de Ponto (Pendências por Supervisor)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addPontoSupervisor()">+ Adicionar Supervisor</button>
+                    <div id="list-pontoSupervisores" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">App 99 (Motivos de Viagem em R$)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addApp99Motivo()">+ Adicionar Motivo</button>
+                    <div id="list-app99Motivos" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Vale Transporte (R$ por Cidade)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addVtCidade()">+ Adicionar Cidade</button>
+                    <div id="list-vtCidades" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Vale Transporte (R$ por Escala)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addVtEscala()">+ Adicionar Escala</button>
+                    <div id="list-vtEscalas" class="dynamic-list-container"></div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-mask"></i> Coringas</h3>
+                    <div class="admin-form-grid" style="margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label>Total de Treinamentos</label>
+                            <input type="number" id="totalTreinamentos" min="0">
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Postos com Treinamento</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addCoringaPosto()">+ Adicionar Posto</button>
+                    <div id="list-coringasPostos" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Usuários em Treinamento</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addCoringaUsuario()">+ Adicionar Usuário</button>
+                    <div id="list-coringasUsuarios" class="dynamic-list-container"></div>
+                </div>
+
                 <div class="admin-actions">
                     <button type="submit" class="btn-primary" style="padding: 12px 30px;"><i class="fa-solid fa-save"></i> Salvar Dados do Mês</button>
                     <button type="button" id="btn-delete" class="btn-danger"><i class="fa-solid fa-trash"></i> Excluir Mês</button>
                 </div>
             </form>
+
+            <footer style="text-align: center; padding: 40px 20px 20px; margin-top: 40px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.9rem;">
+                Criado por <strong style="color: var(--primary-color);">Nikolas Cardoso</strong>
+            </footer>
         </main>
     </div>
 

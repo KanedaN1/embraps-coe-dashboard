@@ -92,7 +92,10 @@ const formFields = [
     'gastosFolgas', 'valeTransporte', 'custo99',
     'horasExtrasGeral', 'horasExtrasIntra', 'horasExtras100',
     'visitasContele', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
-    'movTotal'
+    'movTotal',
+    'folgasPortaria_1', 'folgasPortaria_2', 'folgasPortaria_3', 'folgasPortaria_4',
+    'folgasLimpeza_1', 'folgasLimpeza_2', 'folgasLimpeza_3', 'folgasLimpeza_4',
+    'totalTreinamentos'
 ];
 
 let stateSupervisores99 = [];
@@ -100,6 +103,15 @@ let stateSupervisoresContele = [];
 let stateMovMotivos = [];
 let stateMovSupervisores = [];
 let stateMovTransportes = [];
+let stateFolgasMotivos = [];
+let statePunicoesMotivos = [];
+let statePunicoesTipos = [];
+let statePontoSupervisores = [];
+let stateApp99Motivos = [];
+let stateVtCidades = [];
+let stateVtEscalas = [];
+let stateCoringasPostos = [];
+let stateCoringasUsuarios = [];
 
 async function loadMonthData() {
     const year = document.getElementById('data-year').value;
@@ -122,6 +134,15 @@ async function loadMonthData() {
         stateMovMotivos = data.movMotivos ? [...data.movMotivos] : [];
         stateMovSupervisores = data.movSupervisores ? [...data.movSupervisores] : [];
         stateMovTransportes = data.movTransportes ? [...data.movTransportes] : [];
+        stateFolgasMotivos = data.folgasMotivos ? [...data.folgasMotivos] : [];
+        statePunicoesMotivos = data.punicoesMotivos ? [...data.punicoesMotivos] : [];
+        statePunicoesTipos = data.punicoesTipos ? [...data.punicoesTipos] : [];
+        statePontoSupervisores = data.pontoSupervisores ? [...data.pontoSupervisores] : [];
+        stateApp99Motivos = data.app99Motivos ? [...data.app99Motivos] : [];
+        stateVtCidades = data.vtCidades ? [...data.vtCidades] : [];
+        stateVtEscalas = data.vtEscalas ? [...data.vtEscalas] : [];
+        stateCoringasPostos = data.coringasPostos ? [...data.coringasPostos] : [];
+        stateCoringasUsuarios = data.coringasUsuarios ? [...data.coringasUsuarios] : [];
 
         renderDemissoesGridTabela(data.demissoesMotivosDiarios || {});
 
@@ -156,7 +177,9 @@ async function loadMonthData() {
             }
         }
 
-        renderDailyGrid('faltas-diarias', data.faltasDiarias || {});
+        renderDailyGrid('faltas-diurna', data.faltasDiurna || {});
+        renderDailyGrid('faltas-noturna', data.faltasNoturna || {});
+        renderDailyGrid('faltas-limpeza', data.faltasLimpeza || {});
         renderDemissoesGridTabela(data.demissoesMotivosDiarios || {});
 
         showAdminAlert(`Dados carregados: ${month}/${year}`, 'success');
@@ -171,6 +194,15 @@ async function loadMonthData() {
         stateMovMotivos = [];
         stateMovSupervisores = [];
         stateMovTransportes = [];
+        stateFolgasMotivos = [];
+        statePunicoesMotivos = [];
+        statePunicoesTipos = [];
+        statePontoSupervisores = [];
+        stateApp99Motivos = [];
+        stateVtCidades = [];
+        stateVtEscalas = [];
+        stateCoringasPostos = [];
+        stateCoringasUsuarios = [];
 
         renderDemissoesGridTabela({});
         const resIds = ['res_limp_diurno', 'res_limp_vesp', 'res_limp_5x2', 'res_limp_12x36', 'res_limp_coringa', 'res_portdia_par', 'res_portdia_impar', 'res_portdia_manu', 'res_portdia_zel', 'res_portdia_coringa', 'res_portnoite_par', 'res_portnoite_impar', 'res_portnoite_limp', 'res_portnoite_coringa'];
@@ -181,7 +213,9 @@ async function loadMonthData() {
             if (i) i.value = 0;
         });
 
-        renderDailyGrid('faltas-diarias', {});
+        renderDailyGrid('faltas-diurna', {});
+        renderDailyGrid('faltas-noturna', {});
+        renderDailyGrid('faltas-limpeza', {});
         renderDemissoesGridTabela({});
 
         showAdminAlert(`Nenhum dado encontrado para ${month}/${year}. Preencha para criar.`, 'warning');
@@ -192,6 +226,15 @@ async function loadMonthData() {
     renderMovMotivos();
     renderMovSupervisores();
     renderMovTransportes();
+    renderFolgasMotivos();
+    renderPunicoesMotivos();
+    renderPunicoesTipos();
+    renderPontoSupervisores();
+    renderApp99Motivos();
+    renderVtCidades();
+    renderVtEscalas();
+    renderCoringasPostos();
+    renderCoringasUsuarios();
 }
 
 // ---- Supervisores 99 ----
@@ -350,7 +393,143 @@ function renderMovTransportes() {
     });
 }
 
+// --- Folgas Motivos ---
+function addFolgaMotivo() { stateFolgasMotivos.push({ nome: '', valor: 0 }); renderFolgasMotivos(); }
+function removeFolgaMotivo(i) { stateFolgasMotivos.splice(i, 1); renderFolgasMotivos(); }
+function renderFolgasMotivos() {
+    const c = document.getElementById('list-folgasMotivos'); c.innerHTML = '';
+    if (stateFolgasMotivos.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum motivo.</p>';
+    stateFolgasMotivos.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Motivo" value="${item.nome}" onchange="stateFolgasMotivos[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="R$" value="${item.valor}" step="0.01" onchange="stateFolgasMotivos[${i}].valor = parseFloat(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeFolgaMotivo(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
 
+// --- Punições ---
+function addPunicaoMotivo() { statePunicoesMotivos.push({ nome: '', qtd: 0 }); renderPunicoesMotivos(); }
+function removePunicaoMotivo(i) { statePunicoesMotivos.splice(i, 1); renderPunicoesMotivos(); }
+function renderPunicoesMotivos() {
+    const c = document.getElementById('list-punicoesMotivos'); c.innerHTML = '';
+    if (statePunicoesMotivos.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum motivo.</p>';
+    statePunicoesMotivos.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Motivo" value="${item.nome}" onchange="statePunicoesMotivos[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd" value="${item.qtd}" onchange="statePunicoesMotivos[${i}].qtd = parseInt(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removePunicaoMotivo(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
+function addPunicaoTipo() { statePunicoesTipos.push({ nome: '', qtd: 0 }); renderPunicoesTipos(); }
+function removePunicaoTipo(i) { statePunicoesTipos.splice(i, 1); renderPunicoesTipos(); }
+function renderPunicoesTipos() {
+    const c = document.getElementById('list-punicoesTipos'); c.innerHTML = '';
+    if (statePunicoesTipos.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum tipo.</p>';
+    statePunicoesTipos.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Tipo" value="${item.nome}" onchange="statePunicoesTipos[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd" value="${item.qtd}" onchange="statePunicoesTipos[${i}].qtd = parseInt(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removePunicaoTipo(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
+
+// --- Ponto Supervisores ---
+function addPontoSupervisor() { statePontoSupervisores.push({ nome: '', qtd: 0 }); renderPontoSupervisores(); }
+function removePontoSupervisor(i) { statePontoSupervisores.splice(i, 1); renderPontoSupervisores(); }
+function renderPontoSupervisores() {
+    const c = document.getElementById('list-pontoSupervisores'); c.innerHTML = '';
+    if (statePontoSupervisores.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum supervisor.</p>';
+    statePontoSupervisores.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Supervisor" value="${item.nome}" onchange="statePontoSupervisores[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd Pendências" value="${item.qtd}" onchange="statePontoSupervisores[${i}].qtd = parseInt(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removePontoSupervisor(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
+
+// --- App 99 Motivos ---
+function addApp99Motivo() { stateApp99Motivos.push({ motivo: '', valor: 0 }); renderApp99Motivos(); }
+function removeApp99Motivo(i) { stateApp99Motivos.splice(i, 1); renderApp99Motivos(); }
+function renderApp99Motivos() {
+    const c = document.getElementById('list-app99Motivos'); c.innerHTML = '';
+    if (stateApp99Motivos.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum motivo.</p>';
+    stateApp99Motivos.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Motivo" value="${item.motivo}" onchange="stateApp99Motivos[${i}].motivo = this.value" style="flex: 2;">
+            <input type="number" placeholder="Valor (R$)" value="${item.valor}" step="0.01" onchange="stateApp99Motivos[${i}].valor = parseFloat(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeApp99Motivo(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
+
+// --- VT Cidades e Escalas ---
+function addVtCidade() { stateVtCidades.push({ nome: '', valor: 0 }); renderVtCidades(); }
+function removeVtCidade(i) { stateVtCidades.splice(i, 1); renderVtCidades(); }
+function renderVtCidades() {
+    const c = document.getElementById('list-vtCidades'); c.innerHTML = '';
+    if (stateVtCidades.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhuma cidade.</p>';
+    stateVtCidades.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Cidade" value="${item.nome}" onchange="stateVtCidades[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Valor (R$)" value="${item.valor}" step="0.01" onchange="stateVtCidades[${i}].valor = parseFloat(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeVtCidade(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
+function addVtEscala() { stateVtEscalas.push({ nome: '', valor: 0 }); renderVtEscalas(); }
+function removeVtEscala(i) { stateVtEscalas.splice(i, 1); renderVtEscalas(); }
+function renderVtEscalas() {
+    const c = document.getElementById('list-vtEscalas'); c.innerHTML = '';
+    if (stateVtEscalas.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhuma escala.</p>';
+    stateVtEscalas.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Escala" value="${item.nome}" onchange="stateVtEscalas[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Valor (R$)" value="${item.valor}" step="0.01" onchange="stateVtEscalas[${i}].valor = parseFloat(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeVtEscala(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
+
+// --- Coringas ---
+function addCoringaPosto() { stateCoringasPostos.push({ nome: '', qtd: 0 }); renderCoringasPostos(); }
+function removeCoringaPosto(i) { stateCoringasPostos.splice(i, 1); renderCoringasPostos(); }
+function renderCoringasPostos() {
+    const c = document.getElementById('list-coringasPostos'); c.innerHTML = '';
+    if (stateCoringasPostos.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum posto.</p>';
+    stateCoringasPostos.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Posto" value="${item.nome}" onchange="stateCoringasPostos[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd" value="${item.qtd}" onchange="stateCoringasPostos[${i}].qtd = parseInt(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeCoringaPosto(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
+function addCoringaUsuario() { stateCoringasUsuarios.push({ nome: '', qtd: 0 }); renderCoringasUsuarios(); }
+function removeCoringaUsuario(i) { stateCoringasUsuarios.splice(i, 1); renderCoringasUsuarios(); }
+function renderCoringasUsuarios() {
+    const c = document.getElementById('list-coringasUsuarios'); c.innerHTML = '';
+    if (stateCoringasUsuarios.length === 0) return c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum usuário.</p>';
+    stateCoringasUsuarios.forEach((item, i) => {
+        const div = document.createElement('div'); div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Usuário" value="${item.nome}" onchange="stateCoringasUsuarios[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd" value="${item.qtd}" onchange="stateCoringasUsuarios[${i}].qtd = parseInt(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeCoringaUsuario(${i})"><i class="fa-solid fa-xmark"></i></button>`;
+        c.appendChild(div);
+    });
+}
 function renderDailyGrid(type, dataObj) {
     const container = document.getElementById(`grid-${type}`);
     container.innerHTML = '';
@@ -369,8 +548,10 @@ function renderDailyGrid(type, dataObj) {
 
 function recalcTotals() {
     let totalFaltas = 0;
-    document.querySelectorAll('.input-faltas-diarias').forEach(input => {
-        totalFaltas += parseInt(input.value) || 0;
+    ['faltas-diurna', 'faltas-noturna', 'faltas-limpeza'].forEach(type => {
+        document.querySelectorAll(`.input-${type}`).forEach(input => {
+            totalFaltas += parseInt(input.value) || 0;
+        });
     });
     document.getElementById('faltas').value = totalFaltas;
 }
@@ -428,11 +609,16 @@ async function saveMonthData(e) {
         }
     });
 
-    const faltasDiarias = {};
-    document.querySelectorAll('.input-faltas-diarias').forEach(input => {
-        faltasDiarias[input.dataset.day] = parseInt(input.value) || 0;
-    });
-    payload.faltasDiarias = faltasDiarias;
+    const getFaltasGrid = (type) => {
+        const obj = {};
+        document.querySelectorAll(`.input-${type}`).forEach(input => {
+            obj[input.dataset.day] = parseInt(input.value) || 0;
+        });
+        return obj;
+    };
+    payload.faltasDiurna = getFaltasGrid('faltas-diurna');
+    payload.faltasNoturna = getFaltasGrid('faltas-noturna');
+    payload.faltasLimpeza = getFaltasGrid('faltas-limpeza');
 
     const demissoesMotivosDiarios = {};
     const demissoesDiarias = {};
@@ -491,6 +677,15 @@ async function saveMonthData(e) {
     payload.movMotivos = [...stateMovMotivos];
     payload.movSupervisores = [...stateMovSupervisores];
     payload.movTransportes = [...stateMovTransportes];
+    payload.folgasMotivos = [...stateFolgasMotivos];
+    payload.punicoesMotivos = [...statePunicoesMotivos];
+    payload.punicoesTipos = [...statePunicoesTipos];
+    payload.pontoSupervisores = [...statePontoSupervisores];
+    payload.app99Motivos = [...stateApp99Motivos];
+    payload.vtCidades = [...stateVtCidades];
+    payload.vtEscalas = [...stateVtEscalas];
+    payload.coringasPostos = [...stateCoringasPostos];
+    payload.coringasUsuarios = [...stateCoringasUsuarios];
 
     try {
         await saveData(year, month, payload);

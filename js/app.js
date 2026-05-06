@@ -197,6 +197,31 @@ async function updateDashboard() {
     renderCalendar('cal-faltas', faltasDiarias, year, month, 'Faltas');
     renderCalendar('cal-demissoes', demissoesDiarias, year, month, 'Demissões');
 
+    // Visão Geral - Coringas
+    renderBarChart('chartCoringasTreinamentos', monthLabels, [{
+        label: 'Treinamentos',
+        data: getValues(yearlyData, 'totalTreinamentos'),
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        borderColor: '#10b981',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#10b981'
+    }], { type: 'line' });
+
+    if (currentData && currentData.coringasPostos) {
+        renderBarChart('chartCoringasPostos', currentData.coringasPostos.map(i => i.nome), [{
+            label: 'Postos', data: currentData.coringasPostos.map(i => i.qtd), backgroundColor: '#10b981', borderRadius: 4
+        }], { type: 'bar' });
+    } else { renderBarChart('chartCoringasPostos', [], []); }
+
+    if (currentData && currentData.coringasUsuarios) {
+        renderBarChart('chartCoringasUsuarios', currentData.coringasUsuarios.map(i => i.nome), [{
+            label: 'Usuários', data: currentData.coringasUsuarios.map(i => i.qtd), backgroundColor: '#059669', borderRadius: 4
+        }], { type: 'bar' });
+    } else { renderBarChart('chartCoringasUsuarios', [], []); }
+
+
     renderResumoAnual(yearlyData, monthLabels);
 }
 
@@ -425,13 +450,19 @@ function renderCharts(yearlyData, monthLabels, currentData) {
     let gastosPortaria = [0, 0, 0, 0];
     let gastosLimpeza = [0, 0, 0, 0];
     
-    if (currentData && !currentData.isEmpty && currentData.gastosFolgas) {
-        const total = currentData.gastosFolgas;
-        const portariaTotal = total * 0.7; 
-        const limpezaTotal = total * 0.3; 
-        
-        gastosPortaria = [portariaTotal * 0.2, portariaTotal * 0.3, portariaTotal * 0.25, portariaTotal * 0.25];
-        gastosLimpeza = [limpezaTotal * 0.25, limpezaTotal * 0.2, limpezaTotal * 0.3, limpezaTotal * 0.25];
+    if (currentData && !currentData.isEmpty) {
+        gastosPortaria = [
+            currentData.folgasPortaria_1 || 0,
+            currentData.folgasPortaria_2 || 0,
+            currentData.folgasPortaria_3 || 0,
+            currentData.folgasPortaria_4 || 0
+        ];
+        gastosLimpeza = [
+            currentData.folgasLimpeza_1 || 0,
+            currentData.folgasLimpeza_2 || 0,
+            currentData.folgasLimpeza_3 || 0,
+            currentData.folgasLimpeza_4 || 0
+        ];
     }
     
     renderBarChart('chartVgFolgasPortaria', semanas, [{
@@ -448,7 +479,7 @@ function renderCharts(yearlyData, monthLabels, currentData) {
     renderBarChart('chartVgFolgasLimpeza', semanas, [{
         label: 'Limpeza (R$)',
         data: gastosLimpeza,
-        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        backgroundColor: 'rgba(34, 197, 94, 0.2)',
         borderColor: chartColors.success,
         borderWidth: 2,
         fill: true,
@@ -456,21 +487,47 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         pointBackgroundColor: chartColors.success
     }], { isCurrency: true, type: 'line' });
 
+    if (currentData && currentData.folgasMotivos) {
+        const labels = currentData.folgasMotivos.map(i => i.nome);
+        const vals = currentData.folgasMotivos.map(i => i.valor);
+        renderBarChart('chartVgFolgasMotivos', labels, [{
+            label: 'Motivo (R$)', data: vals, backgroundColor: chartColors.success, borderRadius: 4
+        }], { isCurrency: true, type: 'bar' });
+    } else { renderBarChart('chartVgFolgasMotivos', [], []); }
+
     // Punições
     renderBarChart('chartVgPunicoes', monthLabels, [{
-        label: 'Punições',
+        label: 'Quantidade',
         data: getValues(yearlyData, 'punicoes'),
         backgroundColor: chartColors.danger,
         borderRadius: 4
     }]);
 
+    if (currentData && currentData.punicoesMotivos) {
+        renderBarChart('chartVgPunicoesMotivos', currentData.punicoesMotivos.map(i => i.nome), [{
+            label: 'Qtd', data: currentData.punicoesMotivos.map(i => i.qtd), backgroundColor: chartColors.danger, borderRadius: 4
+        }], { type: 'bar' });
+    } else { renderBarChart('chartVgPunicoesMotivos', [], []); }
+
+    if (currentData && currentData.punicoesTipos) {
+        renderBarChart('chartVgPunicoesTipos', currentData.punicoesTipos.map(i => i.nome), [{
+            label: 'Qtd', data: currentData.punicoesTipos.map(i => i.qtd), backgroundColor: chartColors.warning, borderRadius: 4
+        }], { type: 'bar' });
+    } else { renderBarChart('chartVgPunicoesTipos', [], []); }
+
     // Ponto
     renderBarChart('chartVgPonto', monthLabels, [{
         label: 'Pendências',
         data: getValues(yearlyData, 'pendenciasPonto'),
-        backgroundColor: chartColors.primary,
+        backgroundColor: '#64748b',
         borderRadius: 4
     }]);
+
+    if (currentData && currentData.pontoSupervisores) {
+        renderBarChart('chartVgPontoSupervisor', currentData.pontoSupervisores.map(i => i.nome), [{
+            label: 'Pendências', data: currentData.pontoSupervisores.map(i => i.qtd), backgroundColor: '#94a3b8', borderRadius: 4
+        }], { type: 'bar' });
+    } else { renderBarChart('chartVgPontoSupervisor', [], []); }
 
     // App 99
     renderBarChart('chartVgApp99', monthLabels, [{

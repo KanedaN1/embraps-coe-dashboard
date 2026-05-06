@@ -59,6 +59,7 @@
                     <li><a href="#vg-faltas" class="nav-link"><i class="fa-solid fa-user-xmark"></i> Faltas</a></li>
                     <li><a href="#vg-demissoes" class="nav-link"><i class="fa-solid fa-user-minus"></i> Demissões</a></li>
                     <li><a href="#vg-movimentacao" class="nav-link"><i class="fa-solid fa-people-arrows"></i> Movimentação Operacional</a></li>
+                    <li><a href="#vg-coringas" class="nav-link"><i class="fa-solid fa-mask"></i> Coringas</a></li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -156,35 +157,68 @@
 
                 <!-- CALENDARS SECTIONS -->
                 <section id="cal-faltas" class="dashboard-section mt-5">
-                    <h2 class="section-title"><i class="fa-regular fa-calendar-xmark"></i> Calendário Mensal de Faltas</h2>
-                    
+                    <h2 class="section-title"><i class="fa-regular fa-calendar-xmark"></i> Calendário Mensal de Faltas (Portaria Diurna)</h2>
                     <div class="kpi-cards mb-4">
                         <div class="card kpi-card">
                             <div class="kpi-info w-100 text-center">
                                 <h3>Total Faltas (Mês)</h3>
-                                <h2 id="cal-faltas-total">0</h2>
+                                <h2 id="cal-faltas-diurna-total">0</h2>
                             </div>
                         </div>
                         <div class="card kpi-card">
                             <div class="kpi-info w-100 text-center">
                                 <h3>Média Faltas/Dia</h3>
-                                <h2 id="cal-faltas-media">0</h2>
+                                <h2 id="cal-faltas-diurna-media">0</h2>
                             </div>
                         </div>
                     </div>
-
-                    <div class="card mb-4" style="padding: 24px;">
-                        <h3 style="margin-bottom: 16px; color: var(--primary-color);">Totais por Semana</h3>
-                        <div id="cal-faltas-semanas" style="display: flex; gap: 15px; flex-wrap: wrap;">
-                            <!-- Preenchido via JS -->
-                        </div>
-                    </div>
-
                     <div class="card chart-container" style="height: auto;">
                         <h3 style="margin-bottom: 20px;">Visão do Mês</h3>
-                        <div id="cal-faltas-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center;">
-                            <!-- Preenchido via JS -->
+                        <div id="cal-faltas-diurna-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center;"></div>
+                    </div>
+                </section>
+
+                <section id="cal-faltas-noturna" class="dashboard-section mt-5">
+                    <h2 class="section-title"><i class="fa-regular fa-calendar-xmark"></i> Calendário Mensal de Faltas (Portaria Noturna)</h2>
+                    <div class="kpi-cards mb-4">
+                        <div class="card kpi-card">
+                            <div class="kpi-info w-100 text-center">
+                                <h3>Total Faltas (Mês)</h3>
+                                <h2 id="cal-faltas-noturna-total">0</h2>
+                            </div>
                         </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-info w-100 text-center">
+                                <h3>Média Faltas/Dia</h3>
+                                <h2 id="cal-faltas-noturna-media">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card chart-container" style="height: auto;">
+                        <h3 style="margin-bottom: 20px;">Visão do Mês</h3>
+                        <div id="cal-faltas-noturna-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center;"></div>
+                    </div>
+                </section>
+
+                <section id="cal-faltas-limpeza" class="dashboard-section mt-5">
+                    <h2 class="section-title"><i class="fa-regular fa-calendar-xmark"></i> Calendário Mensal de Faltas (Limpeza)</h2>
+                    <div class="kpi-cards mb-4">
+                        <div class="card kpi-card">
+                            <div class="kpi-info w-100 text-center">
+                                <h3>Total Faltas (Mês)</h3>
+                                <h2 id="cal-faltas-limpeza-total">0</h2>
+                            </div>
+                        </div>
+                        <div class="card kpi-card">
+                            <div class="kpi-info w-100 text-center">
+                                <h3>Média Faltas/Dia</h3>
+                                <h2 id="cal-faltas-limpeza-media">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card chart-container" style="height: auto;">
+                        <h3 style="margin-bottom: 20px;">Visão do Mês</h3>
+                        <div id="cal-faltas-limpeza-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center;"></div>
                     </div>
                 </section>
 
@@ -235,18 +269,24 @@
                     <!-- Folga Trabalhada -->
                     <section id="vg-folgas" class="dashboard-section mt-5">
                         <h2 class="section-title"><i class="fa-solid fa-calendar-check"></i> Folga Trabalhada</h2>
-                        <div class="card chart-container mb-4">
-                            <h3>Gastos em Reais com Folgas Trabalhadas (Anual)</h3>
-                            <canvas id="chartVgFolgas"></canvas>
+                        <div class="charts-grid two-cols mb-4">
+                            <div class="card chart-container">
+                                <h3>Gastos em Reais com Folgas Trabalhadas (Anual)</h3>
+                                <canvas id="chartVgFolgas"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Motivos das Folgas Trabalhadas em R$ (Mês Selecionado)</h3>
+                                <canvas id="chartVgFolgasMotivos"></canvas>
+                            </div>
                         </div>
                         
                         <div class="charts-grid two-cols">
                             <div class="card chart-container">
-                                <h3>Gastos Semanais FT - Portaria (Mês)</h3>
+                                <h3>Gastos Semanais FT - Portaria (Mês Selecionado)</h3>
                                 <canvas id="chartVgFolgasPortaria"></canvas>
                             </div>
                             <div class="card chart-container" style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); border: 2px dashed #94a3b8;">
-                                <h3><i class="fa-solid fa-broom" style="color: var(--success);"></i> Gastos Semanais FT - Limpeza (Mês)</h3>
+                                <h3><i class="fa-solid fa-broom" style="color: var(--success);"></i> Gastos Semanais FT - Limpeza (Mês Selecionado)</h3>
                                 <canvas id="chartVgFolgasLimpeza"></canvas>
                             </div>
                         </div>
@@ -255,25 +295,41 @@
                     <!-- Punições -->
                     <section id="vg-punicoes" class="dashboard-section mt-5">
                         <h2 class="section-title"><i class="fa-solid fa-gavel"></i> Punições</h2>
-                        <div class="card chart-container">
+                        <div class="card chart-container mb-4">
                             <h3>Quantidade de Punições Aplicadas (Anual)</h3>
                             <canvas id="chartVgPunicoes"></canvas>
+                        </div>
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Motivos das Punições (Mês Selecionado)</h3>
+                                <canvas id="chartVgPunicoesMotivos"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Tipos de Punições Aplicadas (Mês Selecionado)</h3>
+                                <canvas id="chartVgPunicoesTipos"></canvas>
+                            </div>
                         </div>
                     </section>
 
                     <!-- Cartão de Ponto -->
                     <section id="vg-ponto" class="dashboard-section mt-5">
                         <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Cartão de Ponto</h2>
-                        <div class="card chart-container">
-                            <h3>Pendências de Cartão de Ponto (Anual)</h3>
-                            <canvas id="chartVgPonto"></canvas>
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Pendências de Cartão de Ponto (Anual)</h3>
+                                <canvas id="chartVgPonto"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Pendências por Supervisor (Mês Selecionado)</h3>
+                                <canvas id="chartVgPontoSupervisor"></canvas>
+                            </div>
                         </div>
                     </section>
 
                     <!-- App 99 -->
                     <section id="vg-app99" class="dashboard-section mt-5">
                         <h2 class="section-title"><i class="fa-solid fa-car"></i> App 99</h2>
-                        <div class="charts-grid two-cols">
+                        <div class="charts-grid two-cols mb-4">
                             <div class="card chart-container">
                                 <h3>Gastos Mensais com App 99 em R$ (Anual)</h3>
                                 <canvas id="chartVgApp99"></canvas>
@@ -281,6 +337,12 @@
                             <div class="card chart-container">
                                 <h3>Gastos por Supervisor no App 99 (Mês Selecionado)</h3>
                                 <canvas id="chartVgApp99Supervisor"></canvas>
+                            </div>
+                        </div>
+                        <div class="charts-grid one-col">
+                            <div class="card chart-container">
+                                <h3>Motivos de Viagens em R$ (Mês Selecionado)</h3>
+                                <canvas id="chartVgApp99Motivos"></canvas>
                             </div>
                         </div>
                     </section>
@@ -307,9 +369,19 @@
                     <!-- Vale Transporte -->
                     <section id="vg-vt" class="dashboard-section mt-5">
                         <h2 class="section-title"><i class="fa-solid fa-bus"></i> Vale Transporte</h2>
-                        <div class="card chart-container">
+                        <div class="card chart-container mb-4">
                             <h3>Gastos com Vale Transporte em R$ (Visão Anual Bimestral)</h3>
                             <canvas id="chartVgVt"></canvas>
+                        </div>
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Valores em R$ por Cidade (Mês Selecionado)</h3>
+                                <canvas id="chartVgVtCidades"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Valores em R$ por Escala (Mês Selecionado)</h3>
+                                <canvas id="chartVgVtEscalas"></canvas>
+                            </div>
                         </div>
                     </section>
 
@@ -450,6 +522,25 @@
                         </div>
                     </section>
 
+                    <!-- Coringas -->
+                    <section id="vg-coringas" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-mask"></i> Coringas</h2>
+                        <div class="card chart-container mb-4">
+                            <h3>Quantidade de Treinamentos (Visão Anual)</h3>
+                            <canvas id="chartCoringasTreinamentos"></canvas>
+                        </div>
+                        <div class="charts-grid two-cols">
+                            <div class="card chart-container">
+                                <h3>Quantidade de Postos com Treinamento (Mês Selecionado)</h3>
+                                <canvas id="chartCoringasPostos"></canvas>
+                            </div>
+                            <div class="card chart-container">
+                                <h3>Quantidade de Usuários em Treinamento (Mês Selecionado)</h3>
+                                <canvas id="chartCoringasUsuarios"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
                 </div> <!-- End Visao Geral -->
 
                 <!-- SECTION: Resumo Anual & KPIs -->
@@ -544,6 +635,10 @@
                     </div>
 
                 </section>
+
+                <footer style="text-align: center; padding: 40px 20px 20px; margin-top: 40px; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.9rem;">
+                    Criado por <strong style="color: var(--primary-color);">Nikolas Cardoso</strong>
+                </footer>
 
             </div>
         </main>
