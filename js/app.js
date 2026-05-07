@@ -360,6 +360,7 @@ function renderBarChart(canvasId, labels, datasets, options = {}) {
 
     const defaultOptions = {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: datasets.length > 1,
@@ -711,7 +712,7 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         label: 'Motivos',
         data: motivosData,
         backgroundColor: [chartColors.primary, chartColors.info, chartColors.warning, chartColors.danger]
-    }], { type: 'doughnut', plugins: { legend: { display: true, position: 'right' } } });
+    }], { type: 'doughnut', plugins: { legend: { display: true, position: window.innerWidth < 768 ? 'bottom' : 'right' } } });
 
     // Top Demissoes (Qtd)
     let topDemissoesLabels = [];
