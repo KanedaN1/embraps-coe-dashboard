@@ -1177,7 +1177,9 @@ body {
         grid-template-columns: 1fr;
     }
     .chart-container {
-        height: 260px !important;
+        min-height: 260px !important;
+        height: auto !important;
+        padding: 16px !important;
     }
 
     /* Resumo anual KPIs em 2 colunas no mobile */
