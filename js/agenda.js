@@ -121,15 +121,22 @@ async function loadAgendaTasks() {
 }
 
 async function saveTaskToDb(task) {
+    console.log('[AGENDA] Saving task to DB:', task);
     if (useFirebase && db) {
-        if (task.id) {
-            const id = task.id;
-            const data = { ...task };
-            delete data.id;
-            await db.collection('agenda_tarefas').doc(id).set(data);
-        } else {
-            const docRef = await db.collection('agenda_tarefas').add(task);
-            task.id = docRef.id;
+        try {
+            if (task.id) {
+                const id = task.id;
+                const data = { ...task };
+                delete data.id;
+                await db.collection('agenda_tarefas').doc(id).set(data);
+                console.log('[AGENDA] Firebase update success');
+            } else {
+                const docRef = await db.collection('agenda_tarefas').add(task);
+                task.id = docRef.id;
+                console.log('[AGENDA] Firebase add success, ID:', task.id);
+            }
+        } catch (err) {
+            console.error('[AGENDA] Firebase save error:', err);
         }
     }
     // Local fallback
@@ -293,46 +300,57 @@ async function confirmarConclusao() {
 }
 
 async function salvarTarefa() {
-    const id = document.getElementById('modal-tarefa-id').value;
-    const nome = document.getElementById('modal-nome').value;
-    const operadorId = document.getElementById('modal-operador').value;
-    const descricao = document.getElementById('modal-descricao').value;
-    const frequencia = document.getElementById('modal-frequencia').value;
-    const dataLimite = document.getElementById('modal-prazo').value;
-    const prioridade = document.getElementById('modal-prioridade').value;
+    try {
+        console.log('[AGENDA] salvarTarefa called');
+        const id = document.getElementById('modal-tarefa-id').value;
+        const nome = document.getElementById('modal-nome').value;
+        const operadorId = document.getElementById('modal-operador').value;
+        const descricao = document.getElementById('modal-descricao').value;
+        const frequencia = document.getElementById('modal-frequencia').value;
+        const dataLimite = document.getElementById('modal-prazo').value;
+        const prioridade = document.getElementById('modal-prioridade').value;
 
-    if (!nome || !operadorId || !dataLimite) {
-        alert("Preencha todos os campos obrigatórios!");
-        return;
+        console.log('[AGENDA] Form data:', { id, nome, operadorId, dataLimite });
+
+        if (!nome || !operadorId || !dataLimite) {
+            alert("Preencha todos os campos obrigatórios (Atividade, Responsável e Prazo)!");
+            return;
+        }
+
+        const sel = document.getElementById('modal-operador');
+        const operadorNome = sel.options[sel.selectedIndex].text;
+
+        const existingTask = id ? agendaTasks.find(t => t.id === id) : null;
+
+        const task = {
+            nome,
+            operadorId,
+            operadorNome,
+            descricao,
+            frequencia,
+            dataLimite,
+            prioridade,
+            status: existingTask ? existingTask.status : 'pendente',
+            criadaEm: existingTask ? existingTask.criadaEm : new Date().toISOString()
+        };
+
+        if (id) task.id = id;
+
+        await saveTaskToDb(task);
+        fecharModalTarefa();
+        await loadAgendaTasks();
+        
+        if (currentAgendaUser.type === 'admin') {
+            renderTabelaAdmin();
+            renderKPIsAdmin();
+        } else {
+            renderPainelOperador();
+        }
+        showToast("Tarefa salva com sucesso!");
+    } catch (err) {
+        console.error('[AGENDA] Error in salvarTarefa:', err);
+        alert("Erro ao salvar tarefa: " + err.message);
     }
-
-    const sel = document.getElementById('modal-operador');
-    const operadorNome = sel.options[sel.selectedIndex].text;
-
-    const task = {
-        nome,
-        operadorId,
-        operadorNome,
-        descricao,
-        frequencia,
-        dataLimite,
-        prioridade,
-        status: id ? agendaTasks.find(t => t.id === id).status : 'pendente',
-        criadaEm: id ? agendaTasks.find(t => t.id === id).criadaEm : new Date().toISOString()
-    };
-
-    if (id) task.id = id;
-
-    await saveTaskToDb(task);
-    fecharModalTarefa();
-    await loadAgendaTasks();
-    if (currentAgendaUser.type === 'admin') {
-        renderTabelaAdmin();
-        renderKPIsAdmin();
-    } else {
-        renderPainelOperador();
-    }
-    showToast("Tarefa salva com sucesso!");
 }
 
 function showToast(msg) {

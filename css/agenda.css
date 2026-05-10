@@ -275,3 +275,30 @@
     justify-content: flex-end;
     gap: 1rem;
 }
+
+/* Layout helpers */
+.agenda-form-row {
+    display: flex;
+    gap: 1rem;
+}
+.agenda-form-row > div {
+    flex: 1;
+}
+
+.agenda-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #1e293b;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 2000;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
