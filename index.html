@@ -142,6 +142,13 @@
                                 <h2 id="kpi-reservas-limpeza">0</h2>
                             </div>
                         </div>
+                        <div class="card kpi-card" onclick="window.location.href='agenda.html'" style="cursor:pointer">
+                            <div class="kpi-icon bg-info"><i class="fa-solid fa-calendar-check"></i></div>
+                            <div class="kpi-info">
+                                <h3>SLA Agenda COE</h3>
+                                <h2 id="kpi-agenda-sla">0%</h2>
+                            </div>
+                        </div>
                     </section>
 
                     <div class="charts-grid two-cols">
@@ -152,6 +159,16 @@
                         <div class="card chart-container">
                             <h3>Folgas Trabalhadas - Fts (Visão Anual)</h3>
                             <canvas id="chartResumoFts"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4" style="padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0;"><i class="fa-solid fa-list-check"></i> Resumo da Agenda COE (Hoje)</h3>
+                            <a href="agenda.html" class="btn-primary" style="padding: 5px 15px; font-size: 0.8rem; text-decoration: none;">Ver Agenda Completa</a>
+                        </div>
+                        <div id="dashboard-agenda-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                            <p>Carregando dados da agenda...</p>
                         </div>
                     </div>
                 </section>

@@ -114,8 +114,66 @@ document.addEventListener('DOMContentLoaded', () => {
         title.appendChild(btn);
     });
 
+    // Update functions
     updateDashboard();
+    updateAgendaSummary();
 });
+
+async function updateAgendaSummary() {
+    console.log('[DASHBOARD] Updating Agenda summary...');
+    try {
+        if (!useFirebase || !db) {
+            document.getElementById('dashboard-agenda-summary').innerHTML = '<p>Firebase não disponível.</p>';
+            return;
+        }
+
+        const snapshot = await db.collection('agenda_tarefas').get();
+        const tasks = [];
+        snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
+
+        if (tasks.length === 0) {
+            document.getElementById('dashboard-agenda-summary').innerHTML = '<p>Nenhuma tarefa cadastrada.</p>';
+            return;
+        }
+
+        const total = tasks.length;
+        const concluidas = tasks.filter(t => t.status === 'concluida').length;
+        const sla = Math.round((concluidas / total) * 100);
+
+        // Update KPI
+        const slaEl = document.getElementById('kpi-agenda-sla');
+        if (slaEl) {
+            slaEl.textContent = sla + '%';
+            slaEl.style.color = sla > 90 ? 'var(--success-color)' : (sla > 70 ? 'var(--warning-color)' : 'var(--danger-color)');
+        }
+
+        // Render Summary (Filter for today or pending)
+        const summaryEl = document.getElementById('dashboard-agenda-summary');
+        if (summaryEl) {
+            const pending = tasks.filter(t => t.status !== 'concluida').slice(0, 4); // Show top 4 pending/late
+            
+            if (pending.length === 0) {
+                summaryEl.innerHTML = '<p style="grid-column: 1/-1; color: var(--success-color); font-weight: bold;">✅ Todas as tarefas foram concluídas!</p>';
+                return;
+            }
+
+            let html = '';
+            pending.forEach(t => {
+                const color = t.status === 'atrasada' ? '#ef4444' : '#f59e0b';
+                html += `
+                    <div style="padding: 10px; border-radius: 8px; background: #f8fafc; border-left: 4px solid ${color};">
+                        <small style="display: block; color: #64748b; font-size: 0.7rem;">${t.operadorNome}</small>
+                        <strong style="display: block; font-size: 0.8rem; margin: 2px 0;">${t.nome}</strong>
+                        <span style="font-size: 0.7rem; color: ${color}; font-weight: bold;">${t.status.toUpperCase()}</span>
+                    </div>
+                `;
+            });
+            summaryEl.innerHTML = html;
+        }
+    } catch (err) {
+        console.error('[DASHBOARD] Error updating agenda summary:', err);
+    }
+}
 
 function toggleTvMode() {
     const btn = document.getElementById('btn-tv-mode');

@@ -89,8 +89,7 @@ async function initApp() {
         document.getElementById('painel-admin').style.display = 'block';
         document.getElementById('painel-operador').style.display = 'none';
         await loadAgendaTasks();
-        renderTabelaAdmin();
-        renderKPIsAdmin();
+        showAdminTab('tarefas'); // Garante que a primeira aba e KPIs carreguem
     } else {
         document.getElementById('painel-admin').style.display = 'none';
         document.getElementById('painel-operador').style.display = 'block';
@@ -260,13 +259,24 @@ function fecharModalTarefa(e) {
 }
 
 function concluirTarefa(id) {
-    const t = agendaTasks.find(x => x.id === id);
-    if (!t) return;
+    try {
+        console.log('[AGENDA] abrir modal conclusão para:', id);
+        const t = agendaTasks.find(x => x.id === id);
+        if (!t) {
+            console.error('[AGENDA] Tarefa não encontrada:', id);
+            return;
+        }
 
-    document.getElementById('conclusao-tarefa-id').value = id;
-    document.getElementById('modal-conclusao-title').innerHTML = t.status === 'atrasada' ? '<i class="fa-solid fa-gavel"></i> Concluir em Atraso (Admin)' : '<i class="fa-solid fa-check-circle"></i> Concluir Atividade';
-    document.getElementById('conclusao-obs').value = '';
-    document.getElementById('modal-conclusao').style.display = 'flex';
+        document.getElementById('conclusao-tarefa-id').value = id;
+        const title = document.getElementById('modal-conclusao-title');
+        if (title) {
+            title.innerHTML = t.status === 'atrasada' ? '<i class="fa-solid fa-gavel"></i> Concluir em Atraso (Admin)' : '<i class="fa-solid fa-check-circle"></i> Concluir Atividade';
+        }
+        document.getElementById('conclusao-obs').value = '';
+        document.getElementById('modal-conclusao').style.display = 'flex';
+    } catch (err) {
+        console.error('[AGENDA] Erro ao abrir modal de conclusão:', err);
+    }
 }
 
 function fecharModalConclusao(e) {
@@ -441,17 +451,7 @@ function renderPainelOperador() {
     document.getElementById('operador-tarefas-container').innerHTML = html;
 }
 
-async function concluirTarefa(id) {
-    const task = agendaTasks.find(t => t.id === id);
-    if (task) {
-        task.status = 'concluida';
-        task.concluidaEm = new Date().toISOString();
-        await saveTaskToDb(task);
-        await loadAgendaTasks();
-        renderPainelOperador();
-        showToast("Tarefa concluída!");
-    }
-}
+// This function was duplicated and broken. Removed to use the modal-based version above.
 
 function showAdminTab(tab) {
     document.querySelectorAll('.agenda-admin-tab').forEach(btn => btn.classList.remove('active'));
@@ -543,20 +543,25 @@ function renderHistoricoAdmin() {
 }
 
 async function excluirTarefa(id) {
-    if (!confirm("Deseja realmente excluir esta tarefa?")) return;
-    
-    if (useFirebase && db) {
-        await db.collection('agenda_tarefas').doc(id).delete();
+    try {
+        if (!confirm("Deseja realmente excluir esta tarefa?")) return;
+        
+        if (useFirebase && db) {
+            await db.collection('agenda_tarefas').doc(id).delete();
+        }
+        
+        let localTasks = JSON.parse(localStorage.getItem('agenda_tasks') || '[]');
+        localTasks = localTasks.filter(t => t.id !== id);
+        localStorage.setItem('agenda_tasks', JSON.stringify(localTasks));
+        
+        await loadAgendaTasks();
+        renderTabelaAdmin();
+        renderKPIsAdmin();
+        showToast("Tarefa excluída.");
+    } catch (err) {
+        console.error('[AGENDA] Erro ao excluir:', err);
+        alert("Erro ao excluir: " + err.message);
     }
-    
-    let localTasks = JSON.parse(localStorage.getItem('agenda_tasks') || '[]');
-    localTasks = localTasks.filter(t => t.id !== id);
-    localStorage.setItem('agenda_tasks', JSON.stringify(localTasks));
-    
-    await loadAgendaTasks();
-    renderTabelaAdmin();
-    renderKPIsAdmin();
-    showToast("Tarefa excluída.");
 }
 
 function agendaExportPDF() {
