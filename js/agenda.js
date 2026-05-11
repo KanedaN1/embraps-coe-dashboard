@@ -563,99 +563,210 @@ async function ag_loadSummaryForDashboard() {
             tasks = JSON.parse(localStorage.getItem('ag_tasks_offline') || '[]');
         }
 
-        const total      = tasks.length;
-        const concluidas = tasks.filter(t => t.status === 'concluida').length;
-        const sla        = total > 0 ? Math.round(concluidas / total * 100) : 100;
-        const slaColor   = sla >= 90 ? '#16a34a' : sla >= 70 ? '#f59e0b' : '#dc2626';
+        // --- DASHBOARD SUMMARY (SMALL AREA) ---
+        ag_renderDashboardSummary(tasks);
 
-        // Update KPI card
-        const slaEl = document.getElementById('kpi-agenda-sla');
-        if (slaEl) {
-            slaEl.textContent = sla + '%';
-            slaEl.style.color = slaColor;
+        // --- EXECUTIVE DASHBOARD (FULL TAB) ---
+        if (document.getElementById('ag-exec-kpis')) {
+            ag_renderExecutiveDashboard(tasks);
         }
-
-        const summaryEl = document.getElementById('dashboard-agenda-summary');
-        if (!summaryEl) return;
-
-        if (!total) {
-            summaryEl.innerHTML = '<p style="color:#64748b;text-align:center;padding:1rem">Nenhuma atividade cadastrada. <a href="agenda.html" style="color:#2563eb">Adicionar agora</a></p>';
-            return;
-        }
-
-        // Group by operator
-        const OPERATORS = {
-            'iris':    'Iris Souza',
-            'hallan':  'Hallan de Barros',
-            'victor':  'Victor Dourado',
-            'walmir':  'Walmir da Luz',
-            'rodrigo': 'Rodrigo Vilanova',
-            'nikolas': 'Nikolas Cardoso'
-        };
-
-        const byOp = {};
-        tasks.forEach(t => {
-            const key = t.operadorId || 'outro';
-            if (!byOp[key]) byOp[key] = [];
-            byOp[key].push(t);
-        });
-
-        const STATUS_COLOR = { pendente:'#f59e0b', atrasada:'#dc2626', concluida:'#16a34a' };
-        const STATUS_BG    = { pendente:'#fffbeb', atrasada:'#fff1f2', concluida:'#f0fdf4' };
-        const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
-
-        let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:.5rem">';
-
-        Object.entries(byOp).forEach(([opId, opTasks]) => {
-            const opName = OPERATORS[opId] || opId;
-            const opDone = opTasks.filter(t => t.status === 'concluida').length;
-            const opSla  = opTasks.length > 0 ? Math.round(opDone / opTasks.length * 100) : 100;
-            const opColor = opSla >= 90 ? '#16a34a' : opSla >= 70 ? '#f59e0b' : '#dc2626';
-
-            // Sort: atrasada first
-            const sorted = [...opTasks].sort((a,b) => {
-                const o = { atrasada:0, pendente:1, concluida:2 };
-                return (o[a.status]??1) - (o[b.status]??1);
-            });
-
-            html += `
-            <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden">
-                <div style="background:#f8fafc;padding:.9rem 1rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
-                    <div>
-                        <strong style="font-size:.9rem">${opName}</strong><br>
-                        <small style="color:#64748b">${opTasks.length} atividade(s)</small>
-                    </div>
-                    <span style="font-weight:700;font-size:.85rem;color:${opColor}">SLA ${opSla}%</span>
-                </div>
-                <div style="padding:.5rem 0">
-                    ${sorted.map(t => {
-                        const sc = STATUS_COLOR[t.status] || '#64748b';
-                        const sb = STATUS_BG[t.status]   || '#f8fafc';
-                        const sl = STATUS_LABEL[t.status] || t.status;
-                        const prazo = t.deadline ? new Date(t.deadline).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-                        return `<div style="padding:.65rem 1rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9">
-                            <div style="flex:1;min-width:0">
-                                <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name || ''}</div>
-                                ${prazo ? `<div style="font-size:.75rem;color:#94a3b8">${prazo}</div>` : ''}
-                            </div>
-                            <span style="background:${sb};color:${sc};padding:.2rem .55rem;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;margin-left:.5rem;flex-shrink:0">${sl}</span>
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>`;
-        });
-
-        html += '</div>';
-        summaryEl.innerHTML = html;
 
     } catch (err) {
-        console.warn('[AG] Dashboard summary failed:', err.message);
+        console.warn('[AG] Dashboard load failed:', err.message);
         const el = document.getElementById('dashboard-agenda-summary');
-        if (el) el.innerHTML = '<p style="color:#dc2626">Conectando ao banco de dados... Se o erro persistir, verifique sua conexão.</p>';
-        
-        // Tenta recarregar em 5 segundos
+        if (el) el.innerHTML = '<p style="color:#dc2626">Conectando ao banco de dados...</p>';
         setTimeout(ag_loadSummaryForDashboard, 5000);
     }
+}
+
+function ag_renderDashboardSummary(tasks) {
+    const total      = tasks.length;
+    const concluidas = tasks.filter(t => t.status === 'concluida').length;
+    const sla        = total > 0 ? Math.round(concluidas / total * 100) : 100;
+    const slaColor   = sla >= 90 ? '#16a34a' : sla >= 70 ? '#f59e0b' : '#dc2626';
+
+    const slaEl = document.getElementById('kpi-agenda-sla');
+    if (slaEl) {
+        slaEl.textContent = sla + '%';
+        slaEl.style.color = slaColor;
+    }
+
+    const summaryEl = document.getElementById('dashboard-agenda-summary');
+    if (!summaryEl) return;
+    if (!total) {
+        summaryEl.innerHTML = '<p style="color:#64748b;text-align:center;padding:1rem">Nenhuma atividade cadastrada.</p>';
+        return;
+    }
+
+    const OPERATORS = {
+        'iris': 'Iris Souza', 'hallan': 'Hallan de Barros', 'victor': 'Victor Dourado',
+        'walmir': 'Walmir da Luz', 'rodrigo': 'Rodrigo Vilanova', 'nikolas': 'Nikolas Cardoso'
+    };
+
+    const byOp = {};
+    tasks.forEach(t => {
+        const key = t.operadorId || 'outro';
+        if (!byOp[key]) byOp[key] = [];
+        byOp[key].push(t);
+    });
+
+    const STATUS_COLOR = { pendente:'#f59e0b', atrasada:'#dc2626', concluida:'#16a34a' };
+    const STATUS_BG    = { pendente:'#fffbeb', atrasada:'#fff1f2', concluida:'#f0fdf4' };
+    const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
+
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:.5rem">';
+    Object.entries(byOp).forEach(([opId, opTasks]) => {
+        const opName = OPERATORS[opId] || opId;
+        const opDone = opTasks.filter(t => t.status === 'concluida').length;
+        const opSla  = opTasks.length > 0 ? Math.round(opDone / opTasks.length * 100) : 100;
+        const opColor = opSla >= 90 ? '#16a34a' : opSla >= 70 ? '#f59e0b' : '#dc2626';
+
+        const sorted = [...opTasks].sort((a,b) => {
+            const o = { atrasada:0, pendente:1, concluida:2 };
+            return (o[a.status]??1) - (o[b.status]??1);
+        });
+
+        html += `
+        <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden;border:1px solid #e2e8f0">
+            <div style="background:#f8fafc;padding:.7rem 1rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+                <strong style="font-size:.85rem">${opName}</strong>
+                <span style="font-weight:700;font-size:.8rem;color:${opColor}">${opSla}%</span>
+            </div>
+            <div style="padding:.3rem 0">
+                ${sorted.slice(0, 3).map(t => {
+                    const sc = STATUS_COLOR[t.status] || '#64748b';
+                    const sb = STATUS_BG[t.status]   || '#f8fafc';
+                    const sl = STATUS_LABEL[t.status] || t.status;
+                    return `<div style="padding:.5rem 1rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9">
+                        <div style="font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${t.name}</div>
+                        <span style="background:${sb};color:${sc};padding:.1rem .4rem;border-radius:4px;font-size:.65rem;font-weight:700;text-transform:uppercase">${sl}</span>
+                    </div>`;
+                }).join('')}
+                ${opTasks.length > 3 ? `<div style="padding:.4rem;text-align:center;font-size:.7rem;color:#94a3b8">+ ${opTasks.length - 3} outras atividades</div>` : ''}
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    summaryEl.innerHTML = html;
+}
+
+function ag_renderExecutiveDashboard(tasks) {
+    const total      = tasks.length;
+    const concluidas = tasks.filter(t => t.status === 'concluida').length;
+    const atrasadas  = tasks.filter(t => t.status === 'atrasada').length;
+    const pendentes  = tasks.filter(t => t.status === 'pendente').length;
+    const sla        = total > 0 ? Math.round(concluidas / total * 100) : 100;
+    const slaColor   = sla >= 90 ? '#16a34a' : sla >= 70 ? '#f59e0b' : '#dc2626';
+
+    // 1. KPIs
+    const kpiEl = document.getElementById('ag-exec-kpis');
+    kpiEl.innerHTML = `
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-info"><i class="fa-solid fa-list-check"></i></div>
+            <div class="kpi-info"><h3>Total Atividades</h3><h2>${total}</h2></div>
+        </div>
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-green"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="kpi-info"><h3>Concluídas</h3><h2>${concluidas}</h2></div>
+        </div>
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-danger"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <div class="kpi-info"><h3>Em Atraso</h3><h2>${atrasadas}</h2></div>
+        </div>
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-warning"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="kpi-info"><h3>SLA Operacional</h3><h2 style="color:${slaColor}">${sla}%</h2></div>
+        </div>
+    `;
+
+    // 2. Ranking & SLA List
+    const OPERATORS = {
+        'iris': 'Iris Souza', 'hallan': 'Hallan de Barros', 'victor': 'Victor Dourado',
+        'walmir': 'Walmir da Luz', 'rodrigo': 'Rodrigo Vilanova', 'nikolas': 'Nikolas Cardoso'
+    };
+
+    const results = Object.entries(OPERATORS).map(([id, name]) => {
+        const mine = tasks.filter(t => t.operadorId === id);
+        const done = mine.filter(t => t.status === 'concluida').length;
+        const sla  = mine.length > 0 ? Math.round(done / mine.length * 100) : 100;
+        return { id, name, done, total: mine.length, sla };
+    });
+
+    // Ranking (Most deliveries)
+    const ranking = [...results].sort((a,b) => b.done - a.done);
+    document.getElementById('ag-exec-ranking').innerHTML = ranking.map((r, i) => `
+        <div style="display:flex;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9">
+            <div style="width:30px;font-weight:800;color:${i===0?'#f59e0b':(i===1?'#94a3b8':(i===2?'#b45309':'#cbd5e1'))}">${i+1}°</div>
+            <div style="flex:1">
+                <strong style="font-size:.9rem">${r.name}</strong><br>
+                <small style="color:#64748b">${r.done} conclusões de ${r.total} atribuídas</small>
+            </div>
+            <div style="text-align:right">
+                <div style="font-weight:700;color:#16a34a">${r.done}</div>
+                <small style="font-size:.65rem;text-transform:uppercase;color:#94a3b8">Entregues</small>
+            </div>
+        </div>
+    `).join('');
+
+    // SLA Efficiency
+    const efficiency = [...results].sort((a,b) => b.sla - a.sla);
+    document.getElementById('ag-exec-operator-sla').innerHTML = efficiency.map(r => {
+        const color = r.sla >= 90 ? '#16a34a' : r.sla >= 70 ? '#f59e0b' : '#dc2626';
+        return `
+        <div style="margin-bottom:15px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="font-size:.85rem;font-weight:600">${r.name}</span>
+                <span style="font-size:.85rem;font-weight:700;color:${color}">${r.sla}%</span>
+            </div>
+            <div style="height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden">
+                <div style="height:100%;background:${color};width:${r.sla}%"></div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // 3. Detailed Grouped List (Executive Style)
+    const byOp = {};
+    tasks.forEach(t => {
+        const key = t.operadorId || 'outro';
+        if (!byOp[key]) byOp[key] = [];
+        byOp[key].push(t);
+    });
+
+    const STATUS_COLOR = { pendente:'#f59e0b', atrasada:'#dc2626', concluida:'#16a34a' };
+    const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
+
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem">';
+    Object.entries(byOp).forEach(([opId, opTasks]) => {
+        const opName = OPERATORS[opId] || opId;
+        const sorted = [...opTasks].sort((a,b) => {
+            const o = { atrasada:0, pendente:1, concluida:2 };
+            return (o[a.status]??1) - (o[b.status]??1);
+        });
+
+        html += `
+        <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+            <div style="background:#f8fafc;padding:1rem;border-bottom:1px solid #e2e8f0">
+                <strong style="color:#1e3a8a">${opName}</strong>
+            </div>
+            <div>
+                ${sorted.map(t => {
+                    const sc = STATUS_COLOR[t.status] || '#64748b';
+                    const sl = STATUS_LABEL[t.status] || t.status;
+                    const prazo = t.deadline ? new Date(t.deadline).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : '';
+                    return `
+                    <div style="padding:.8rem 1rem;border-bottom:1px solid #f8fafc;display:flex;justify-content:space-between;align-items:center">
+                        <div style="min-width:0;flex:1">
+                            <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</div>
+                            <div style="font-size:.75rem;color:#94a3b8">${prazo} · ${t.freq || ''}</div>
+                        </div>
+                        <span style="color:${sc};font-weight:700;font-size:.7rem;text-transform:uppercase;margin-left:10px">${sl}</span>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    document.getElementById('ag-exec-grouped-list').innerHTML = html;
 }
 
 /* ================================================================

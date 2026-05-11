@@ -60,6 +60,7 @@
                     <li><a href="#vg-demissoes" class="nav-link"><i class="fa-solid fa-user-minus"></i> Demissões</a></li>
                     <li><a href="#vg-movimentacao" class="nav-link"><i class="fa-solid fa-people-arrows"></i> Movimentação Operacional</a></li>
                     <li class="nav-group-title mt-4">Agenda</li>
+                    <li><a href="#vg-agenda-sla" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Indicadores Agenda</a></li>
                     <li><a href="agenda.html" class="nav-link"><i class="fa-solid fa-calendar-check"></i> Agenda COE</a></li>
                 </ul>
             </nav>
@@ -162,6 +163,39 @@
                         </div>
                         <div id="dashboard-agenda-summary">
                             <p style="color: #64748b;">Carregando dados da agenda...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- NOVA ABA: INDICADORES AGENDA COE (DIRETORIA) -->
+                <section id="vg-agenda-sla" class="dashboard-section">
+                    <h2 class="section-title"><i class="fa-solid fa-chart-pie"></i> Indicadores Agenda COE — Visão Executiva</h2>
+                    
+                    <div id="ag-exec-kpis" class="kpi-cards mb-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <!-- Renderizado via JS -->
+                    </div>
+
+                    <div class="charts-grid two-cols">
+                        <!-- Ranking -->
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="margin-bottom:20px; font-size:1.1rem; color:#1e3a8a;"><i class="fa-solid fa-trophy" style="color:#f59e0b"></i> Ranking de Produtividade</h3>
+                            <div id="ag-exec-ranking">
+                                <p style="color:#64748b">Carregando ranking...</p>
+                            </div>
+                        </div>
+                        <!-- Status Geral -->
+                        <div class="card" style="padding: 20px;">
+                            <h3 style="margin-bottom:20px; font-size:1.1rem; color:#1e3a8a;"><i class="fa-solid fa-chart-column" style="color:#3b82f6"></i> Eficiência por Operador (SLA)</h3>
+                            <div id="ag-exec-operator-sla">
+                                <p style="color:#64748b">Carregando indicadores...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4" style="padding: 20px;">
+                        <h3 style="margin-bottom:20px; font-size:1.1rem; color:#1e3a8a;"><i class="fa-solid fa-users-viewfinder"></i> Detalhamento de Atividades por Responsável</h3>
+                        <div id="ag-exec-grouped-list">
+                            <p style="color:#64748b">Carregando lista detalhada...</p>
                         </div>
                     </div>
                 </section>
