@@ -573,9 +573,15 @@ async function ag_loadSummaryForDashboard() {
 
     } catch (err) {
         console.warn('[AG] Dashboard load failed:', err.message);
-        const el = document.getElementById('dashboard-agenda-summary');
-        if (el) el.innerHTML = '<p style="color:#dc2626">Conectando ao banco de dados...</p>';
-        setTimeout(ag_loadSummaryForDashboard, 5000);
+        
+        const containers = ['dashboard-agenda-summary', 'ag-exec-ranking', 'ag-exec-operator-sla', 'ag-exec-grouped-list'];
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '<p style="color:#dc2626; font-size:0.85rem;">Falha na sincronização. Verifique sua conexão.</p>';
+        });
+
+        // Tenta recarregar em 10 segundos
+        setTimeout(ag_loadSummaryForDashboard, 10000);
     }
 }
 

@@ -82,6 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetSection.classList.add('active-section');
             }
 
+            // Força atualização da agenda ao trocar de aba
+            if (targetId === 'vg-agenda-sla') {
+                updateAgendaSummary();
+            }
+
             // Fechar sidebar no mobile ao clicar num link
             if (window.innerWidth <= 768) closeSidebar();
         });
