@@ -1,581 +1,417 @@
-let currentAgendaUser = null;
-let agendaTasks = [];
+/**
+ * AGENDA COE - REWRITTEN FROM SCRATCH
+ */
 
-// Helper para esperar o Firebase inicializar
-async function waitForFirebase() {
-    let retries = 0;
-    while (!useFirebase && retries < 10) {
-        await new Promise(r => setTimeout(r, 500));
-        retries++;
-    }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-    await waitForFirebase();
-    // Check if already logged in
-    const savedUser = sessionStorage.getItem('agenda_user');
-    if (savedUser) {
-        currentAgendaUser = JSON.parse(savedUser);
-        initApp();
-    }
-});
-
-function agendaSelectLoginType(type) {
-    document.querySelectorAll('.agenda-tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById('tab-' + type).classList.add('active');
-    
-    if (type === 'admin') {
-        document.getElementById('login-form-admin').style.display = 'block';
-        document.getElementById('login-form-operador').style.display = 'none';
-    } else {
-        document.getElementById('login-form-admin').style.display = 'none';
-        document.getElementById('login-form-operador').style.display = 'block';
-    }
-}
-
-function agendaLoginAdmin() {
-    const senha = document.getElementById('admin-senha').value;
-    if (senha === 'admin') { // As per user request: "pode ser a mesma senha"
-        currentAgendaUser = { type: 'admin', name: 'Administrador' };
-        sessionStorage.setItem('agenda_user', JSON.stringify(currentAgendaUser));
-        initApp();
-    } else {
-        showLoginError();
-    }
-}
-
-function agendaLoginOperador() {
-    const op = document.getElementById('operador-select').value;
-    const senha = document.getElementById('operador-senha').value;
-    
-    // Simplistic password check for demo/initial phase
-    // In a real app, these would be in a database
-    const validPasswords = {
+const STATE = {
+    user: null,
+    tasks: [],
+    operators: {
+        'iris': 'Iris Souza',
+        'hallan': 'Hallan de Barros',
+        'victor': 'Victor Dourado',
+        'walmir': 'Walmir da Luz',
+        'rodrigo': 'Rodrigo Vilanova',
+        'nikolas': 'Nikolas Cardoso'
+    },
+    passwords: {
         'iris': 'iris123',
         'hallan': 'hallan123',
         'victor': 'victor123',
         'walmir': 'walmir123',
         'rodrigo': 'rodrigo123',
-        'nikolas': 'nikolas123'
-    };
+        'nikolas': 'nikolas123',
+        'admin': 'admin'
+    }
+};
 
-    if (op && senha === validPasswords[op]) {
-        const names = {
-            'iris': 'Iris Souza',
-            'hallan': 'Hallan de Barros',
-            'victor': 'Victor Dourado',
-            'walmir': 'Walmir da Luz',
-            'rodrigo': 'Rodrigo Vilanova',
-            'nikolas': 'Nikolas Cardoso'
-        };
-        currentAgendaUser = { type: 'operador', id: op, name: names[op] };
-        sessionStorage.setItem('agenda_user', JSON.stringify(currentAgendaUser));
-        initApp();
+// ---------------------------------------------------------
+// INITIALIZATION
+// ---------------------------------------------------------
+
+document.addEventListener('DOMContentLoaded', async () => {
+    initTabs();
+    
+    // Auto-login if session exists
+    const saved = sessionStorage.getItem('agenda_session');
+    if (saved) {
+        STATE.user = JSON.parse(saved);
+        startApp();
+    }
+});
+
+function initTabs() {
+    const tabs = document.querySelectorAll('.agenda-admin-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            const target = tab.getAttribute('data-tab');
+            document.querySelectorAll('.agenda-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + target).classList.add('active');
+        });
+    });
+}
+
+// ---------------------------------------------------------
+// LOGIN LOGIC
+// ---------------------------------------------------------
+
+function setLoginType(type) {
+    document.querySelectorAll('.agenda-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-tab-' + type).classList.add('active');
+    
+    document.getElementById('form-admin').style.display = type === 'admin' ? 'block' : 'none';
+    document.getElementById('form-operador').style.display = type === 'operador' ? 'block' : 'none';
+}
+
+function handleLogin(type) {
+    let success = false;
+    let userData = null;
+
+    if (type === 'admin') {
+        const pass = document.getElementById('login-admin-pass').value;
+        if (pass === STATE.passwords.admin) {
+            success = true;
+            userData = { type: 'admin', name: 'Gestor COE' };
+        }
     } else {
-        showLoginError();
+        const opId = document.getElementById('login-operador-id').value;
+        const pass = document.getElementById('login-operador-pass').value;
+        if (opId && pass === STATE.passwords[opId]) {
+            success = true;
+            userData = { type: 'operador', id: opId, name: STATE.operators[opId] };
+        }
+    }
+
+    if (success) {
+        STATE.user = userData;
+        sessionStorage.setItem('agenda_session', JSON.stringify(userData));
+        startApp();
+    } else {
+        const err = document.getElementById('login-error');
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 3000);
     }
 }
 
-function showLoginError() {
-    const err = document.getElementById('agenda-login-error');
-    err.style.display = 'block';
-    setTimeout(() => { err.style.display = 'none'; }, 3000);
-}
-
-function agendaLogout() {
-    sessionStorage.removeItem('agenda_user');
+function handleLogout() {
+    sessionStorage.removeItem('agenda_session');
     location.reload();
 }
 
-async function initApp() {
+// ---------------------------------------------------------
+// CORE APP LOGIC
+// ---------------------------------------------------------
+
+async function startApp() {
     document.getElementById('agenda-login-screen').style.display = 'none';
     document.getElementById('agenda-app').style.display = 'block';
-    
-    document.getElementById('agenda-user-badge').textContent = currentAgendaUser.name;
-    document.getElementById('agenda-date-now').textContent = new Date().toLocaleDateString('pt-BR');
-    
-    if (currentAgendaUser.type === 'admin') {
-        document.getElementById('painel-admin').style.display = 'block';
-        document.getElementById('painel-operador').style.display = 'none';
-        await loadAgendaTasks();
-        showAdminTab('tarefas'); // Garante que a primeira aba e KPIs carreguem
+    document.getElementById('user-display').textContent = STATE.user.name;
+
+    if (STATE.user.type === 'admin') {
+        document.getElementById('view-admin').style.display = 'block';
+        populateOperatorFilter();
     } else {
-        document.getElementById('painel-admin').style.display = 'none';
-        document.getElementById('painel-operador').style.display = 'block';
-        await loadAgendaTasks();
-        renderPainelOperador();
+        document.getElementById('view-operador').style.display = 'block';
     }
 
-    // Auto-check for late tasks
-    setInterval(checkLateTasks, 1000 * 60 * 5); // 5 minutes
-    checkLateTasks();
-}
-
-async function loadAgendaTasks() {
-    if (useFirebase && db) {
-        try {
-            console.log('[AGENDA] Buscando tarefas no Firestore...');
-            const snapshot = await db.collection('agenda_tarefas').get();
-            agendaTasks = [];
-            snapshot.forEach(doc => {
-                agendaTasks.push({ id: doc.id, ...doc.data() });
-            });
-            console.log('[AGENDA] Tarefas carregadas:', agendaTasks.length);
-        } catch (err) {
-            console.error("Error loading tasks:", err);
-            agendaTasks = JSON.parse(localStorage.getItem('agenda_tasks') || '[]');
-        }
+    // Subscribe to Firebase (Real-time)
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        const db = firebase.firestore();
+        db.collection('agenda_tarefas').onSnapshot(snapshot => {
+            STATE.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            refreshUI();
+            checkLateTasks();
+        });
     } else {
-        agendaTasks = JSON.parse(localStorage.getItem('agenda_tasks') || '[]');
+        // Fallback for development if firebase fails
+        STATE.tasks = JSON.parse(localStorage.getItem('agenda_tasks_offline') || '[]');
+        refreshUI();
     }
 }
 
-async function saveTaskToDb(task) {
-    console.log('[AGENDA] Saving task to DB:', task);
-    if (useFirebase && db) {
-        try {
-            if (task.id) {
-                const id = task.id;
-                const data = { ...task };
-                delete data.id;
-                await db.collection('agenda_tarefas').doc(id).set(data);
-                console.log('[AGENDA] Firebase update success');
-            } else {
-                const docRef = await db.collection('agenda_tarefas').add(task);
-                task.id = docRef.id;
-                console.log('[AGENDA] Firebase add success, ID:', task.id);
-            }
-        } catch (err) {
-            console.error('[AGENDA] Firebase save error:', err);
-        }
+function refreshUI() {
+    if (STATE.user.type === 'admin') {
+        renderAdminTasks();
+        renderAdminKPIs();
+        renderRanking();
+        renderHistory();
+    } else {
+        renderOperadorTasks();
+        renderOperadorKPIs();
     }
-    // Local fallback
-    let localTasks = JSON.parse(localStorage.getItem('agenda_tasks') || '[]');
-    const idx = localTasks.findIndex(t => t.id === task.id);
-    if (idx >= 0) localTasks[idx] = task;
-    else localTasks.push(task);
-    localStorage.setItem('agenda_tasks', JSON.stringify(localTasks));
 }
 
-function renderKPIsAdmin() {
-    const total = agendaTasks.length;
-    const concluidas = agendaTasks.filter(t => t.status === 'concluida').length;
-    const pendentes = agendaTasks.filter(t => t.status === 'pendente').length;
-    const atrasadas = agendaTasks.filter(t => t.status === 'atrasada').length;
+// ---------------------------------------------------------
+// RENDERERS (ADMIN)
+// ---------------------------------------------------------
+
+function renderAdminKPIs() {
+    const total = STATE.tasks.length;
+    const concluidas = STATE.tasks.filter(t => t.status === 'concluida').length;
+    const atrasadas = STATE.tasks.filter(t => t.status === 'atrasada').length;
     const sla = total > 0 ? Math.round((concluidas / total) * 100) : 100;
 
     const html = `
-        <div class="agenda-kpi-card">
-            <h3>Total Tarefas</h3>
-            <div class="value">${total}</div>
-        </div>
-        <div class="agenda-kpi-card" style="border-left-color: var(--agenda-success)">
-            <h3>Concluídas</h3>
-            <div class="value">${concluidas}</div>
-        </div>
-        <div class="agenda-kpi-card" style="border-left-color: var(--agenda-warning)">
-            <h3>Pendentes</h3>
-            <div class="value">${pendentes}</div>
-        </div>
-        <div class="agenda-kpi-card" style="border-left-color: var(--agenda-danger)">
-            <h3>Em Atraso</h3>
-            <div class="value">${atrasadas}</div>
-        </div>
-        <div class="agenda-kpi-card" style="border-left-color: var(--agenda-info)">
-            <h3>SLA Geral</h3>
-            <div class="value">${sla}%</div>
-        </div>
+        <div class="agenda-kpi-card" style="border-left-color: #3b82f6"><h3>Total</h3><div class="value">${total}</div></div>
+        <div class="agenda-kpi-card" style="border-left-color: #16a34a"><h3>Concluídas</h3><div class="value">${concluidas}</div></div>
+        <div class="agenda-kpi-card" style="border-left-color: #dc2626"><h3>Em Atraso</h3><div class="value">${atrasadas}</div></div>
+        <div class="agenda-kpi-card" style="border-left-color: #0284c7"><h3>SLA Geral</h3><div class="value">${sla}%</div></div>
     `;
-    document.getElementById('agenda-kpis').innerHTML = html;
+    document.getElementById('admin-kpis').innerHTML = html;
 }
 
-function renderTabelaAdmin() {
-    const opFiltro = document.getElementById('filtro-operador').value;
-    const statusFiltro = document.getElementById('filtro-status').value;
-    
-    let filtered = agendaTasks;
-    if (opFiltro) filtered = filtered.filter(t => t.operadorId === opFiltro);
-    if (statusFiltro) filtered = filtered.filter(t => t.status === statusFiltro);
+function renderAdminTasks() {
+    const opFilter = document.getElementById('filter-op').value;
+    const statusFilter = document.getElementById('filter-status').value;
 
-    if (filtered.length === 0) {
-        document.getElementById('admin-tabela-container').innerHTML = '<p class="agenda-empty">Nenhuma tarefa encontrada.</p>';
+    let list = STATE.tasks;
+    if (opFilter) list = list.filter(t => t.operadorId === opFilter);
+    if (statusFilter) list = list.filter(t => t.status === statusFilter);
+
+    // Sort: Late first, then Pending, then Concluded
+    list.sort((a, b) => {
+        const order = { 'atrasada': 0, 'pendente': 1, 'em_andamento': 2, 'concluida': 3 };
+        return order[a.status] - order[b.status] || new Date(a.deadline) - new Date(b.deadline);
+    });
+
+    const body = document.getElementById('table-tasks-body');
+    if (list.length === 0) {
+        body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 2rem;">Nenhuma atividade encontrada.</td></tr>';
         return;
     }
 
-    let html = `
-        <table class="agenda-table">
-            <thead>
-                <tr>
-                    <th>Atividade</th>
-                    <th>Responsável</th>
-                    <th>Prazo</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
+    body.innerHTML = list.map(t => `
+        <tr>
+            <td>
+                <strong>${t.name}</strong><br>
+                <small style="color: #64748b">${new Date(t.deadline).toLocaleString('pt-BR')}</small>
+            </td>
+            <td>${STATE.operators[t.operadorId] || t.operadorId}</td>
+            <td><span class="badge badge-${t.status}">${t.status}</span></td>
+            <td>
+                <div style="display: flex; gap: 5px;">
+                    ${t.status !== 'concluida' ? `<button class="btn-action success" onclick="openConcludeModal('${t.id}')"><i class="fa-solid fa-check"></i></button>` : ''}
+                    <button class="btn-action primary" onclick="openTaskModal('${t.id}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action danger" onclick="deleteTask('${t.id}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderRanking() {
+    const results = Object.keys(STATE.operators).map(id => {
+        const tasks = STATE.tasks.filter(t => t.operadorId === id);
+        const done = tasks.filter(t => t.status === 'concluida').length;
+        const total = tasks.length;
+        const sla = total > 0 ? Math.round((done / total) * 100) : 100;
+        return { name: STATE.operators[id], total, done, sla };
+    }).sort((a, b) => b.sla - a.sla);
+
+    document.getElementById('ranking-list').innerHTML = `
+        <h2 style="margin-bottom: 2rem;">SLA por Operador</h2>
+        ${results.map((r, idx) => `
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span><strong>${idx + 1}° ${r.name}</strong> (${r.done}/${r.total})</span>
+                    <span><strong>${r.sla}%</strong></span>
+                </div>
+                <div style="background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
+                    <div style="background: ${r.sla > 90 ? '#16a34a' : (r.sla > 70 ? '#f59e0b' : '#dc2626')}; width: ${r.sla}%; height: 100%;"></div>
+                </div>
+            </div>
+        `).join('')}
     `;
+}
 
-    filtered.forEach(t => {
-        html += `
-            <tr>
-                <td><strong>${t.nome}</strong><br><small>${t.frequencia}</small></td>
-                <td>${t.operadorNome}</td>
-                <td>${new Date(t.dataLimite).toLocaleString('pt-BR')}</td>
-                <td><span class="badge badge-${t.status}">${t.status}</span></td>
-                <td>
-                    ${t.status !== 'concluida' ? `<button class="btn-action" onclick="concluirTarefa('${t.id}')" title="Concluir"><i class="fa-solid fa-check"></i></button>` : ''}
-                    <button class="btn-action" onclick="abrirEditarTarefa('${t.id}')" title="Editar"><i class="fa-solid fa-edit"></i></button>
-                    <button class="btn-action" onclick="excluirTarefa('${t.id}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            </tr>
-        `;
+function renderHistory() {
+    const history = STATE.tasks.filter(t => t.status === 'concluida')
+        .sort((a, b) => new Date(b.concluidaEm) - new Date(a.concluidaEm));
+
+    const body = document.getElementById('table-history-body');
+    body.innerHTML = history.map(t => `
+        <tr>
+            <td>${t.name}</td>
+            <td>${t.concluidaPor || '-'}</td>
+            <td>${new Date(t.concluidaEm).toLocaleString('pt-BR')}</td>
+            <td><small>${t.concluidaObs || '-'}</small></td>
+        </tr>
+    `).join('');
+}
+
+// ---------------------------------------------------------
+// RENDERERS (OPERADOR)
+// ---------------------------------------------------------
+
+function renderOperadorKPIs() {
+    const minhas = STATE.tasks.filter(t => t.operadorId === STATE.user.id);
+    const done = minhas.filter(t => t.status === 'concluida').length;
+    const total = minhas.length;
+    const sla = total > 0 ? Math.round((done / total) * 100) : 100;
+    const late = minhas.filter(t => t.status === 'atrasada').length;
+
+    const html = `
+        <div class="agenda-kpi-card"><h3>Minhas Tarefas</h3><div class="value">${total}</div></div>
+        <div class="agenda-kpi-card" style="border-left-color: #0284c7"><h3>Meu SLA</h3><div class="value">${sla}%</div></div>
+        <div class="agenda-kpi-card" style="border-left-color: #dc2626"><h3>Atrasos</h3><div class="value">${late}</div></div>
+    `;
+    document.getElementById('operador-kpis').innerHTML = html;
+}
+
+function renderOperadorTasks() {
+    const minhas = STATE.tasks.filter(t => t.operadorId === STATE.user.id);
+    const list = document.getElementById('operador-tasks-list');
+    
+    if (minhas.length === 0) {
+        list.innerHTML = '<div class="card" style="padding: 2rem; text-align:center;">Nenhuma atividade atribuída para você.</div>';
+        return;
+    }
+
+    list.innerHTML = minhas.map(t => `
+        <div class="card" style="padding: 1.5rem; margin-bottom: 1rem; border-left: 5px solid ${t.status === 'atrasada' ? '#dc2626' : (t.status === 'concluida' ? '#16a34a' : '#3b82f6')}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h3 style="margin: 0;">${t.name}</h3>
+                    <p style="margin: 5px 0; color: #64748b; font-size: 0.9rem;">${t.desc || 'Sem descrição.'}</p>
+                    <small>Prazo: <strong>${new Date(t.deadline).toLocaleString('pt-BR')}</strong></small>
+                </div>
+                <div style="text-align: right;">
+                    <span class="badge badge-${t.status}" style="display: block; margin-bottom: 10px;">${t.status}</span>
+                    ${t.status === 'pendente' ? `<button class="agenda-btn-primary" onclick="openConcludeModal('${t.id}')" style="padding: 8px 15px; font-size: 0.8rem;">Concluir</button>` : ''}
+                    ${t.status === 'atrasada' ? `<small style="color: #dc2626; font-weight: bold;">Bloqueado: Contate o Admin</small>` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ---------------------------------------------------------
+// CRUD ACTIONS
+// ---------------------------------------------------------
+
+function openTaskModal(id = null) {
+    const modal = document.getElementById('modal-task');
+    const title = document.getElementById('modal-task-title');
+    
+    if (id) {
+        const t = STATE.tasks.find(x => x.id === id);
+        title.textContent = 'Editar Atividade';
+        document.getElementById('task-id').value = id;
+        document.getElementById('task-name').value = t.name;
+        document.getElementById('task-op-id').value = t.operadorId;
+        document.getElementById('task-freq').value = t.freq;
+        document.getElementById('task-deadline').value = t.deadline;
+        document.getElementById('task-priority').value = t.priority;
+        document.getElementById('task-desc').value = t.desc || '';
+    } else {
+        title.textContent = 'Nova Atividade';
+        document.getElementById('task-id').value = '';
+        document.getElementById('task-name').value = '';
+        document.getElementById('task-deadline').value = '';
+        document.getElementById('task-desc').value = '';
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function closeTaskModal() {
+    document.getElementById('modal-task').style.display = 'none';
+}
+
+async function saveTask() {
+    const id = document.getElementById('task-id').value;
+    const data = {
+        name: document.getElementById('task-name').value,
+        operadorId: document.getElementById('task-op-id').value,
+        freq: document.getElementById('task-freq').value,
+        deadline: document.getElementById('task-deadline').value,
+        priority: document.getElementById('task-priority').value,
+        desc: document.getElementById('task-desc').value,
+        status: id ? STATE.tasks.find(t => t.id === id).status : 'pendente',
+        criadaEm: id ? STATE.tasks.find(t => t.id === id).criadaEm : new Date().toISOString()
+    };
+
+    if (!data.name || !data.deadline) return alert('Título e Prazo são obrigatórios!');
+
+    try {
+        const db = firebase.firestore();
+        if (id) {
+            await db.collection('agenda_tarefas').doc(id).update(data);
+        } else {
+            await db.collection('agenda_tarefas').add(data);
+        }
+        closeTaskModal();
+    } catch (e) {
+        console.error(e);
+        // Offline fallback
+        const offline = JSON.parse(localStorage.getItem('agenda_tasks_offline') || '[]');
+        if (id) {
+            const idx = offline.findIndex(x => x.id === id);
+            offline[idx] = { ...data, id };
+        } else {
+            offline.push({ ...data, id: Date.now().toString() });
+        }
+        localStorage.setItem('agenda_tasks_offline', JSON.stringify(offline));
+        location.reload(); // Refresh to show changes if offline
+    }
+}
+
+async function deleteTask(id) {
+    if (!confirm('Deseja excluir esta atividade?')) return;
+    const db = firebase.firestore();
+    await db.collection('agenda_tarefas').doc(id).delete();
+}
+
+// ---------------------------------------------------------
+// CONCLUSION MODAL
+// ---------------------------------------------------------
+
+function openConcludeModal(id) {
+    const t = STATE.tasks.find(x => x.id === id);
+    document.getElementById('conclude-task-id').value = id;
+    document.getElementById('conclude-task-name').textContent = t.name;
+    document.getElementById('conclude-obs').value = '';
+    document.getElementById('modal-conclude').style.display = 'flex';
+}
+
+function closeConcludeModal() {
+    document.getElementById('modal-conclude').style.display = 'none';
+}
+
+async function confirmConclusion() {
+    const id = document.getElementById('conclude-task-id').value;
+    const obs = document.getElementById('conclude-obs').value;
+    
+    const db = firebase.firestore();
+    await db.collection('agenda_tarefas').doc(id).update({
+        status: 'concluida',
+        concluidaEm: new Date().toISOString(),
+        concluidaPor: STATE.user.name,
+        concluidaObs: obs
     });
-
-    html += '</tbody></table>';
-    document.getElementById('admin-tabela-container').innerHTML = html;
-}
-
-function abrirModalNovaTarefa() {
-    document.getElementById('modal-tarefa-title').innerHTML = '<i class="fa-solid fa-plus"></i> Nova Tarefa';
-    document.getElementById('modal-tarefa-id').value = '';
-    document.getElementById('modal-nome').value = '';
-    document.getElementById('modal-descricao').value = '';
-    document.getElementById('modal-operador').value = '';
-    document.getElementById('modal-frequencia').value = 'diaria';
-    document.getElementById('modal-prazo').value = '';
-    document.getElementById('modal-prioridade').value = 'media';
     
-    document.getElementById('modal-tarefa').style.display = 'flex';
+    closeConcludeModal();
 }
 
-function abrirEditarTarefa(id) {
-    const t = agendaTasks.find(x => x.id === id);
-    if (!t) return;
+// ---------------------------------------------------------
+// HELPERS
+// ---------------------------------------------------------
 
-    document.getElementById('modal-tarefa-title').innerHTML = '<i class="fa-solid fa-edit"></i> Editar Tarefa';
-    document.getElementById('modal-tarefa-id').value = t.id;
-    document.getElementById('modal-nome').value = t.nome;
-    document.getElementById('modal-descricao').value = t.descricao || '';
-    document.getElementById('modal-operador').value = t.operadorId;
-    document.getElementById('modal-frequencia').value = t.frequencia;
-    document.getElementById('modal-prazo').value = t.dataLimite;
-    document.getElementById('modal-prioridade').value = t.prioridade || 'media';
-    
-    document.getElementById('modal-tarefa').style.display = 'flex';
-}
-
-function fecharModalTarefa(e) {
-    if (e && e.target !== e.currentTarget) return;
-    document.getElementById('modal-tarefa').style.display = 'none';
-}
-
-function concluirTarefa(id) {
-    try {
-        console.log('[AGENDA] abrir modal conclusão para:', id);
-        const t = agendaTasks.find(x => x.id === id);
-        if (!t) {
-            console.error('[AGENDA] Tarefa não encontrada:', id);
-            return;
-        }
-
-        document.getElementById('conclusao-tarefa-id').value = id;
-        const title = document.getElementById('modal-conclusao-title');
-        if (title) {
-            title.innerHTML = t.status === 'atrasada' ? '<i class="fa-solid fa-gavel"></i> Concluir em Atraso (Admin)' : '<i class="fa-solid fa-check-circle"></i> Concluir Atividade';
-        }
-        document.getElementById('conclusao-obs').value = '';
-        document.getElementById('modal-conclusao').style.display = 'flex';
-    } catch (err) {
-        console.error('[AGENDA] Erro ao abrir modal de conclusão:', err);
-    }
-}
-
-function fecharModalConclusao(e) {
-    if (e && e.target !== e.currentTarget) return;
-    document.getElementById('modal-conclusao').style.display = 'none';
-}
-
-async function confirmarConclusao() {
-    const id = document.getElementById('conclusao-tarefa-id').value;
-    const obs = document.getElementById('conclusao-obs').value;
-    const task = agendaTasks.find(t => t.id === id);
-    
-    if (task) {
-        task.status = 'concluida';
-        task.concluidaEm = new Date().toISOString();
-        task.concluidaObs = obs;
-        task.concluidaPor = currentAgendaUser.name;
-        
-        await saveTaskToDb(task);
-        await loadAgendaTasks();
-        fecharModalConclusao();
-        
-        if (currentAgendaUser.type === 'admin') {
-            renderTabelaAdmin();
-            renderKPIsAdmin();
-        } else {
-            renderPainelOperador();
-        }
-        showToast("Atividade concluída com sucesso!");
-    }
-}
-
-async function salvarTarefa() {
-    try {
-        console.log('[AGENDA] salvarTarefa called');
-        const id = document.getElementById('modal-tarefa-id').value;
-        const nome = document.getElementById('modal-nome').value;
-        const operadorId = document.getElementById('modal-operador').value;
-        const descricao = document.getElementById('modal-descricao').value;
-        const frequencia = document.getElementById('modal-frequencia').value;
-        const dataLimite = document.getElementById('modal-prazo').value;
-        const prioridade = document.getElementById('modal-prioridade').value;
-
-        console.log('[AGENDA] Form data:', { id, nome, operadorId, dataLimite });
-
-        if (!nome || !operadorId || !dataLimite) {
-            alert("Preencha todos os campos obrigatórios (Atividade, Responsável e Prazo)!");
-            return;
-        }
-
-        const sel = document.getElementById('modal-operador');
-        const operadorNome = sel.options[sel.selectedIndex].text;
-
-        const existingTask = id ? agendaTasks.find(t => t.id === id) : null;
-
-        const task = {
-            nome,
-            operadorId,
-            operadorNome,
-            descricao,
-            frequencia,
-            dataLimite,
-            prioridade,
-            status: existingTask ? existingTask.status : 'pendente',
-            criadaEm: existingTask ? existingTask.criadaEm : new Date().toISOString()
-        };
-
-        if (id) task.id = id;
-
-        await saveTaskToDb(task);
-        fecharModalTarefa();
-        await loadAgendaTasks();
-        
-        if (currentAgendaUser.type === 'admin') {
-            renderTabelaAdmin();
-            renderKPIsAdmin();
-        } else {
-            renderPainelOperador();
-        }
-        showToast("Tarefa salva com sucesso!");
-    } catch (err) {
-        console.error('[AGENDA] Error in salvarTarefa:', err);
-        alert("Erro ao salvar tarefa: " + err.message);
-    }
-}
-
-function showToast(msg) {
-    const toast = document.getElementById('agenda-toast');
-    toast.textContent = msg;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+function populateOperatorFilter() {
+    const select = document.getElementById('filter-op');
+    select.innerHTML = '<option value="">Todos Operadores</option>' + 
+        Object.keys(STATE.operators).map(id => `<option value="${id}">${STATE.operators[id]}</option>`).join('');
 }
 
 function checkLateTasks() {
     const agora = new Date();
-    let mudou = false;
-    agendaTasks.forEach(t => {
-        if (t.status === 'pendente' || t.status === 'em_andamento') {
-            const prazo = new Date(t.dataLimite);
-            if (agora > prazo) {
-                t.status = 'atrasada';
-                saveTaskToDb(t);
-                mudou = true;
-                // Here we would trigger email if integrated
-                console.warn(`Tarefa atrasada: ${t.nome}`);
-            }
+    const db = firebase.firestore();
+    
+    STATE.tasks.forEach(t => {
+        if (t.status === 'pendente' && new Date(t.deadline) < agora) {
+            db.collection('agenda_tarefas').doc(t.id).update({ status: 'atrasada' });
         }
     });
-    if (mudou && currentAgendaUser) {
-        if (currentAgendaUser.type === 'admin') renderTabelaAdmin();
-        else renderPainelOperador();
-    }
-}
-
-// Additional functions for operator and ranking would go here
-function renderPainelOperador() {
-    const minhas = agendaTasks.filter(t => t.operadorId === currentAgendaUser.id);
-    const concluidas = minhas.filter(t => t.status === 'concluida').length;
-    const total = minhas.length;
-    const sla = total > 0 ? Math.round((concluidas / total) * 100) : 100;
-    const atrasadas = minhas.filter(t => t.status === 'atrasada').length;
-
-    const kpiHtml = `
-        <div class="agenda-kpi-card">
-            <h3>Minhas Tarefas</h3>
-            <div class="value">${total}</div>
-        </div>
-        <div class="agenda-kpi-card" style="border-left-color: var(--agenda-info)">
-            <h3>Meu SLA</h3>
-            <div class="value">${sla}%</div>
-        </div>
-        <div class="agenda-kpi-card" style="border-left-color: var(--agenda-danger)">
-            <h3>Atrasos</h3>
-            <div class="value">${atrasadas}</div>
-        </div>
-    `;
-    document.getElementById('operador-kpis').innerHTML = kpiHtml;
-
-    if (minhas.length === 0) {
-        document.getElementById('operador-tarefas-container').innerHTML = '<p class="agenda-empty">Você não possui tarefas atribuídas.</p>';
-        return;
-    }
-
-    let html = '<div class="agenda-op-list">';
-    minhas.forEach(t => {
-        html += `
-            <div class="agenda-op-item card" style="margin-bottom: 1rem; padding: 1rem; border-left: 5px solid ${t.status === 'atrasada' ? 'var(--agenda-danger)' : 'var(--agenda-primary)'}">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h4 style="margin:0">${t.nome}</h4>
-                        <small style="color: var(--agenda-text-muted)">Prazo: ${new Date(t.dataLimite).toLocaleString('pt-BR')}</small>
-                    </div>
-                    <div>
-                        <span class="badge badge-${t.status}">${t.status}</span>
-                    </div>
-                </div>
-                <p style="margin: 0.5rem 0; font-size: 0.9rem;">${t.descricao || 'Sem descrição.'}</p>
-                ${t.status !== 'concluida' && t.status !== 'atrasada' ? `
-                    <button class="agenda-btn-primary" style="padding: 0.5rem; width: auto; font-size: 0.8rem;" onclick="concluirTarefa('${t.id}')">
-                        <i class="fa-solid fa-check"></i> Marcar como Concluída
-                    </button>
-                ` : ''}
-                ${t.status === 'atrasada' ? `
-                    <p style="color: var(--agenda-danger); font-size: 0.8rem; font-weight: bold;">
-                        <i class="fa-solid fa-circle-exclamation"></i> Vencida. Somente o administrador pode concluir.
-                    </p>
-                ` : ''}
-            </div>
-        `;
-    });
-    html += '</div>';
-    document.getElementById('operador-tarefas-container').innerHTML = html;
-}
-
-// This function was duplicated and broken. Removed to use the modal-based version above.
-
-function showAdminTab(tab) {
-    document.querySelectorAll('.agenda-admin-tab').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.remove('active-tab'));
-    
-    const targetTab = document.getElementById('admin-tab-' + tab);
-    const targetBtn = document.querySelector(`[onclick="showAdminTab('${tab}')"]`);
-    
-    if (targetTab) targetTab.classList.add('active-tab');
-    if (targetBtn) targetBtn.classList.add('active');
-
-    if (tab === 'ranking') renderRankingAdmin();
-    if (tab === 'historico') renderHistoricoAdmin();
-}
-
-function renderRankingAdmin() {
-    const ops = [
-        { id: 'iris', name: 'Iris Souza' },
-        { id: 'hallan', name: 'Hallan de Barros' },
-        { id: 'victor', name: 'Victor Dourado' },
-        { id: 'walmir', name: 'Walmir da Luz' },
-        { id: 'rodrigo', name: 'Rodrigo Vilanova' },
-        { id: 'nikolas', name: 'Nikolas Cardoso' }
-    ];
-
-    let results = ops.map(op => {
-        const suas = agendaTasks.filter(t => t.operadorId === op.id);
-        const concluidas = suas.filter(t => t.status === 'concluida').length;
-        const total = suas.length;
-        const sla = total > 0 ? Math.round((concluidas / total) * 100) : 0;
-        const atrasos = suas.filter(t => t.status === 'atrasada').length;
-        return { ...op, total, concluidas, sla, atrasos };
-    });
-
-    results.sort((a, b) => b.sla - a.sla || a.atrasos - b.atrasos);
-
-    let html = `
-        <div class="card" style="padding: 2rem;">
-            <h2><i class="fa-solid fa-ranking-star"></i> Ranking de Operadores (SLA)</h2>
-            <div class="agenda-ranking-list">
-    `;
-
-    results.forEach((r, idx) => {
-        html += `
-            <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--agenda-border);">
-                <div style="font-size: 1.5rem; font-weight: 800; width: 40px; color: ${idx === 0 ? '#fbbf24' : '#94a3b8'}">${idx + 1}°</div>
-                <div style="flex: 1">
-                    <strong>${r.name}</strong><br>
-                    <small>${r.atrasos} atrasos / ${r.total} tarefas</small>
-                </div>
-                <div style="width: 200px; margin: 0 20px;">
-                    <div style="background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
-                        <div style="background: ${r.sla > 90 ? 'var(--agenda-success)' : (r.sla > 70 ? 'var(--agenda-warning)' : 'var(--agenda-danger)')}; width: ${r.sla}%; height: 100%;"></div>
-                    </div>
-                </div>
-                <div style="font-weight: 800; font-size: 1.2rem;">${r.sla}%</div>
-            </div>
-        `;
-    });
-
-    html += '</div></div>';
-    document.getElementById('ranking-container').innerHTML = html;
-}
-
-function renderHistoricoAdmin() {
-    // Sort tasks by conclusion date
-    const sorted = [...agendaTasks].filter(t => t.concluidaEm).sort((a, b) => new Date(b.concluidaEm) - new Date(a.concluidaEm));
-
-    if (sorted.length === 0) {
-        document.getElementById('historico-container').innerHTML = '<p class="agenda-empty">Nenhuma atividade concluída ainda.</p>';
-        return;
-    }
-
-    let html = '<div class="card" style="padding: 1rem;"><table class="agenda-table"><thead><tr><th>Atividade</th><th>Operador</th><th>Conclusão</th><th>Observação</th></tr></thead><tbody>';
-    
-    sorted.forEach(t => {
-        html += `
-            <tr>
-                <td>${t.nome}</td>
-                <td>${t.operadorNome}</td>
-                <td>${new Date(t.concluidaEm).toLocaleString('pt-BR')}</td>
-                <td><small>${t.concluidaObs || '-'}</small></td>
-            </tr>
-        `;
-    });
-
-    html += '</tbody></table></div>';
-    document.getElementById('historico-container').innerHTML = html;
-}
-
-async function excluirTarefa(id) {
-    try {
-        if (!confirm("Deseja realmente excluir esta tarefa?")) return;
-        
-        if (useFirebase && db) {
-            await db.collection('agenda_tarefas').doc(id).delete();
-        }
-        
-        let localTasks = JSON.parse(localStorage.getItem('agenda_tasks') || '[]');
-        localTasks = localTasks.filter(t => t.id !== id);
-        localStorage.setItem('agenda_tasks', JSON.stringify(localTasks));
-        
-        await loadAgendaTasks();
-        renderTabelaAdmin();
-        renderKPIsAdmin();
-        showToast("Tarefa excluída.");
-    } catch (err) {
-        console.error('[AGENDA] Erro ao excluir:', err);
-        alert("Erro ao excluir: " + err.message);
-    }
-}
-
-function agendaExportPDF() {
-    window.print();
 }
