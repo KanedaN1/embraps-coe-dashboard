@@ -106,6 +106,9 @@
         <button class="ag-tab-btn active" onclick="ag_switchTab('tarefas', this)">
           <i class="fa-solid fa-list-check"></i> Tarefas
         </button>
+        <button class="ag-tab-btn" onclick="ag_switchTab('por-operador', this)">
+          <i class="fa-solid fa-users-viewfinder"></i> Visão por Operador
+        </button>
         <button class="ag-tab-btn" onclick="ag_switchTab('ranking', this)">
           <i class="fa-solid fa-ranking-star"></i> Ranking & SLA
         </button>
@@ -155,6 +158,11 @@
             <tbody id="ag-admin-tbody"></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- TAB: Visão por Operador -->
+      <div id="ag-tab-por-operador" class="ag-tab-pane">
+        <div id="ag-grouped-view-body" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;"></div>
       </div>
 
       <!-- TAB: Ranking -->

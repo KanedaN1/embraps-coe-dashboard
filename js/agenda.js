@@ -197,6 +197,7 @@ function ag_refreshUI() {
     if (AG_USER.type === 'admin') {
         ag_renderAdminKPIs();
         ag_renderAdminTable();
+        ag_renderGroupedView();
         ag_renderRanking();
         ag_renderHistory();
     } else {
@@ -650,6 +651,81 @@ async function ag_loadSummaryForDashboard() {
     } catch (err) {
         console.warn('[AG] Dashboard summary failed:', err.message);
         const el = document.getElementById('dashboard-agenda-summary');
-        if (el) el.innerHTML = '<p style="color:#dc2626">Erro ao carregar agenda. Verifique a conexão.</p>';
+        if (el) el.innerHTML = '<p style="color:#dc2626">Conectando ao banco de dados... Se o erro persistir, verifique sua conexão.</p>';
+        
+        // Tenta recarregar em 5 segundos
+        setTimeout(ag_loadSummaryForDashboard, 5000);
     }
+}
+
+/* ================================================================
+   ADMIN — GROUPED VIEW
+   ================================================================ */
+function ag_renderGroupedView() {
+    const el = document.getElementById('ag-grouped-view-body');
+    if (!el) return;
+
+    if (!AG_TASKS.length) {
+        el.innerHTML = '<div class="ag-empty" style="grid-column: 1/-1">Nenhuma atividade cadastrada na Agenda.</div>';
+        return;
+    }
+
+    const byOp = {};
+    AG_TASKS.forEach(t => {
+        const key = t.operadorId || 'outro';
+        if (!byOp[key]) byOp[key] = [];
+        byOp[key].push(t);
+    });
+
+    const STATUS_COLOR = { pendente:'#f59e0b', atrasada:'#dc2626', concluida:'#16a34a' };
+    const STATUS_BG    = { pendente:'#fffbeb', atrasada:'#fff1f2', concluida:'#f0fdf4' };
+    const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
+
+    el.innerHTML = Object.entries(byOp).map(([opId, opTasks]) => {
+        const opName = AG_OPERATORS[opId] || opId;
+        const opDone = opTasks.filter(t => t.status === 'concluida').length;
+        const opSla  = opTasks.length > 0 ? Math.round(opDone / opTasks.length * 100) : 100;
+        const opColor = opSla >= 90 ? '#16a34a' : opSla >= 70 ? '#f59e0b' : '#dc2626';
+
+        const sorted = [...opTasks].sort((a,b) => {
+            const o = { atrasada:0, pendente:1, concluida:2 };
+            return (o[a.status]??1) - (o[b.status]??1);
+        });
+
+        return `
+        <div class="ag-table-wrap" style="display:flex; flex-direction:column; min-height:100%; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <div style="background:#f8fafc; padding:1.2rem; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center">
+                <div>
+                    <h4 style="margin:0; font-size:1rem; color:#1e3a8a; font-weight:700;">${opName}</h4>
+                    <small style="color:#64748b">${opTasks.length} tarefas atribuídas</small>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-weight:800; font-size:1.2rem; color:${opColor}; line-height:1;">${opSla}%</div>
+                    <small style="text-transform:uppercase; font-weight:700; font-size:0.65rem; color:#94a3b8">SLA</small>
+                </div>
+            </div>
+            <div style="flex:1; padding: 0.5rem 0;">
+                ${sorted.map(t => {
+                    const sc = STATUS_COLOR[t.status] || '#64748b';
+                    const sb = STATUS_BG[t.status]   || '#f8fafc';
+                    const sl = STATUS_LABEL[t.status] || t.status;
+                    const prazo = t.deadline ? new Date(t.deadline).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+                    return `
+                    <div style="padding:0.8rem 1.2rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center">
+                        <div style="min-width:0; flex:1">
+                            <div style="font-weight:600; font-size:0.88rem; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: #334155;">${ag_esc(t.name)}</div>
+                            <div style="font-size:0.75rem; color:#64748b"><i class="fa-regular fa-clock" style="margin-right:3px;"></i>${prazo}</div>
+                        </div>
+                        <div style="margin-left:12px; text-align:right; flex-shrink:0;">
+                            <span class="ag-badge" style="background:${sb}; color:${sc}; border:1px solid ${sc}22; font-size:0.6rem; padding: 2px 8px;">${sl}</span>
+                            <div style="margin-top:6px; display:flex; gap:5px; justify-content:flex-end">
+                                <button class="ag-icon-btn edit" style="padding:2px 6px; font-size:0.7rem; height:24px; width:24px;" onclick="ag_openTaskModal('${t.id}')"><i class="fa-solid fa-pen"></i></button>
+                                <button class="ag-icon-btn del" style="padding:2px 6px; font-size:0.7rem; height:24px; width:24px;" onclick="ag_deleteTask('${t.id}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    }).join('');
 }
