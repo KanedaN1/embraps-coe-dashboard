@@ -555,52 +555,101 @@ function ag_esc(str) {
 async function ag_loadSummaryForDashboard() {
     try {
         let tasks = [];
-        if (useFirebase && db) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
             const snap = await db.collection('agenda_tarefas').get();
             tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         } else {
-            tasks = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
+            tasks = JSON.parse(localStorage.getItem('ag_tasks_offline') || '[]');
         }
 
         const total      = tasks.length;
         const concluidas = tasks.filter(t => t.status === 'concluida').length;
         const sla        = total > 0 ? Math.round(concluidas / total * 100) : 100;
+        const slaColor   = sla >= 90 ? '#16a34a' : sla >= 70 ? '#f59e0b' : '#dc2626';
 
-        // Update KPI card in index.html
+        // Update KPI card
         const slaEl = document.getElementById('kpi-agenda-sla');
-        if (slaEl) slaEl.textContent = sla + '%';
+        if (slaEl) {
+            slaEl.textContent = sla + '%';
+            slaEl.style.color = slaColor;
+        }
 
-        // Render summary cards
         const summaryEl = document.getElementById('dashboard-agenda-summary');
         if (!summaryEl) return;
 
         if (!total) {
-            summaryEl.innerHTML = '<p>Nenhuma atividade cadastrada na Agenda COE.</p>';
+            summaryEl.innerHTML = '<p style="color:#64748b;text-align:center;padding:1rem">Nenhuma atividade cadastrada. <a href="agenda.html" style="color:#2563eb">Adicionar agora</a></p>';
             return;
         }
 
-        // Show all tasks grouped by operator
-        const tasksByOp = {};
+        // Group by operator
+        const OPERATORS = {
+            'iris':    'Iris Souza',
+            'hallan':  'Hallan de Barros',
+            'victor':  'Victor Dourado',
+            'walmir':  'Walmir da Luz',
+            'rodrigo': 'Rodrigo Vilanova',
+            'nikolas': 'Nikolas Cardoso'
+        };
+
+        const byOp = {};
         tasks.forEach(t => {
-            const op = AG_OPERATORS[t.operadorId] || t.operadorId || 'Desconhecido';
-            if (!tasksByOp[op]) tasksByOp[op] = [];
-            tasksByOp[op].push(t);
+            const key = t.operadorId || 'outro';
+            if (!byOp[key]) byOp[key] = [];
+            byOp[key].push(t);
         });
 
-        let html = '<div class="ag-summary-grid">';
-        tasks.sort((a,b) => {
-            const o = { atrasada:0, pendente:1, concluida:2 };
-            return (o[a.status]??1) - (o[b.status]??1);
-        }).forEach(t => {
-            const opName = AG_OPERATORS[t.operadorId] || t.operadorId;
-            html += `<div class="ag-summary-item ${t.status === 'concluida' ? 'done' : t.status === 'atrasada' ? 'late' : ''}">
-                <strong>${t.name}</strong>
-                <small>${opName} · <span style="font-weight:700;text-transform:uppercase">${t.status}</span></small>
+        const STATUS_COLOR = { pendente:'#f59e0b', atrasada:'#dc2626', concluida:'#16a34a' };
+        const STATUS_BG    = { pendente:'#fffbeb', atrasada:'#fff1f2', concluida:'#f0fdf4' };
+        const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
+
+        let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:.5rem">';
+
+        Object.entries(byOp).forEach(([opId, opTasks]) => {
+            const opName = OPERATORS[opId] || opId;
+            const opDone = opTasks.filter(t => t.status === 'concluida').length;
+            const opSla  = opTasks.length > 0 ? Math.round(opDone / opTasks.length * 100) : 100;
+            const opColor = opSla >= 90 ? '#16a34a' : opSla >= 70 ? '#f59e0b' : '#dc2626';
+
+            // Sort: atrasada first
+            const sorted = [...opTasks].sort((a,b) => {
+                const o = { atrasada:0, pendente:1, concluida:2 };
+                return (o[a.status]??1) - (o[b.status]??1);
+            });
+
+            html += `
+            <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden">
+                <div style="background:#f8fafc;padding:.9rem 1rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <strong style="font-size:.9rem">${opName}</strong><br>
+                        <small style="color:#64748b">${opTasks.length} atividade(s)</small>
+                    </div>
+                    <span style="font-weight:700;font-size:.85rem;color:${opColor}">SLA ${opSla}%</span>
+                </div>
+                <div style="padding:.5rem 0">
+                    ${sorted.map(t => {
+                        const sc = STATUS_COLOR[t.status] || '#64748b';
+                        const sb = STATUS_BG[t.status]   || '#f8fafc';
+                        const sl = STATUS_LABEL[t.status] || t.status;
+                        const prazo = t.deadline ? new Date(t.deadline).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+                        return `<div style="padding:.65rem 1rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9">
+                            <div style="flex:1;min-width:0">
+                                <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name || ''}</div>
+                                ${prazo ? `<div style="font-size:.75rem;color:#94a3b8">${prazo}</div>` : ''}
+                            </div>
+                            <span style="background:${sb};color:${sc};padding:.2rem .55rem;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;margin-left:.5rem;flex-shrink:0">${sl}</span>
+                        </div>`;
+                    }).join('')}
+                </div>
             </div>`;
         });
+
         html += '</div>';
         summaryEl.innerHTML = html;
+
     } catch (err) {
-        console.warn('[AG] Dashboard summary failed.', err.message);
+        console.warn('[AG] Dashboard summary failed:', err.message);
+        const el = document.getElementById('dashboard-agenda-summary');
+        if (el) el.innerHTML = '<p style="color:#dc2626">Erro ao carregar agenda. Verifique a conexão.</p>';
     }
 }
