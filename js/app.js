@@ -86,6 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetId === 'vg-agenda-sla') {
                 updateAgendaSummary();
             }
+            if (targetId === 'vg-pos-venda') {
+                if (typeof pv_loadData === 'function') pv_loadData();
+            }
 
             // Fechar sidebar no mobile ao clicar num link
             if (window.innerWidth <= 768) closeSidebar();

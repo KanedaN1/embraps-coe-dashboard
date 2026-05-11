@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pós Venda Negativo - Embraps</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pos-venda.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; }
+        .sidebar { background-color: #1e3a8a; color: white; width: 260px; height: 100vh; position: fixed; }
+        .main-content { margin-left: 260px; padding: 2rem; }
+        .btn-add { background: #e11d48; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-add:hover { background: #be123c; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div style="padding: 2rem; text-align: center;">
+            <img src="assets/img/Logo.png" alt="Logo" style="max-width: 150px;">
+        </div>
+        <nav class="sidebar-nav" style="padding: 0 1rem;">
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: white; text-decoration: none; display: block; padding: 10px; border-radius: 8px;"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+                <li style="margin-bottom: 0.5rem; background: rgba(255,255,255,0.1);"><a href="#" style="color: white; text-decoration: none; display: block; padding: 10px; border-radius: 8px;"><i class="fa-solid fa-headset"></i> Pós Venda</a></li>
+                <li style="margin-bottom: 0.5rem;"><a href="agenda.html" style="color: white; text-decoration: none; display: block; padding: 10px; border-radius: 8px;"><i class="fa-solid fa-calendar-check"></i> Agenda COE</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="pv-header">
+            <div>
+                <h1 style="margin:0; color:#1e3a8a;">Pós Venda Negativo</h1>
+                <p style="color:#64748b; margin:5px 0 0 0;">Controle de acompanhamento e efetivação de retornos</p>
+            </div>
+            <div id="pv-admin-actions" style="display: none;">
+                <button class="btn-add" onclick="pv_openModal()"><i class="fa-solid fa-plus"></i> Novo Pós Venda</button>
+            </div>
+        </div>
+
+        <div id="pv-login-section" style="background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 400px; margin: 4rem auto; text-align: center;">
+            <i class="fa-solid fa-lock" style="font-size: 3rem; color: #e11d48; margin-bottom: 1.5rem;"></i>
+            <h3>Acesso Restrito</h3>
+            <p style="color: #64748b; margin-bottom: 2rem;">Escolha seu perfil de acesso:</p>
+            <button onclick="pv_login('admin')" class="btn-primary w-100" style="margin-bottom: 1rem; background: #1e3a8a;">Acesso Admin</button>
+            <button onclick="pv_login('coordenador')" class="btn-primary w-100" style="background: #e11d48;">Acesso Coordenador</button>
+        </div>
+
+        <div id="pv-app-content" style="display: none;">
+            <div class="pv-kpi-grid" id="pv-kpis">
+                <!-- KPIs via JS -->
+            </div>
+
+            <div class="pv-table-card">
+                <table class="pv-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Coordenador</th>
+                            <th>Supervisor</th>
+                            <th>Data Inicial</th>
+                            <th>Próximo Retorno</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pv-table-body">
+                        <!-- Linhas via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Cadastro/Edição -->
+    <div id="pv-modal" class="pv-modal">
+        <div class="pv-modal-content">
+            <h2 id="pv-modal-title" style="color: #1e3a8a; margin-top: 0;">Novo Pós Venda</h2>
+            <input type="hidden" id="pv-id">
+            
+            <div class="pv-form-group">
+                <label>Cliente</label>
+                <input type="text" id="pv-cliente" placeholder="Nome do cliente">
+            </div>
+            
+            <div class="pv-form-group">
+                <label>Coordenador</label>
+                <select id="pv-coordenador">
+                    <option value="">Selecione...</option>
+                    <option value="coord1">Coordenador 1</option>
+                    <option value="coord2">Coordenador 2</option>
+                    <option value="coord3">Coordenador 3</option>
+                </select>
+            </div>
+
+            <div class="pv-form-group">
+                <label>Supervisor</label>
+                <input type="text" id="pv-supervisor" placeholder="Nome do supervisor">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="pv-form-group">
+                    <label>Data Inicial</label>
+                    <input type="date" id="pv-data-inicial">
+                </div>
+                <div class="pv-form-group">
+                    <label>Próximo Retorno</label>
+                    <input type="date" id="pv-proximo-retorno">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button onclick="pv_closeModal()" class="btn-secondary" style="flex: 1; padding: 10px;">Cancelar</button>
+                <button onclick="pv_save()" class="btn-primary" style="flex: 1; padding: 10px; background: #1e3a8a;">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/pos-venda.js"></script>
+</body>
+</html>

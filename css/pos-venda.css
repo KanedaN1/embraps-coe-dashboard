@@ -1,0 +1,122 @@
+/* Pós Venda Negativo CSS */
+:root {
+    --pv-primary: #e11d48; /* Rose/Red for "Negativo" */
+    --pv-bg: #f8fafc;
+    --pv-card: #ffffff;
+    --pv-text: #1e293b;
+    --pv-border: #e2e8f0;
+}
+
+.pv-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.pv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.pv-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.pv-kpi-card {
+    background: var(--pv-card);
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--pv-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.pv-kpi-val {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--pv-primary);
+    margin-top: 0.5rem;
+}
+
+.pv-table-card {
+    background: var(--pv-card);
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--pv-border);
+    overflow: hidden;
+}
+
+.pv-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pv-table th {
+    background: #f1f5f9;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.pv-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--pv-border);
+    font-size: 0.95rem;
+}
+
+.pv-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.pv-badge-pendente { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+.pv-badge-concluido { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+.pv-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.pv-modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.pv-form-group {
+    margin-bottom: 1rem;
+}
+
+.pv-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.pv-form-group input, .pv-form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--pv-border);
+    border-radius: 8px;
+    font-size: 1rem;
+}
