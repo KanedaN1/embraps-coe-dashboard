@@ -457,10 +457,13 @@ async function ag_saveTask() {
         criadaEm:  existing ? existing.criadaEm : new Date().toISOString()
     };
 
+    const finalId = id || (typeof db !== 'undefined' && db ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now());
+    data.id = finalId;
+
     ag_closeTaskModal();
     ag_toast('Salvando...');
 
-    await ag_persistTask(data, id || null);
+    await ag_persistTask(data, finalId);
     await ag_loadTasks();
     ag_toast(id ? '✅ Atividade atualizada!' : '✅ Atividade criada!');
 }
