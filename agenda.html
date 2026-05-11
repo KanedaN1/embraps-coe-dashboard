@@ -1,254 +1,296 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda COE — Embraps</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css?v=1.5">
-    <link rel="stylesheet" href="css/agenda.css?v=1.5">
-    <style>
-        /* Ajustes finos para garantir que os botões apareçam */
-        .btn-action { cursor: pointer; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; transition: all 0.2s; }
-        .btn-action:hover { background: #f1f5f9; transform: translateY(-1px); }
-        .btn-action.success:hover { color: #16a34a; border-color: #16a34a; }
-        .btn-action.danger:hover { color: #dc2626; border-color: #dc2626; }
-        .btn-action.primary:hover { color: #2563eb; border-color: #2563eb; }
-        
-        .agenda-tab-content { display: none; }
-        .agenda-tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda COE — Embraps</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css?v=2.0">
+  <link rel="stylesheet" href="css/agenda.css?v=2.0">
 </head>
 <body class="agenda-body">
 
-<!-- LOGIN SCREEN -->
-<div id="agenda-login-screen" class="agenda-login-screen">
-    <div class="agenda-login-card">
-        <div class="agenda-login-logo">
-            <img src="assets/img/Logo.png" alt="Embraps" onerror="this.style.display='none'">
-            <h1>Agenda <span>COE</span></h1>
-            <p>Controle de Atividades Operacionais</p>
-        </div>
+<!-- ============================================================
+     TELA DE LOGIN
+     ============================================================ -->
+<div id="ag-login">
+  <div class="ag-login-wrap">
+    <div class="ag-login-box">
 
-        <div class="agenda-login-tabs">
-            <button class="agenda-tab-btn active" id="btn-tab-admin" onclick="setLoginType('admin')">Admin</button>
-            <button class="agenda-tab-btn" id="btn-tab-operador" onclick="setLoginType('operador')">Operador</button>
-        </div>
+      <div class="ag-login-logo">
+        <img src="assets/img/Logo.png" alt="Embraps" onerror="this.style.display='none'">
+        <h1>Agenda <span>COE</span></h1>
+        <p>Sistema de Controle Operacional</p>
+      </div>
 
-        <div id="form-admin" class="agenda-login-form">
-            <div class="agenda-form-group">
-                <label>Senha de Acesso</label>
-                <input type="password" id="login-admin-pass" placeholder="Senha do painel...">
-            </div>
-            <button class="agenda-btn-primary" onclick="handleLogin('admin')">Entrar como Gestor</button>
-        </div>
+      <div class="ag-type-tabs">
+        <button class="ag-type-tab active" onclick="ag_setType('admin')">
+          <i class="fa-solid fa-shield-halved"></i> Gestor
+        </button>
+        <button class="ag-type-tab" onclick="ag_setType('operador')">
+          <i class="fa-solid fa-user-tie"></i> Operador
+        </button>
+      </div>
 
-        <div id="form-operador" class="agenda-login-form" style="display:none">
-            <div class="agenda-form-group">
-                <label>Selecionar Nome</label>
-                <select id="login-operador-id">
-                    <option value="">— Selecione —</option>
-                    <option value="iris">Iris Souza (Limpeza)</option>
-                    <option value="hallan">Hallan de Barros (Diurno)</option>
-                    <option value="victor">Victor Dourado (Noturno)</option>
-                    <option value="walmir">Walmir da Luz (Folguista)</option>
-                    <option value="rodrigo">Rodrigo Vilanova (Back-Office)</option>
-                    <option value="nikolas">Nikolas Cardoso (ADMDOP)</option>
-                </select>
-            </div>
-            <div class="agenda-form-group">
-                <label>Sua Senha</label>
-                <input type="password" id="login-operador-pass" placeholder="Sua senha individual...">
-            </div>
-            <button class="agenda-btn-primary" onclick="handleLogin('operador')">Acessar Minha Agenda</button>
+      <!-- Formulário Admin -->
+      <div id="ag-form-admin">
+        <div class="ag-form-group">
+          <label>Senha de Acesso</label>
+          <input type="password" id="ag-admin-pw" placeholder="Digite a senha..." onkeydown="if(event.key==='Enter') ag_login('admin')">
         </div>
+        <button class="ag-btn ag-btn-primary ag-btn-full" onclick="ag_login('admin')">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Entrar como Gestor
+        </button>
+      </div>
 
-        <p id="login-error" style="color: #dc2626; font-size: 0.85rem; margin-top: 1rem; display:none;">Usuário ou senha incorretos.</p>
-        
-        <a href="index.html" class="agenda-back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao Dashboard</a>
+      <!-- Formulário Operador -->
+      <div id="ag-form-operador" style="display:none">
+        <div class="ag-form-group">
+          <label>Selecionar Operador</label>
+          <select id="ag-op-select">
+            <option value="">— Selecione —</option>
+            <option value="iris">Iris Souza (Limpeza)</option>
+            <option value="hallan">Hallan de Barros (Diurno)</option>
+            <option value="victor">Victor Dourado (Noturno)</option>
+            <option value="walmir">Walmir da Luz (Folguista)</option>
+            <option value="rodrigo">Rodrigo Vilanova (Back-Office)</option>
+            <option value="nikolas">Nikolas Cardoso (ADMDOP)</option>
+          </select>
+        </div>
+        <div class="ag-form-group">
+          <label>Senha</label>
+          <input type="password" id="ag-op-pw" placeholder="Sua senha..." onkeydown="if(event.key==='Enter') ag_login('operador')">
+        </div>
+        <button class="ag-btn ag-btn-primary ag-btn-full" onclick="ag_login('operador')">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Acessar Minha Agenda
+        </button>
+      </div>
+
+      <p id="ag-login-err" class="ag-error" style="display:none">
+        <i class="fa-solid fa-triangle-exclamation"></i> Usuário ou senha incorretos.
+      </p>
+      <a href="index.html" class="ag-back-link">
+        <i class="fa-solid fa-arrow-left"></i> Voltar ao Dashboard
+      </a>
     </div>
+  </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="agenda-app" style="display:none">
-    <header class="agenda-header">
-        <div class="agenda-header-left">
-            <a href="index.html" class="agenda-header-logo">
-                <img src="assets/img/Logo.png" alt="Embraps" style="height:32px">
-                <span class="agenda-header-title">Agenda <strong>COE</strong></span>
-            </a>
-        </div>
-        <div class="agenda-header-right">
-            <span id="user-display" class="agenda-user-badge"></span>
-            <button class="agenda-btn-ghost" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
-        </div>
-    </header>
+<!-- ============================================================
+     APLICATIVO PRINCIPAL
+     ============================================================ -->
+<div id="ag-app" style="display:none">
 
-    <div class="agenda-container">
-        
-        <!-- ADMIN VIEW -->
-        <div id="view-admin" style="display:none">
-            <div class="agenda-admin-tabs">
-                <button class="agenda-admin-tab active" data-tab="tarefas">Tarefas</button>
-                <button class="agenda-admin-tab" data-tab="ranking">Ranking & SLA</button>
-                <button class="agenda-admin-tab" data-tab="historico">Histórico</button>
-            </div>
+  <!-- Header -->
+  <header class="ag-header">
+    <a href="index.html" class="ag-header-logo">
+      <img src="assets/img/Logo.png" alt="Embraps" onerror="this.style.display='none'">
+      <span>Agenda <strong>COE</strong></span>
+    </a>
+    <div class="ag-header-right">
+      <span id="ag-user-name" class="ag-user-badge"></span>
+      <span id="ag-date-display" class="ag-date"></span>
+      <button class="ag-btn ag-btn-ghost" onclick="ag_logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sair
+      </button>
+    </div>
+  </header>
 
-            <!-- TAB TAREFAS -->
-            <div id="tab-tarefas" class="agenda-tab-content active">
-                <div id="admin-kpis" class="agenda-kpi-grid"></div>
-                
-                <div class="agenda-actions-bar">
-                    <button class="agenda-btn-primary" onclick="openTaskModal()"><i class="fa-solid fa-plus"></i> Nova Atividade</button>
-                    <div class="agenda-filters">
-                        <select id="filter-op" onchange="renderAdminTasks()"><option value="">Todos Operadores</option></select>
-                        <select id="filter-status" onchange="renderAdminTasks()">
-                            <option value="">Todos Status</option>
-                            <option value="pendente">Pendente</option>
-                            <option value="atrasada">Atrasada</option>
-                            <option value="concluida">Concluída</option>
-                        </select>
-                    </div>
-                </div>
+  <!-- ---- PAINEL ADMIN ---- -->
+  <div id="ag-view-admin" style="display:none">
+    <div class="ag-wrap">
 
-                <div class="agenda-table-wrapper">
-                    <table class="agenda-table">
-                        <thead>
-                            <tr>
-                                <th>Atividade / Prazo</th>
-                                <th>Responsável</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-tasks-body"></tbody>
-                    </table>
-                </div>
-            </div>
+      <!-- Tabs -->
+      <div class="ag-admin-tabs">
+        <button class="ag-tab-btn active" onclick="ag_switchTab('tarefas', this)">
+          <i class="fa-solid fa-list-check"></i> Tarefas
+        </button>
+        <button class="ag-tab-btn" onclick="ag_switchTab('ranking', this)">
+          <i class="fa-solid fa-ranking-star"></i> Ranking & SLA
+        </button>
+        <button class="ag-tab-btn" onclick="ag_switchTab('historico', this)">
+          <i class="fa-solid fa-clock-rotate-left"></i> Histórico
+        </button>
+      </div>
 
-            <!-- TAB RANKING -->
-            <div id="tab-ranking" class="agenda-tab-content">
-                <div id="ranking-list" class="card" style="padding: 2rem;"></div>
-            </div>
+      <!-- TAB: Tarefas -->
+      <div id="ag-tab-tarefas" class="ag-tab-pane active">
+        <div id="ag-kpi-admin" class="ag-kpi-grid"></div>
 
-            <!-- TAB HISTORICO -->
-            <div id="tab-historico" class="agenda-tab-content">
-                <div class="agenda-table-wrapper">
-                    <table class="agenda-table">
-                        <thead>
-                            <tr>
-                                <th>Atividade</th>
-                                <th>Concluída Por</th>
-                                <th>Data/Hora</th>
-                                <th>Observação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-history-body"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="ag-actions-bar">
+          <button class="ag-btn ag-btn-primary" onclick="ag_openTaskModal()">
+            <i class="fa-solid fa-plus"></i> Nova Atividade
+          </button>
+          <div class="ag-filters">
+            <select id="ag-filter-op" onchange="ag_renderAdminTable()">
+              <option value="">Todos os Operadores</option>
+              <option value="iris">Iris Souza</option>
+              <option value="hallan">Hallan de Barros</option>
+              <option value="victor">Victor Dourado</option>
+              <option value="walmir">Walmir da Luz</option>
+              <option value="rodrigo">Rodrigo Vilanova</option>
+              <option value="nikolas">Nikolas Cardoso</option>
+            </select>
+            <select id="ag-filter-status" onchange="ag_renderAdminTable()">
+              <option value="">Todos os Status</option>
+              <option value="pendente">Pendente</option>
+              <option value="atrasada">Atrasada</option>
+              <option value="concluida">Concluída</option>
+            </select>
+          </div>
         </div>
 
-        <!-- OPERATOR VIEW -->
-        <div id="view-operador" style="display:none">
-            <div id="operador-kpis" class="agenda-kpi-grid"></div>
-            <h3 style="margin-bottom: 1.5rem;">Minhas Atividades de Hoje</h3>
-            <div id="operador-tasks-list"></div>
+        <div class="ag-table-wrap">
+          <table class="ag-table">
+            <thead>
+              <tr>
+                <th>Atividade</th>
+                <th>Responsável</th>
+                <th>Prazo</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="ag-admin-tbody"></tbody>
+          </table>
         </div>
+      </div>
+
+      <!-- TAB: Ranking -->
+      <div id="ag-tab-ranking" class="ag-tab-pane">
+        <div class="ag-table-wrap" style="padding: 2rem;" id="ag-ranking-body"></div>
+      </div>
+
+      <!-- TAB: Histórico -->
+      <div id="ag-tab-historico" class="ag-tab-pane">
+        <div class="ag-table-wrap">
+          <table class="ag-table">
+            <thead>
+              <tr>
+                <th>Atividade</th>
+                <th>Operador</th>
+                <th>Concluída Em</th>
+                <th>Por</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody id="ag-history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
 
     </div>
-</div>
+  </div>
 
-<!-- MODAL: TASK (CREATE/EDIT) -->
-<div id="modal-task" class="agenda-modal-overlay" style="display:none">
-    <div class="agenda-modal-card">
-        <div class="agenda-modal-header">
-            <h2 id="modal-task-title">Nova Atividade</h2>
-            <button class="agenda-modal-close" onclick="closeTaskModal()">&times;</button>
-        </div>
-        <div class="agenda-modal-body">
-            <input type="hidden" id="task-id">
-            <div class="agenda-form-group">
-                <label>Título da Atividade</label>
-                <input type="text" id="task-name" placeholder="Ex: Conferência de posto">
-            </div>
-            <div class="agenda-form-row">
-                <div class="agenda-form-group">
-                    <label>Responsável</label>
-                    <select id="task-op-id">
-                        <option value="iris">Iris Souza</option>
-                        <option value="hallan">Hallan de Barros</option>
-                        <option value="victor">Victor Dourado</option>
-                        <option value="walmir">Walmir da Luz</option>
-                        <option value="rodrigo">Rodrigo Vilanova</option>
-                        <option value="nikolas">Nikolas Cardoso</option>
-                    </select>
-                </div>
-                <div class="agenda-form-group">
-                    <label>Frequência</label>
-                    <select id="task-freq">
-                        <option value="diaria">Diária</option>
-                        <option value="semanal">Semanal</option>
-                        <option value="mensal">Mensal</option>
-                    </select>
-                </div>
-            </div>
-            <div class="agenda-form-row">
-                <div class="agenda-form-group">
-                    <label>Data/Hora Limite</label>
-                    <input type="datetime-local" id="task-deadline">
-                </div>
-                <div class="agenda-form-group">
-                    <label>Prioridade</label>
-                    <select id="task-priority">
-                        <option value="baixa">Baixa</option>
-                        <option value="media" selected>Média</option>
-                        <option value="alta">Alta</option>
-                    </select>
-                </div>
-            </div>
-            <div class="agenda-form-group">
-                <label>Descrição (Opcional)</label>
-                <textarea id="task-desc" rows="2"></textarea>
-            </div>
-        </div>
-        <div class="agenda-modal-footer">
-            <button class="agenda-btn-ghost" onclick="closeTaskModal()">Cancelar</button>
-            <button class="agenda-btn-primary" onclick="saveTask()">Salvar Atividade</button>
-        </div>
+  <!-- ---- PAINEL OPERADOR ---- -->
+  <div id="ag-view-operador" style="display:none">
+    <div class="ag-wrap">
+      <div id="ag-kpi-op" class="ag-kpi-grid"></div>
+      <div id="ag-op-tasks"></div>
     </div>
+  </div>
+
 </div>
 
-<!-- MODAL: CONCLUDE -->
-<div id="modal-conclude" class="agenda-modal-overlay" style="display:none">
-    <div class="agenda-modal-card">
-        <div class="agenda-modal-header">
-            <h2>Concluir Atividade</h2>
-            <button class="agenda-modal-close" onclick="closeConcludeModal()">&times;</button>
-        </div>
-        <div class="agenda-modal-body">
-            <input type="hidden" id="conclude-task-id">
-            <p id="conclude-task-name" style="font-weight: 600; margin-bottom: 1rem;"></p>
-            <div class="agenda-form-group">
-                <label>Observação / Justificativa</label>
-                <textarea id="conclude-obs" rows="3" placeholder="Opcional..."></textarea>
-            </div>
-        </div>
-        <div class="agenda-modal-footer">
-            <button class="agenda-btn-ghost" onclick="closeConcludeModal()">Cancelar</button>
-            <button class="agenda-btn-primary" onclick="confirmConclusion()" style="background: #16a34a;">Confirmar Conclusão</button>
-        </div>
+<!-- ============================================================
+     MODAL: CRIAR / EDITAR TAREFA
+     ============================================================ -->
+<div id="ag-modal-task" class="ag-modal-overlay" style="display:none" onclick="if(event.target===this) ag_closeTaskModal()">
+  <div class="ag-modal">
+    <div class="ag-modal-header">
+      <h3 id="ag-modal-task-title"><i class="fa-solid fa-plus"></i> Nova Atividade</h3>
+      <button class="ag-modal-close" onclick="ag_closeTaskModal()">&#215;</button>
     </div>
+    <div class="ag-modal-body">
+      <input type="hidden" id="ag-task-id">
+      <div class="ag-form-group">
+        <label>Título da Atividade *</label>
+        <input type="text" id="ag-task-name" placeholder="Ex: Conferência de postos">
+      </div>
+      <div class="ag-form-row">
+        <div class="ag-form-group">
+          <label>Responsável *</label>
+          <select id="ag-task-op">
+            <option value="">— Selecione —</option>
+            <option value="iris">Iris Souza</option>
+            <option value="hallan">Hallan de Barros</option>
+            <option value="victor">Victor Dourado</option>
+            <option value="walmir">Walmir da Luz</option>
+            <option value="rodrigo">Rodrigo Vilanova</option>
+            <option value="nikolas">Nikolas Cardoso</option>
+          </select>
+        </div>
+        <div class="ag-form-group">
+          <label>Frequência</label>
+          <select id="ag-task-freq">
+            <option value="diaria">Diária</option>
+            <option value="semanal">Semanal</option>
+            <option value="mensal">Mensal</option>
+          </select>
+        </div>
+      </div>
+      <div class="ag-form-row">
+        <div class="ag-form-group">
+          <label>Data/Hora Limite *</label>
+          <input type="datetime-local" id="ag-task-deadline">
+        </div>
+        <div class="ag-form-group">
+          <label>Prioridade</label>
+          <select id="ag-task-priority">
+            <option value="baixa">🟢 Baixa</option>
+            <option value="media" selected>🟡 Média</option>
+            <option value="alta">🔴 Alta</option>
+          </select>
+        </div>
+      </div>
+      <div class="ag-form-group">
+        <label>Descrição (opcional)</label>
+        <textarea id="ag-task-desc" rows="2" placeholder="Detalhes adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="ag-modal-footer">
+      <button class="ag-btn ag-btn-ghost" onclick="ag_closeTaskModal()">Cancelar</button>
+      <button class="ag-btn ag-btn-primary" onclick="ag_saveTask()">
+        <i class="fa-solid fa-floppy-disk"></i> Salvar Atividade
+      </button>
+    </div>
+  </div>
 </div>
 
-<!-- Scripts -->
+<!-- ============================================================
+     MODAL: CONCLUIR
+     ============================================================ -->
+<div id="ag-modal-conclude" class="ag-modal-overlay" style="display:none" onclick="if(event.target===this) ag_closeConcludeModal()">
+  <div class="ag-modal">
+    <div class="ag-modal-header">
+      <h3><i class="fa-solid fa-circle-check"></i> Concluir Atividade</h3>
+      <button class="ag-modal-close" onclick="ag_closeConcludeModal()">&#215;</button>
+    </div>
+    <div class="ag-modal-body">
+      <input type="hidden" id="ag-conclude-id">
+      <p id="ag-conclude-name" style="font-weight: 600; margin: 0 0 1rem;"></p>
+      <div class="ag-form-group">
+        <label>Observação / Justificativa</label>
+        <textarea id="ag-conclude-obs" rows="3" placeholder="Opcional..."></textarea>
+      </div>
+    </div>
+    <div class="ag-modal-footer">
+      <button class="ag-btn ag-btn-ghost" onclick="ag_closeConcludeModal()">Cancelar</button>
+      <button class="ag-btn ag-btn-success" onclick="ag_confirmConclusion()">
+        <i class="fa-solid fa-check"></i> Confirmar Conclusão
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="ag-toast" class="ag-toast"></div>
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=1.5"></script>
-<script src="js/agenda.js?v=1.5"></script>
-
+<script src="js/firebase-config.js?v=2.0"></script>
+<script src="js/agenda.js?v=2.0"></script>
 </body>
 </html>

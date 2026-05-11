@@ -1,417 +1,606 @@
 /**
- * AGENDA COE - REWRITTEN FROM SCRATCH
+ * AGENDA COE — agenda.js v2.0
+ *
+ * IMPORTANT: This file depends on firebase-config.js being loaded first,
+ * which sets the globals: `db` (Firestore instance) and `useFirebase` (boolean).
+ *
+ * Storage: Firestore collection `agenda_tarefas`.
+ * LocalStorage fallback: key `ag_tasks_offline`.
  */
 
-const STATE = {
-    user: null,
-    tasks: [],
-    operators: {
-        'iris': 'Iris Souza',
-        'hallan': 'Hallan de Barros',
-        'victor': 'Victor Dourado',
-        'walmir': 'Walmir da Luz',
-        'rodrigo': 'Rodrigo Vilanova',
-        'nikolas': 'Nikolas Cardoso'
-    },
-    passwords: {
-        'iris': 'iris123',
-        'hallan': 'hallan123',
-        'victor': 'victor123',
-        'walmir': 'walmir123',
-        'rodrigo': 'rodrigo123',
-        'nikolas': 'nikolas123',
-        'admin': 'admin'
-    }
+/* ================================================================
+   CONSTANTS
+   ================================================================ */
+const AG_LS_KEY = 'ag_tasks_offline';
+
+const AG_OPERATORS = {
+    'iris':    'Iris Souza',
+    'hallan':  'Hallan de Barros',
+    'victor':  'Victor Dourado',
+    'walmir':  'Walmir da Luz',
+    'rodrigo': 'Rodrigo Vilanova',
+    'nikolas': 'Nikolas Cardoso'
 };
 
-// ---------------------------------------------------------
-// INITIALIZATION
-// ---------------------------------------------------------
+const AG_PASSWORDS = {
+    admin:    'admin',
+    iris:     'iris123',
+    hallan:   'hallan123',
+    victor:   'victor123',
+    walmir:   'walmir123',
+    rodrigo:  'rodrigo123',
+    nikolas:  'nikolas123'
+};
 
-document.addEventListener('DOMContentLoaded', async () => {
-    initTabs();
-    
-    // Auto-login if session exists
-    const saved = sessionStorage.getItem('agenda_session');
+/* ================================================================
+   STATE
+   ================================================================ */
+let AG_USER  = null;   // { type: 'admin'|'operador', id?, name }
+let AG_TASKS = [];     // cached array of task objects
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    // Restore session
+    const saved = sessionStorage.getItem('ag_session');
     if (saved) {
-        STATE.user = JSON.parse(saved);
-        startApp();
+        try {
+            AG_USER = JSON.parse(saved);
+            ag_showApp();
+        } catch(e) {
+            sessionStorage.removeItem('ag_session');
+        }
     }
+
+    // Display today's date
+    const el = document.getElementById('ag-date-display');
+    if (el) el.textContent = new Date().toLocaleDateString('pt-BR', { weekday:'short', day:'numeric', month:'short' });
 });
 
-function initTabs() {
-    const tabs = document.querySelectorAll('.agenda-admin-tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            const target = tab.getAttribute('data-tab');
-            document.querySelectorAll('.agenda-tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('tab-' + target).classList.add('active');
-        });
-    });
+/* ================================================================
+   LOGIN / LOGOUT
+   ================================================================ */
+function ag_setType(type) {
+    document.querySelectorAll('.ag-type-tab').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('ag-form-admin').style.display    = (type === 'admin')    ? 'block' : 'none';
+    document.getElementById('ag-form-operador').style.display = (type === 'operador') ? 'block' : 'none';
 }
 
-// ---------------------------------------------------------
-// LOGIN LOGIC
-// ---------------------------------------------------------
+function ag_login(type) {
+    const errEl = document.getElementById('ag-login-err');
+    errEl.style.display = 'none';
 
-function setLoginType(type) {
-    document.querySelectorAll('.agenda-tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('btn-tab-' + type).classList.add('active');
-    
-    document.getElementById('form-admin').style.display = type === 'admin' ? 'block' : 'none';
-    document.getElementById('form-operador').style.display = type === 'operador' ? 'block' : 'none';
-}
-
-function handleLogin(type) {
-    let success = false;
-    let userData = null;
-
+    let ok = false;
     if (type === 'admin') {
-        const pass = document.getElementById('login-admin-pass').value;
-        if (pass === STATE.passwords.admin) {
-            success = true;
-            userData = { type: 'admin', name: 'Gestor COE' };
-        }
+        const pw = document.getElementById('ag-admin-pw').value;
+        ok = (pw === AG_PASSWORDS.admin);
+        if (ok) AG_USER = { type: 'admin', name: 'Gestor COE' };
     } else {
-        const opId = document.getElementById('login-operador-id').value;
-        const pass = document.getElementById('login-operador-pass').value;
-        if (opId && pass === STATE.passwords[opId]) {
-            success = true;
-            userData = { type: 'operador', id: opId, name: STATE.operators[opId] };
-        }
+        const id = document.getElementById('ag-op-select').value;
+        const pw = document.getElementById('ag-op-pw').value;
+        ok = (id && pw === AG_PASSWORDS[id]);
+        if (ok) AG_USER = { type: 'operador', id, name: AG_OPERATORS[id] };
     }
 
-    if (success) {
-        STATE.user = userData;
-        sessionStorage.setItem('agenda_session', JSON.stringify(userData));
-        startApp();
+    if (ok) {
+        sessionStorage.setItem('ag_session', JSON.stringify(AG_USER));
+        ag_showApp();
     } else {
-        const err = document.getElementById('login-error');
-        err.style.display = 'block';
-        setTimeout(() => err.style.display = 'none', 3000);
+        errEl.style.display = 'block';
+        setTimeout(() => errEl.style.display = 'none', 3000);
     }
 }
 
-function handleLogout() {
-    sessionStorage.removeItem('agenda_session');
+function ag_logout() {
+    sessionStorage.removeItem('ag_session');
     location.reload();
 }
 
-// ---------------------------------------------------------
-// CORE APP LOGIC
-// ---------------------------------------------------------
+/* ================================================================
+   APP INIT
+   ================================================================ */
+function ag_showApp() {
+    document.getElementById('ag-login').style.display = 'none';
+    document.getElementById('ag-app').style.display   = 'block';
+    document.getElementById('ag-user-name').textContent = AG_USER.name;
 
-async function startApp() {
-    document.getElementById('agenda-login-screen').style.display = 'none';
-    document.getElementById('agenda-app').style.display = 'block';
-    document.getElementById('user-display').textContent = STATE.user.name;
-
-    if (STATE.user.type === 'admin') {
-        document.getElementById('view-admin').style.display = 'block';
-        populateOperatorFilter();
+    if (AG_USER.type === 'admin') {
+        document.getElementById('ag-view-admin').style.display    = 'block';
+        document.getElementById('ag-view-operador').style.display = 'none';
     } else {
-        document.getElementById('view-operador').style.display = 'block';
+        document.getElementById('ag-view-admin').style.display    = 'none';
+        document.getElementById('ag-view-operador').style.display = 'block';
     }
 
-    // Subscribe to Firebase (Real-time)
-    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-        const db = firebase.firestore();
-        db.collection('agenda_tarefas').onSnapshot(snapshot => {
-            STATE.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            refreshUI();
-            checkLateTasks();
-        });
-    } else {
-        // Fallback for development if firebase fails
-        STATE.tasks = JSON.parse(localStorage.getItem('agenda_tasks_offline') || '[]');
-        refreshUI();
-    }
+    ag_loadTasks();
 }
 
-function refreshUI() {
-    if (STATE.user.type === 'admin') {
-        renderAdminTasks();
-        renderAdminKPIs();
-        renderRanking();
-        renderHistory();
-    } else {
-        renderOperadorTasks();
-        renderOperadorKPIs();
-    }
-}
-
-// ---------------------------------------------------------
-// RENDERERS (ADMIN)
-// ---------------------------------------------------------
-
-function renderAdminKPIs() {
-    const total = STATE.tasks.length;
-    const concluidas = STATE.tasks.filter(t => t.status === 'concluida').length;
-    const atrasadas = STATE.tasks.filter(t => t.status === 'atrasada').length;
-    const sla = total > 0 ? Math.round((concluidas / total) * 100) : 100;
-
-    const html = `
-        <div class="agenda-kpi-card" style="border-left-color: #3b82f6"><h3>Total</h3><div class="value">${total}</div></div>
-        <div class="agenda-kpi-card" style="border-left-color: #16a34a"><h3>Concluídas</h3><div class="value">${concluidas}</div></div>
-        <div class="agenda-kpi-card" style="border-left-color: #dc2626"><h3>Em Atraso</h3><div class="value">${atrasadas}</div></div>
-        <div class="agenda-kpi-card" style="border-left-color: #0284c7"><h3>SLA Geral</h3><div class="value">${sla}%</div></div>
-    `;
-    document.getElementById('admin-kpis').innerHTML = html;
-}
-
-function renderAdminTasks() {
-    const opFilter = document.getElementById('filter-op').value;
-    const statusFilter = document.getElementById('filter-status').value;
-
-    let list = STATE.tasks;
-    if (opFilter) list = list.filter(t => t.operadorId === opFilter);
-    if (statusFilter) list = list.filter(t => t.status === statusFilter);
-
-    // Sort: Late first, then Pending, then Concluded
-    list.sort((a, b) => {
-        const order = { 'atrasada': 0, 'pendente': 1, 'em_andamento': 2, 'concluida': 3 };
-        return order[a.status] - order[b.status] || new Date(a.deadline) - new Date(b.deadline);
-    });
-
-    const body = document.getElementById('table-tasks-body');
-    if (list.length === 0) {
-        body.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 2rem;">Nenhuma atividade encontrada.</td></tr>';
-        return;
+/* ================================================================
+   DATA LAYER — Load / Save / Delete
+   ================================================================ */
+async function ag_loadTasks() {
+    try {
+        if (useFirebase && db) {
+            const snap = await db.collection('agenda_tarefas').get();
+            AG_TASKS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+            AG_TASKS = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
+        }
+    } catch (err) {
+        console.warn('[AG] Load failed, using offline cache.', err.message);
+        AG_TASKS = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
     }
 
-    body.innerHTML = list.map(t => `
-        <tr>
-            <td>
-                <strong>${t.name}</strong><br>
-                <small style="color: #64748b">${new Date(t.deadline).toLocaleString('pt-BR')}</small>
-            </td>
-            <td>${STATE.operators[t.operadorId] || t.operadorId}</td>
-            <td><span class="badge badge-${t.status}">${t.status}</span></td>
-            <td>
-                <div style="display: flex; gap: 5px;">
-                    ${t.status !== 'concluida' ? `<button class="btn-action success" onclick="openConcludeModal('${t.id}')"><i class="fa-solid fa-check"></i></button>` : ''}
-                    <button class="btn-action primary" onclick="openTaskModal('${t.id}')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-action danger" onclick="deleteTask('${t.id}')"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
+    ag_checkLate();
+    ag_refreshUI();
 }
 
-function renderRanking() {
-    const results = Object.keys(STATE.operators).map(id => {
-        const tasks = STATE.tasks.filter(t => t.operadorId === id);
-        const done = tasks.filter(t => t.status === 'concluida').length;
-        const total = tasks.length;
-        const sla = total > 0 ? Math.round((done / total) * 100) : 100;
-        return { name: STATE.operators[id], total, done, sla };
-    }).sort((a, b) => b.sla - a.sla);
-
-    document.getElementById('ranking-list').innerHTML = `
-        <h2 style="margin-bottom: 2rem;">SLA por Operador</h2>
-        ${results.map((r, idx) => `
-            <div style="margin-bottom: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span><strong>${idx + 1}° ${r.name}</strong> (${r.done}/${r.total})</span>
-                    <span><strong>${r.sla}%</strong></span>
-                </div>
-                <div style="background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
-                    <div style="background: ${r.sla > 90 ? '#16a34a' : (r.sla > 70 ? '#f59e0b' : '#dc2626')}; width: ${r.sla}%; height: 100%;"></div>
-                </div>
-            </div>
-        `).join('')}
-    `;
-}
-
-function renderHistory() {
-    const history = STATE.tasks.filter(t => t.status === 'concluida')
-        .sort((a, b) => new Date(b.concluidaEm) - new Date(a.concluidaEm));
-
-    const body = document.getElementById('table-history-body');
-    body.innerHTML = history.map(t => `
-        <tr>
-            <td>${t.name}</td>
-            <td>${t.concluidaPor || '-'}</td>
-            <td>${new Date(t.concluidaEm).toLocaleString('pt-BR')}</td>
-            <td><small>${t.concluidaObs || '-'}</small></td>
-        </tr>
-    `).join('');
-}
-
-// ---------------------------------------------------------
-// RENDERERS (OPERADOR)
-// ---------------------------------------------------------
-
-function renderOperadorKPIs() {
-    const minhas = STATE.tasks.filter(t => t.operadorId === STATE.user.id);
-    const done = minhas.filter(t => t.status === 'concluida').length;
-    const total = minhas.length;
-    const sla = total > 0 ? Math.round((done / total) * 100) : 100;
-    const late = minhas.filter(t => t.status === 'atrasada').length;
-
-    const html = `
-        <div class="agenda-kpi-card"><h3>Minhas Tarefas</h3><div class="value">${total}</div></div>
-        <div class="agenda-kpi-card" style="border-left-color: #0284c7"><h3>Meu SLA</h3><div class="value">${sla}%</div></div>
-        <div class="agenda-kpi-card" style="border-left-color: #dc2626"><h3>Atrasos</h3><div class="value">${late}</div></div>
-    `;
-    document.getElementById('operador-kpis').innerHTML = html;
-}
-
-function renderOperadorTasks() {
-    const minhas = STATE.tasks.filter(t => t.operadorId === STATE.user.id);
-    const list = document.getElementById('operador-tasks-list');
-    
-    if (minhas.length === 0) {
-        list.innerHTML = '<div class="card" style="padding: 2rem; text-align:center;">Nenhuma atividade atribuída para você.</div>';
-        return;
+async function ag_persistTask(data, id) {
+    /* id is provided for update, null/undefined for create */
+    try {
+        if (useFirebase && db) {
+            if (id) {
+                await db.collection('agenda_tarefas').doc(id).set(data, { merge: true });
+            } else {
+                const ref = await db.collection('agenda_tarefas').add(data);
+                data.id = ref.id;
+            }
+        }
+    } catch (err) {
+        console.warn('[AG] Firestore persist failed — offline save.', err.message);
     }
 
-    list.innerHTML = minhas.map(t => `
-        <div class="card" style="padding: 1.5rem; margin-bottom: 1rem; border-left: 5px solid ${t.status === 'atrasada' ? '#dc2626' : (t.status === 'concluida' ? '#16a34a' : '#3b82f6')}">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <h3 style="margin: 0;">${t.name}</h3>
-                    <p style="margin: 5px 0; color: #64748b; font-size: 0.9rem;">${t.desc || 'Sem descrição.'}</p>
-                    <small>Prazo: <strong>${new Date(t.deadline).toLocaleString('pt-BR')}</strong></small>
-                </div>
-                <div style="text-align: right;">
-                    <span class="badge badge-${t.status}" style="display: block; margin-bottom: 10px;">${t.status}</span>
-                    ${t.status === 'pendente' ? `<button class="agenda-btn-primary" onclick="openConcludeModal('${t.id}')" style="padding: 8px 15px; font-size: 0.8rem;">Concluir</button>` : ''}
-                    ${t.status === 'atrasada' ? `<small style="color: #dc2626; font-weight: bold;">Bloqueado: Contate o Admin</small>` : ''}
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// ---------------------------------------------------------
-// CRUD ACTIONS
-// ---------------------------------------------------------
-
-function openTaskModal(id = null) {
-    const modal = document.getElementById('modal-task');
-    const title = document.getElementById('modal-task-title');
-    
+    // Always mirror to localStorage
+    const local = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
     if (id) {
-        const t = STATE.tasks.find(x => x.id === id);
-        title.textContent = 'Editar Atividade';
-        document.getElementById('task-id').value = id;
-        document.getElementById('task-name').value = t.name;
-        document.getElementById('task-op-id').value = t.operadorId;
-        document.getElementById('task-freq').value = t.freq;
-        document.getElementById('task-deadline').value = t.deadline;
-        document.getElementById('task-priority').value = t.priority;
-        document.getElementById('task-desc').value = t.desc || '';
+        const i = local.findIndex(t => t.id === id);
+        if (i >= 0) local[i] = { ...data, id };
+        else local.push({ ...data, id });
     } else {
-        title.textContent = 'Nova Atividade';
-        document.getElementById('task-id').value = '';
-        document.getElementById('task-name').value = '';
-        document.getElementById('task-deadline').value = '';
-        document.getElementById('task-desc').value = '';
+        if (!data.id) data.id = 'local_' + Date.now();
+        local.push(data);
     }
-    
+    localStorage.setItem(AG_LS_KEY, JSON.stringify(local));
+}
+
+async function ag_deleteFromDb(id) {
+    try {
+        if (useFirebase && db) {
+            await db.collection('agenda_tarefas').doc(id).delete();
+        }
+    } catch (err) {
+        console.warn('[AG] Delete failed.', err.message);
+    }
+    const local = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]').filter(t => t.id !== id);
+    localStorage.setItem(AG_LS_KEY, JSON.stringify(local));
+}
+
+/* ================================================================
+   AUTO-LATE CHECK
+   ================================================================ */
+function ag_checkLate() {
+    const now = new Date();
+    AG_TASKS.forEach(t => {
+        if (t.status === 'pendente' && t.deadline && new Date(t.deadline) < now) {
+            t.status = 'atrasada';
+            ag_persistTask({ ...t }, t.id);
+        }
+    });
+}
+
+/* ================================================================
+   UI REFRESH (master)
+   ================================================================ */
+function ag_refreshUI() {
+    if (AG_USER.type === 'admin') {
+        ag_renderAdminKPIs();
+        ag_renderAdminTable();
+        ag_renderRanking();
+        ag_renderHistory();
+    } else {
+        ag_renderOpKPIs();
+        ag_renderOpTasks();
+    }
+}
+
+/* ================================================================
+   ADMIN — KPIs
+   ================================================================ */
+function ag_renderAdminKPIs() {
+    const total      = AG_TASKS.length;
+    const concluidas = AG_TASKS.filter(t => t.status === 'concluida').length;
+    const atrasadas  = AG_TASKS.filter(t => t.status === 'atrasada').length;
+    const pendentes  = AG_TASKS.filter(t => t.status === 'pendente').length;
+    const sla        = total > 0 ? Math.round(concluidas / total * 100) : 100;
+
+    document.getElementById('ag-kpi-admin').innerHTML = `
+        <div class="ag-kpi-card" style="border-left-color:#3b82f6">
+            <h4>Total</h4><div class="ag-kpi-val">${total}</div>
+        </div>
+        <div class="ag-kpi-card" style="border-left-color:#16a34a">
+            <h4>Concluídas</h4><div class="ag-kpi-val">${concluidas}</div>
+        </div>
+        <div class="ag-kpi-card" style="border-left-color:#f59e0b">
+            <h4>Pendentes</h4><div class="ag-kpi-val">${pendentes}</div>
+        </div>
+        <div class="ag-kpi-card" style="border-left-color:#dc2626">
+            <h4>Em Atraso</h4><div class="ag-kpi-val">${atrasadas}</div>
+        </div>
+        <div class="ag-kpi-card" style="border-left-color:#7c3aed">
+            <h4>SLA Geral</h4><div class="ag-kpi-val" style="color:${sla>=90?'#16a34a':sla>=70?'#f59e0b':'#dc2626'}">${sla}%</div>
+        </div>
+    `;
+}
+
+/* ================================================================
+   ADMIN — TASKS TABLE
+   ================================================================ */
+function ag_renderAdminTable() {
+    const opF  = document.getElementById('ag-filter-op').value;
+    const stF  = document.getElementById('ag-filter-status').value;
+
+    let list = [...AG_TASKS];
+    if (opF)  list = list.filter(t => t.operadorId === opF);
+    if (stF)  list = list.filter(t => t.status === stF);
+
+    // Sort: atrasada → pendente → concluida
+    const ord = { atrasada:0, pendente:1, concluida:2 };
+    list.sort((a, b) => (ord[a.status]??1) - (ord[b.status]??1));
+
+    const tbody = document.getElementById('ag-admin-tbody');
+    if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="ag-empty"><i class="fa-solid fa-inbox"></i>Nenhuma atividade encontrada.</div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(t => {
+        const opName  = AG_OPERATORS[t.operadorId] || t.operadorId;
+        const prazo   = t.deadline ? new Date(t.deadline).toLocaleString('pt-BR') : '—';
+        const canDone = t.status !== 'concluida';
+        return `<tr>
+            <td>
+                <strong>${ag_esc(t.name)}</strong>
+                ${t.desc ? `<br><small style="color:#64748b">${ag_esc(t.desc)}</small>` : ''}
+            </td>
+            <td>${ag_esc(opName)}</td>
+            <td><small>${prazo}</small></td>
+            <td><span class="ag-badge ag-badge-${t.status}">${t.status}</span></td>
+            <td>
+                <div style="display:flex;gap:5px;flex-wrap:wrap">
+                    ${canDone ? `<button class="ag-icon-btn ok" onclick="ag_openConclude('${t.id}')" title="Concluir"><i class="fa-solid fa-check"></i></button>` : ''}
+                    <button class="ag-icon-btn edit" onclick="ag_openTaskModal('${t.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                    <button class="ag-icon-btn del" onclick="ag_deleteTask('${t.id}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+/* ================================================================
+   ADMIN — RANKING
+   ================================================================ */
+function ag_renderRanking() {
+    const results = Object.entries(AG_OPERATORS).map(([id, name]) => {
+        const mine  = AG_TASKS.filter(t => t.operadorId === id);
+        const done  = mine.filter(t => t.status === 'concluida').length;
+        const total = mine.length;
+        const sla   = total > 0 ? Math.round(done / total * 100) : 100;
+        return { name, total, done, sla, late: mine.filter(t => t.status === 'atrasada').length };
+    }).sort((a,b) => b.sla - a.sla);
+
+    const el = document.getElementById('ag-ranking-body');
+    el.innerHTML = `<h3 style="margin:0 0 1.5rem">Ranking por SLA do Mês</h3>` +
+        results.map((r, i) => {
+            const color = r.sla >= 90 ? '#16a34a' : r.sla >= 70 ? '#f59e0b' : '#dc2626';
+            return `<div class="ag-rank-item">
+                <span class="ag-rank-pos ${i===0?'gold':(i===1?'silver':i===2?'bronze':'')}">${i+1}°</span>
+                <div class="ag-rank-bar-wrap" style="flex:1">
+                    <div style="display:flex;justify-content:space-between">
+                        <strong>${r.name}</strong>
+                        <span style="color:${color};font-weight:700">${r.sla}%</span>
+                    </div>
+                    <small style="color:#64748b">${r.done}/${r.total} concluídas · ${r.late} atraso(s)</small>
+                    <div class="ag-rank-bar-bg">
+                        <div class="ag-rank-bar" style="width:${r.sla}%;background:${color}"></div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+}
+
+/* ================================================================
+   ADMIN — HISTORY
+   ================================================================ */
+function ag_renderHistory() {
+    const hist = AG_TASKS.filter(t => t.status === 'concluida')
+        .sort((a,b) => new Date(b.concluidaEm||0) - new Date(a.concluidaEm||0));
+
+    const tbody = document.getElementById('ag-history-tbody');
+    if (!hist.length) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="ag-empty"><i class="fa-solid fa-clock-rotate-left"></i>Nenhum histórico ainda.</div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = hist.map(t => `<tr>
+        <td><strong>${ag_esc(t.name)}</strong></td>
+        <td>${ag_esc(AG_OPERATORS[t.operadorId] || t.operadorId)}</td>
+        <td><small>${t.concluidaEm ? new Date(t.concluidaEm).toLocaleString('pt-BR') : '—'}</small></td>
+        <td>${ag_esc(t.concluidaPor || '—')}</td>
+        <td><small>${ag_esc(t.concluidaObs || '—')}</small></td>
+    </tr>`).join('');
+}
+
+/* ================================================================
+   OPERADOR — KPIs
+   ================================================================ */
+function ag_renderOpKPIs() {
+    const mine  = AG_TASKS.filter(t => t.operadorId === AG_USER.id);
+    const done  = mine.filter(t => t.status === 'concluida').length;
+    const total = mine.length;
+    const sla   = total > 0 ? Math.round(done / total * 100) : 100;
+    const late  = mine.filter(t => t.status === 'atrasada').length;
+
+    document.getElementById('ag-kpi-op').innerHTML = `
+        <div class="ag-kpi-card"><h4>Minhas Tarefas</h4><div class="ag-kpi-val">${total}</div></div>
+        <div class="ag-kpi-card" style="border-left-color:#16a34a"><h4>Concluídas</h4><div class="ag-kpi-val">${done}</div></div>
+        <div class="ag-kpi-card" style="border-left-color:#dc2626"><h4>Em Atraso</h4><div class="ag-kpi-val">${late}</div></div>
+        <div class="ag-kpi-card" style="border-left-color:#7c3aed"><h4>Meu SLA</h4>
+            <div class="ag-kpi-val" style="color:${sla>=90?'#16a34a':sla>=70?'#f59e0b':'#dc2626'}">${sla}%</div>
+        </div>
+    `;
+}
+
+/* ================================================================
+   OPERADOR — TASKS
+   ================================================================ */
+function ag_renderOpTasks() {
+    const mine = AG_TASKS.filter(t => t.operadorId === AG_USER.id);
+    const el   = document.getElementById('ag-op-tasks');
+
+    if (!mine.length) {
+        el.innerHTML = `<div class="ag-empty"><i class="fa-solid fa-inbox"></i>Nenhuma atividade atribuída a você.</div>`;
+        return;
+    }
+
+    const ord = { atrasada:0, pendente:1, concluida:2 };
+    mine.sort((a,b) => (ord[a.status]??1) - (ord[b.status]??1));
+
+    el.innerHTML = mine.map(t => {
+        const borderColor = t.status === 'atrasada' ? '#dc2626' : t.status === 'concluida' ? '#16a34a' : '#3b82f6';
+        const prazo = t.deadline ? new Date(t.deadline).toLocaleString('pt-BR') : '—';
+        return `<div class="ag-op-card ${t.status}" style="border-left-color:${borderColor}">
+            <div class="ag-op-card-header">
+                <div>
+                    <p class="ag-op-card-title">${ag_esc(t.name)}</p>
+                    <p class="ag-op-card-meta">
+                        <i class="fa-regular fa-clock"></i> Prazo: <strong>${prazo}</strong>
+                        &nbsp;·&nbsp; ${t.freq || ''}
+                    </p>
+                    ${t.desc ? `<p style="margin:.5rem 0 0;font-size:.85rem;color:#475569">${ag_esc(t.desc)}</p>` : ''}
+                </div>
+                <div style="text-align:right;flex-shrink:0;margin-left:1rem">
+                    <span class="ag-badge ag-badge-${t.status}" style="margin-bottom:.6rem;display:inline-block">${t.status}</span><br>
+                    ${t.status === 'pendente' ?
+                        `<button class="ag-btn ag-btn-success" style="font-size:.82rem;padding:.5rem 1rem" onclick="ag_openConclude('${t.id}')">
+                            <i class="fa-solid fa-check"></i> Concluir
+                        </button>` : ''}
+                    ${t.status === 'atrasada' ?
+                        `<small style="color:#dc2626;font-weight:700"><i class="fa-solid fa-lock"></i> Apenas o Admin pode concluir</small>` : ''}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* ================================================================
+   TAB SWITCHER
+   ================================================================ */
+function ag_switchTab(tabId, btn) {
+    document.querySelectorAll('.ag-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.ag-tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('ag-tab-' + tabId).classList.add('active');
+}
+
+/* ================================================================
+   TASK MODAL
+   ================================================================ */
+function ag_openTaskModal(id) {
+    const modal = document.getElementById('ag-modal-task');
+    const title = document.getElementById('ag-modal-task-title');
+
+    if (id) {
+        const t = AG_TASKS.find(x => x.id === id);
+        if (!t) return;
+        title.innerHTML = '<i class="fa-solid fa-pen"></i> Editar Atividade';
+        document.getElementById('ag-task-id').value       = id;
+        document.getElementById('ag-task-name').value     = t.name || '';
+        document.getElementById('ag-task-op').value       = t.operadorId || '';
+        document.getElementById('ag-task-freq').value     = t.freq || 'diaria';
+        document.getElementById('ag-task-deadline').value = t.deadline || '';
+        document.getElementById('ag-task-priority').value = t.priority || 'media';
+        document.getElementById('ag-task-desc').value     = t.desc || '';
+    } else {
+        title.innerHTML = '<i class="fa-solid fa-plus"></i> Nova Atividade';
+        document.getElementById('ag-task-id').value       = '';
+        document.getElementById('ag-task-name').value     = '';
+        document.getElementById('ag-task-op').value       = '';
+        document.getElementById('ag-task-freq').value     = 'diaria';
+        document.getElementById('ag-task-deadline').value = '';
+        document.getElementById('ag-task-priority').value = 'media';
+        document.getElementById('ag-task-desc').value     = '';
+    }
     modal.style.display = 'flex';
+    document.getElementById('ag-task-name').focus();
 }
 
-function closeTaskModal() {
-    document.getElementById('modal-task').style.display = 'none';
+function ag_closeTaskModal() {
+    document.getElementById('ag-modal-task').style.display = 'none';
 }
 
-async function saveTask() {
-    const id = document.getElementById('task-id').value;
+async function ag_saveTask() {
+    const id       = document.getElementById('ag-task-id').value;
+    const name     = document.getElementById('ag-task-name').value.trim();
+    const opId     = document.getElementById('ag-task-op').value;
+    const freq     = document.getElementById('ag-task-freq').value;
+    const deadline = document.getElementById('ag-task-deadline').value;
+    const priority = document.getElementById('ag-task-priority').value;
+    const desc     = document.getElementById('ag-task-desc').value.trim();
+
+    if (!name)     { ag_toast('⚠️ Informe o título da atividade.'); return; }
+    if (!opId)     { ag_toast('⚠️ Selecione um responsável.');      return; }
+    if (!deadline) { ag_toast('⚠️ Informe o prazo.');               return; }
+
+    const existing = id ? AG_TASKS.find(t => t.id === id) : null;
     const data = {
-        name: document.getElementById('task-name').value,
-        operadorId: document.getElementById('task-op-id').value,
-        freq: document.getElementById('task-freq').value,
-        deadline: document.getElementById('task-deadline').value,
-        priority: document.getElementById('task-priority').value,
-        desc: document.getElementById('task-desc').value,
-        status: id ? STATE.tasks.find(t => t.id === id).status : 'pendente',
-        criadaEm: id ? STATE.tasks.find(t => t.id === id).criadaEm : new Date().toISOString()
+        name,
+        operadorId: opId,
+        freq,
+        deadline,
+        priority,
+        desc,
+        status:    existing ? existing.status : 'pendente',
+        criadaEm:  existing ? existing.criadaEm : new Date().toISOString()
     };
 
-    if (!data.name || !data.deadline) return alert('Título e Prazo são obrigatórios!');
+    ag_closeTaskModal();
+    ag_toast('Salvando...');
 
-    try {
-        const db = firebase.firestore();
-        if (id) {
-            await db.collection('agenda_tarefas').doc(id).update(data);
-        } else {
-            await db.collection('agenda_tarefas').add(data);
-        }
-        closeTaskModal();
-    } catch (e) {
-        console.error(e);
-        // Offline fallback
-        const offline = JSON.parse(localStorage.getItem('agenda_tasks_offline') || '[]');
-        if (id) {
-            const idx = offline.findIndex(x => x.id === id);
-            offline[idx] = { ...data, id };
-        } else {
-            offline.push({ ...data, id: Date.now().toString() });
-        }
-        localStorage.setItem('agenda_tasks_offline', JSON.stringify(offline));
-        location.reload(); // Refresh to show changes if offline
-    }
+    await ag_persistTask(data, id || null);
+    await ag_loadTasks();
+    ag_toast(id ? '✅ Atividade atualizada!' : '✅ Atividade criada!');
 }
 
-async function deleteTask(id) {
-    if (!confirm('Deseja excluir esta atividade?')) return;
-    const db = firebase.firestore();
-    await db.collection('agenda_tarefas').doc(id).delete();
+/* ================================================================
+   DELETE TASK
+   ================================================================ */
+async function ag_deleteTask(id) {
+    if (!confirm('Deseja excluir esta atividade permanentemente?')) return;
+    await ag_deleteFromDb(id);
+    await ag_loadTasks();
+    ag_toast('🗑️ Atividade excluída.');
 }
 
-// ---------------------------------------------------------
-// CONCLUSION MODAL
-// ---------------------------------------------------------
-
-function openConcludeModal(id) {
-    const t = STATE.tasks.find(x => x.id === id);
-    document.getElementById('conclude-task-id').value = id;
-    document.getElementById('conclude-task-name').textContent = t.name;
-    document.getElementById('conclude-obs').value = '';
-    document.getElementById('modal-conclude').style.display = 'flex';
+/* ================================================================
+   CONCLUSION MODAL
+   ================================================================ */
+function ag_openConclude(id) {
+    const t = AG_TASKS.find(x => x.id === id);
+    if (!t) return;
+    document.getElementById('ag-conclude-id').value      = id;
+    document.getElementById('ag-conclude-name').textContent = t.name;
+    document.getElementById('ag-conclude-obs').value     = '';
+    document.getElementById('ag-modal-conclude').style.display = 'flex';
+    document.getElementById('ag-conclude-obs').focus();
 }
 
-function closeConcludeModal() {
-    document.getElementById('modal-conclude').style.display = 'none';
+function ag_closeConcludeModal() {
+    document.getElementById('ag-modal-conclude').style.display = 'none';
 }
 
-async function confirmConclusion() {
-    const id = document.getElementById('conclude-task-id').value;
-    const obs = document.getElementById('conclude-obs').value;
-    
-    const db = firebase.firestore();
-    await db.collection('agenda_tarefas').doc(id).update({
-        status: 'concluida',
-        concluidaEm: new Date().toISOString(),
-        concluidaPor: STATE.user.name,
+async function ag_confirmConclusion() {
+    const id  = document.getElementById('ag-conclude-id').value;
+    const obs = document.getElementById('ag-conclude-obs').value.trim();
+
+    if (!id) return;
+
+    const existing = AG_TASKS.find(t => t.id === id);
+    if (!existing) return;
+
+    const data = {
+        ...existing,
+        status:       'concluida',
+        concluidaEm:  new Date().toISOString(),
+        concluidaPor: AG_USER.name,
         concluidaObs: obs
-    });
-    
-    closeConcludeModal();
+    };
+    delete data.id;
+
+    ag_closeConcludeModal();
+    ag_toast('Salvando...');
+
+    await ag_persistTask(data, id);
+    await ag_loadTasks();
+    ag_toast('✅ Atividade concluída com sucesso!');
 }
 
-// ---------------------------------------------------------
-// HELPERS
-// ---------------------------------------------------------
-
-function populateOperatorFilter() {
-    const select = document.getElementById('filter-op');
-    select.innerHTML = '<option value="">Todos Operadores</option>' + 
-        Object.keys(STATE.operators).map(id => `<option value="${id}">${STATE.operators[id]}</option>`).join('');
+/* ================================================================
+   TOAST
+   ================================================================ */
+let _toastTimer = null;
+function ag_toast(msg, duration = 3000) {
+    const el = document.getElementById('ag-toast');
+    el.textContent = msg;
+    el.style.display = 'block';
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.style.display = 'none', duration);
 }
 
-function checkLateTasks() {
-    const agora = new Date();
-    const db = firebase.firestore();
-    
-    STATE.tasks.forEach(t => {
-        if (t.status === 'pendente' && new Date(t.deadline) < agora) {
-            db.collection('agenda_tarefas').doc(t.id).update({ status: 'atrasada' });
+/* ================================================================
+   HELPERS
+   ================================================================ */
+function ag_esc(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+}
+
+/* ================================================================
+   DASHBOARD INTEGRATION (called from app.js)
+   ================================================================ */
+async function ag_loadSummaryForDashboard() {
+    try {
+        let tasks = [];
+        if (useFirebase && db) {
+            const snap = await db.collection('agenda_tarefas').get();
+            tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+            tasks = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
         }
-    });
+
+        const total      = tasks.length;
+        const concluidas = tasks.filter(t => t.status === 'concluida').length;
+        const sla        = total > 0 ? Math.round(concluidas / total * 100) : 100;
+
+        // Update KPI card in index.html
+        const slaEl = document.getElementById('kpi-agenda-sla');
+        if (slaEl) slaEl.textContent = sla + '%';
+
+        // Render summary cards
+        const summaryEl = document.getElementById('dashboard-agenda-summary');
+        if (!summaryEl) return;
+
+        if (!total) {
+            summaryEl.innerHTML = '<p>Nenhuma atividade cadastrada na Agenda COE.</p>';
+            return;
+        }
+
+        // Show all tasks grouped by operator
+        const tasksByOp = {};
+        tasks.forEach(t => {
+            const op = AG_OPERATORS[t.operadorId] || t.operadorId || 'Desconhecido';
+            if (!tasksByOp[op]) tasksByOp[op] = [];
+            tasksByOp[op].push(t);
+        });
+
+        let html = '<div class="ag-summary-grid">';
+        tasks.sort((a,b) => {
+            const o = { atrasada:0, pendente:1, concluida:2 };
+            return (o[a.status]??1) - (o[b.status]??1);
+        }).forEach(t => {
+            const opName = AG_OPERATORS[t.operadorId] || t.operadorId;
+            html += `<div class="ag-summary-item ${t.status === 'concluida' ? 'done' : t.status === 'atrasada' ? 'late' : ''}">
+                <strong>${t.name}</strong>
+                <small>${opName} · <span style="font-weight:700;text-transform:uppercase">${t.status}</span></small>
+            </div>`;
+        });
+        html += '</div>';
+        summaryEl.innerHTML = html;
+    } catch (err) {
+        console.warn('[AG] Dashboard summary failed.', err.message);
+    }
 }

@@ -164,11 +164,11 @@
 
                     <div class="card mt-4" style="padding: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="margin: 0;"><i class="fa-solid fa-list-check"></i> Resumo da Agenda COE (Hoje)</h3>
-                            <a href="agenda.html" class="btn-primary" style="padding: 5px 15px; font-size: 0.8rem; text-decoration: none;">Ver Agenda Completa</a>
+                            <h3 style="margin: 0;"><i class="fa-solid fa-list-check"></i> Agenda COE — Atividades</h3>
+                            <a href="agenda.html" class="btn-primary" style="padding: 6px 18px; font-size: 0.85rem; text-decoration: none; border-radius: 8px;">Abrir Agenda</a>
                         </div>
-                        <div id="dashboard-agenda-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-                            <p>Carregando dados da agenda...</p>
+                        <div id="dashboard-agenda-summary">
+                            <p style="color: #64748b;">Carregando dados da agenda...</p>
                         </div>
                     </div>
                 </section>
@@ -680,7 +680,8 @@
     <!-- App Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="js/firebase-config.js?v=1.4"></script>
-    <script src="js/app.js?v=1.4"></script>
+    <script src="js/firebase-config.js?v=2.0"></script>
+    <script src="js/agenda.js?v=2.0"></script>
+    <script src="js/app.js?v=2.0"></script>
 </body>
 </html>
