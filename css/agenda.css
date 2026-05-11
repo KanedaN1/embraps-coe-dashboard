@@ -234,6 +234,28 @@
 .badge-atrasada { background: #fee2e2; color: #991b1b; }
 .badge-andamento { background: #e0f2fe; color: #075985; }
 
+/* Action Buttons */
+.btn-action {
+    background: #f1f5f9;
+    border: 1px solid var(--agenda-border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    color: var(--agenda-text-muted);
+    transition: all 0.2s;
+    margin-right: 4px;
+}
+.btn-action:hover {
+    background: var(--agenda-primary);
+    color: white;
+}
+.btn-action[title="Excluir"]:hover {
+    background: var(--agenda-danger);
+}
+.btn-action[title="Concluir"]:hover {
+    background: var(--agenda-success);
+}
+
 /* Modals */
 .agenda-modal-overlay {
     position: fixed;

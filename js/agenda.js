@@ -1,8 +1,17 @@
-// Agenda COE - Main Logic
 let currentAgendaUser = null;
 let agendaTasks = [];
 
+// Helper para esperar o Firebase inicializar
+async function waitForFirebase() {
+    let retries = 0;
+    while (!useFirebase && retries < 10) {
+        await new Promise(r => setTimeout(r, 500));
+        retries++;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    await waitForFirebase();
     // Check if already logged in
     const savedUser = sessionStorage.getItem('agenda_user');
     if (savedUser) {
@@ -105,11 +114,13 @@ async function initApp() {
 async function loadAgendaTasks() {
     if (useFirebase && db) {
         try {
+            console.log('[AGENDA] Buscando tarefas no Firestore...');
             const snapshot = await db.collection('agenda_tarefas').get();
             agendaTasks = [];
             snapshot.forEach(doc => {
                 agendaTasks.push({ id: doc.id, ...doc.data() });
             });
+            console.log('[AGENDA] Tarefas carregadas:', agendaTasks.length);
         } catch (err) {
             console.error("Error loading tasks:", err);
             agendaTasks = JSON.parse(localStorage.getItem('agenda_tasks') || '[]');
@@ -213,8 +224,9 @@ function renderTabelaAdmin() {
                 <td>${new Date(t.dataLimite).toLocaleString('pt-BR')}</td>
                 <td><span class="badge badge-${t.status}">${t.status}</span></td>
                 <td>
-                    <button onclick="abrirEditarTarefa('${t.id}')"><i class="fa-solid fa-edit"></i></button>
-                    <button onclick="excluirTarefa('${t.id}')"><i class="fa-solid fa-trash"></i></button>
+                    ${t.status !== 'concluida' ? `<button class="btn-action" onclick="concluirTarefa('${t.id}')" title="Concluir"><i class="fa-solid fa-check"></i></button>` : ''}
+                    <button class="btn-action" onclick="abrirEditarTarefa('${t.id}')" title="Editar"><i class="fa-solid fa-edit"></i></button>
+                    <button class="btn-action" onclick="excluirTarefa('${t.id}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
                 </td>
             </tr>
         `;

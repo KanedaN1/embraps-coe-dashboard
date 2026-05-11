@@ -116,7 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update functions
     updateDashboard();
-    updateAgendaSummary();
+    
+    // Esperar Firebase para a agenda summary
+    setTimeout(() => {
+        updateAgendaSummary();
+    }, 1500);
 });
 
 async function updateAgendaSummary() {
