@@ -5,18 +5,23 @@ let PV_USER = { type: null }; // 'admin' ou 'coordenador'
 const PV_LS_KEY = 'embraps_pv_offline';
 
 const COORDENADORES = {
-    'coord1': 'Alexandre Lima',
-    'coord2': 'Beatriz Souza',
-    'coord3': 'Claudio Neves',
-    'coord4': 'Daniela Rocha'
+    'ricardo': 'Ricardo Faustino',
+    'renato': 'Renato Augusto',
+    'isaias': 'Isaias Belchior',
+    'carlos': 'Carlos Leme',
+    'rejiane': 'Rejiane Teles'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Verificar sessão prévia
-    const saved = sessionStorage.getItem('pv_user_type');
-    if (saved) {
-        pv_login(saved);
+    // Verificar se é admin via localStorage ou URL
+    const isAdmin = localStorage.getItem('embraps_admin') === 'true' || window.location.search.includes('admin=true');
+    if (isAdmin) {
+        PV_USER.type = 'admin';
+        const btn = document.getElementById('pv-btn-novo');
+        if (btn) btn.style.display = 'block';
     }
+    
+    pv_loadData();
 });
 
 function pv_login(type) {
@@ -66,7 +71,7 @@ function pv_renderKPIs() {
 
     kpiEl.innerHTML = `
         <div class="card kpi-card">
-            <div class="kpi-icon bg-info"><i class="fa-solid fa-folder-open"></i></div>
+            <div class="kpi-icon bg-blue"><i class="fa-solid fa-folder-open"></i></div>
             <div class="kpi-info"><h3>Total Casos</h3><h2>${total}</h2></div>
         </div>
         <div class="card kpi-card">
@@ -74,11 +79,11 @@ function pv_renderKPIs() {
             <div class="kpi-info"><h3>Concluídos</h3><h2>${concluidos}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon bg-danger"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div class="kpi-icon bg-purple"><i class="fa-solid fa-clock-rotate-left"></i></div>
             <div class="kpi-info"><h3>Pendentes</h3><h2>${pendentes}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon bg-warning"><i class="fa-solid fa-star"></i></div>
+            <div class="kpi-icon" style="background:#f59e0b; color:white; display:flex; align-items:center; justify-content:center; border-radius:50%; width:50px; height:50px; font-size:1.5rem;"><i class="fa-solid fa-star"></i></div>
             <div class="kpi-info"><h3>SLA Médio</h3><h2>${sla}%</h2></div>
         </div>
     `;

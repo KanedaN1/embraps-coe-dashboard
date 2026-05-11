@@ -669,7 +669,7 @@ function ag_renderExecutiveDashboard(tasks) {
     const kpiEl = document.getElementById('ag-exec-kpis');
     kpiEl.innerHTML = `
         <div class="card kpi-card">
-            <div class="kpi-icon bg-info"><i class="fa-solid fa-list-check"></i></div>
+            <div class="kpi-icon bg-blue"><i class="fa-solid fa-list-check"></i></div>
             <div class="kpi-info"><h3>Total Atividades</h3><h2>${total}</h2></div>
         </div>
         <div class="card kpi-card">
@@ -677,11 +677,11 @@ function ag_renderExecutiveDashboard(tasks) {
             <div class="kpi-info"><h3>Concluídas</h3><h2>${concluidas}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon bg-danger"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <div class="kpi-icon bg-purple"><i class="fa-solid fa-circle-exclamation"></i></div>
             <div class="kpi-info"><h3>Em Atraso</h3><h2>${atrasadas}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon bg-warning"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="kpi-icon" style="background:#f59e0b; color:white; display:flex; align-items:center; justify-content:center; border-radius:50%; width:50px; height:50px; font-size:1.5rem;"><i class="fa-solid fa-chart-line"></i></div>
             <div class="kpi-info"><h3>SLA Operacional</h3><h2 style="color:${slaColor}">${sla}%</h2></div>
         </div>
     `;
