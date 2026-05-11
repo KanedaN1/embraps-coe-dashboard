@@ -63,6 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
+            const href = e.currentTarget.getAttribute('href');
+            if (href && !href.startsWith('#')) return; // Deixa o navegador seguir o link se não for uma âncora (#)
+
             e.preventDefault();
             
             // Atualizar links ativos
