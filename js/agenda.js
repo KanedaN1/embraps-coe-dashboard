@@ -122,47 +122,39 @@ function ag_showApp() {
    ================================================================ */
 async function ag_loadTasks() {
     try {
-        if (useFirebase && db) {
+        if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
             const snap = await db.collection('agenda_tarefas').get();
             AG_TASKS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Sync to local
+            localStorage.setItem(AG_LS_KEY, JSON.stringify(AG_TASKS));
         } else {
             AG_TASKS = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
         }
     } catch (err) {
-        console.warn('[AG] Load failed, using offline cache.', err.message);
+        console.warn('[AG] Firestore read failed, using local data:', err.message);
         AG_TASKS = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
     }
-
     ag_checkLate();
     ag_refreshUI();
 }
 
-async function ag_persistTask(data, id) {
-    /* id is provided for update, null/undefined for create */
-    try {
-        if (useFirebase && db) {
-            if (id) {
-                await db.collection('agenda_tarefas').doc(id).set(data, { merge: true });
-            } else {
-                const ref = await db.collection('agenda_tarefas').add(data);
-                data.id = ref.id;
-            }
-        }
-    } catch (err) {
-        console.warn('[AG] Firestore persist failed — offline save.', err.message);
-    }
+async function ag_persistTask(task, id) {
+    // 1. Always save to local first (Instant feedback & reliability)
+    const idx = AG_TASKS.findIndex(t => t.id === id);
+    if (idx >= 0) AG_TASKS[idx] = task;
+    else AG_TASKS.push(task);
+    localStorage.setItem(AG_LS_KEY, JSON.stringify(AG_TASKS));
 
-    // Always mirror to localStorage
-    const local = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
-    if (id) {
-        const i = local.findIndex(t => t.id === id);
-        if (i >= 0) local[i] = { ...data, id };
-        else local.push({ ...data, id });
-    } else {
-        if (!data.id) data.id = 'local_' + Date.now();
-        local.push(data);
+    // 2. Try to sync to cloud
+    if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
+        try {
+            await db.collection('agenda_tarefas').doc(id).set(task);
+            console.log('[AG] Sincronizado com o servidor ✅');
+        } catch (err) {
+            console.error('[AG] Falha na sincronização cloud:', err.message);
+            ag_toast("Erro ao salvar na nuvem. Verifique as regras do Firebase.");
+        }
     }
-    localStorage.setItem(AG_LS_KEY, JSON.stringify(local));
 }
 
 async function ag_deleteFromDb(id) {
@@ -554,34 +546,40 @@ function ag_esc(str) {
    DASHBOARD INTEGRATION (called from app.js)
    ================================================================ */
 async function ag_loadSummaryForDashboard() {
+    let tasks = [];
+    let loadError = null;
+
     try {
-        let tasks = [];
         if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
             const snap = await db.collection('agenda_tarefas').get();
             tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            localStorage.setItem('ag_tasks_offline', JSON.stringify(tasks));
         } else {
             tasks = JSON.parse(localStorage.getItem('ag_tasks_offline') || '[]');
         }
-
-        // --- DASHBOARD SUMMARY (SMALL AREA) ---
-        ag_renderDashboardSummary(tasks);
-
-        // --- EXECUTIVE DASHBOARD (FULL TAB) ---
-        if (document.getElementById('ag-exec-kpis')) {
-            ag_renderExecutiveDashboard(tasks);
-        }
-
     } catch (err) {
-        console.warn('[AG] Dashboard load failed:', err.message);
-        
+        console.warn('[AG] Dashboard sync failed:', err.message);
+        loadError = err.message;
+        tasks = JSON.parse(localStorage.getItem('ag_tasks_offline') || '[]');
+    }
+
+    // --- RENDERIZAÇÃO MESMO COM ERRO (usando cache local) ---
+    ag_renderDashboardSummary(tasks);
+    if (document.getElementById('ag-exec-kpis')) {
+        ag_renderExecutiveDashboard(tasks);
+    }
+
+    // Se houve erro de conexão, mostrar um aviso discreto mas continuar exibindo os dados locais
+    if (loadError) {
         const containers = ['dashboard-agenda-summary', 'ag-exec-ranking', 'ag-exec-operator-sla', 'ag-exec-grouped-list'];
         containers.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.innerHTML = '<p style="color:#dc2626; font-size:0.85rem;">Falha na sincronização. Verifique sua conexão.</p>';
+            if (el && tasks.length === 0) {
+                el.innerHTML = `<p style="color:#dc2626; font-size:0.85rem;">⚠️ Erro de Conexão: ${loadError}. Verifique as permissões do Firebase.</p>`;
+            }
         });
-
-        // Tenta recarregar em 10 segundos
-        setTimeout(ag_loadSummaryForDashboard, 10000);
+        // Tenta recarregar em 15 segundos
+        setTimeout(ag_loadSummaryForDashboard, 15000);
     }
 }
 
