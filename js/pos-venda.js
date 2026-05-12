@@ -37,19 +37,30 @@ function pv_login(type) {
     
     pv_loadData();
 }
-
 async function pv_loadData() {
+    const filterCoord = document.getElementById('pv-filter-coord')?.value;
+
     try {
         if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
-            const snap = await db.collection('pos_venda_negativo').get();
+            let query = db.collection('pos_venda_negativo');
+            if (filterCoord) {
+                query = query.where('coordenadorId', '==', filterCoord);
+            }
+            const snap = await query.get();
             PV_DATA = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             localStorage.setItem(PV_LS_KEY, JSON.stringify(PV_DATA));
         } else {
             PV_DATA = JSON.parse(localStorage.getItem(PV_LS_KEY) || '[]');
+            if (filterCoord) {
+                PV_DATA = PV_DATA.filter(d => d.coordenadorId === filterCoord);
+            }
         }
     } catch (err) {
         console.warn('[PV] Firestore fail, using local:', err.message);
         PV_DATA = JSON.parse(localStorage.getItem(PV_LS_KEY) || '[]');
+        if (filterCoord) {
+            PV_DATA = PV_DATA.filter(d => d.coordenadorId === filterCoord);
+        }
     }
     pv_renderUI();
 }
@@ -79,11 +90,11 @@ function pv_renderKPIs() {
             <div class="kpi-info"><h3>Concluídos</h3><h2>${concluidos}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon bg-purple"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div class="kpi-icon bg-purple"><i class="fa-solid fa-history"></i></div>
             <div class="kpi-info"><h3>Pendentes</h3><h2>${pendentes}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon" style="background:#f59e0b; color:white; display:flex; align-items:center; justify-content:center; border-radius:50%; width:50px; height:50px; font-size:1.5rem;"><i class="fa-solid fa-star"></i></div>
+            <div class="kpi-icon" style="background:#f59e0b;"><i class="fa-solid fa-star"></i></div>
             <div class="kpi-info"><h3>SLA Médio</h3><h2>${sla}%</h2></div>
         </div>
     `;
@@ -111,6 +122,8 @@ function pv_renderTable() {
         const dateLimit = new Date(d.proximoRetorno);
         const isLate = dateLimit < new Date() && !isDone;
         
+        const isAdmin = localStorage.getItem('embraps_admin') === 'true' || window.location.search.includes('admin=true');
+
         return `
             <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 12px; font-weight:700; color:#1e3a8a;">${d.cliente}</td>
@@ -125,8 +138,8 @@ function pv_renderTable() {
                 <td style="padding: 12px;"><span class="pv-badge ${badgeClass}" style="padding:4px 8px; border-radius:4px; font-size:0.7rem; font-weight:700; text-transform:uppercase;">${statusLabel}</span></td>
                 <td style="padding: 12px;">
                     <div style="display:flex; gap:5px;">
-                        ${!isDone ? `<button onclick="pv_concluir('${d.id}')" style="padding:5px 10px; background:#16a34a; border:none; border-radius:6px; color:white; cursor:pointer; font-size:0.7rem; font-weight:600;"><i class="fa-solid fa-check"></i></button>` : ''}
-                        <button onclick="pv_delete('${d.id}')" style="padding:5px 10px; background:#f1f5f9; border:none; border-radius:6px; color:#64748b; cursor:pointer; font-size:0.7rem;"><i class="fa-solid fa-trash"></i></button>
+                        ${!isDone ? `<button onclick="pv_concluir('${d.id}')" style="padding:5px 10px; background:#16a34a; border:none; border-radius:6px; color:white; cursor:pointer; font-size:0.7rem; font-weight:600;"><i class="fa-solid fa-check"></i> Concluir</button>` : ''}
+                        ${isAdmin ? `<button onclick="pv_delete('${d.id}')" style="padding:5px 10px; background:#f1f5f9; border:none; border-radius:6px; color:#64748b; cursor:pointer; font-size:0.7rem;"><i class="fa-solid fa-trash"></i></button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -242,6 +255,11 @@ async function pv_concluir(id) {
 }
 
 async function pv_delete(id) {
+    const isAdmin = localStorage.getItem('embraps_admin') === 'true' || window.location.search.includes('admin=true');
+    if (!isAdmin) {
+        alert('Apenas administradores podem excluir registros.');
+        return;
+    }
     if (!confirm('Excluir este registro?')) return;
     try {
         if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
@@ -249,4 +267,53 @@ async function pv_delete(id) {
         }
     } catch(e) {}
     pv_loadData();
+}
+
+function pv_print() {
+    const printWindow = window.open('', '_blank');
+    const rows = PV_DATA.map(d => `
+        <tr>
+            <td>${d.cliente}</td>
+            <td>${COORDENADORES[d.coordenadorId] || d.coordenadorId}</td>
+            <td>${d.supervisor || ''}</td>
+            <td>${new Date(d.dataInicial).toLocaleDateString('pt-BR')}</td>
+            <td>${new Date(d.proximoRetorno).toLocaleDateString('pt-BR')}</td>
+            <td>${d.status === 'concluido' ? 'Concluído' : 'Pendente'}</td>
+        </tr>
+    `).join('');
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Relatório Pós Venda Negativo</title>
+            <style>
+                body { font-family: sans-serif; padding: 20px; color: #333; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }
+                th { background: #f4f4f4; }
+                h1 { color: #1e3a8a; font-size: 18px; }
+                .footer { margin-top: 30px; font-size: 10px; color: #999; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <h1>Relatório Pós Venda Negativo - ${new Date().toLocaleDateString('pt-BR')}</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Coordenador</th>
+                        <th>Supervisor</th>
+                        <th>Data Inicial</th>
+                        <th>Próximo Retorno</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <div class="footer">Gerado via Embraps COE Dashboard em ${new Date().toLocaleString('pt-BR')}</div>
+            <script>window.print();</script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 }

@@ -582,6 +582,12 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         borderRadius: 4
     }], { isCurrency: true });
 
+    if (currentData && currentData.app99Motivos) {
+        renderBarChart('chartVgApp99Motivos', currentData.app99Motivos.map(i => i.nome), [{
+            label: 'Motivo (R$)', data: currentData.app99Motivos.map(i => i.valor), backgroundColor: '#eab308', borderRadius: 4
+        }], { isCurrency: true, type: 'bar' });
+    } else { renderBarChart('chartVgApp99Motivos', [], []); }
+
     // Horas Extras
     renderBarChart('chartVgHeGeral', monthLabels, [{
         label: 'HE Geral (R$)',
@@ -620,13 +626,39 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         borderRadius: 4
     }], { isCurrency: true });
 
+    if (currentData && currentData.vtCidades) {
+        renderBarChart('chartVgVtCidades', currentData.vtCidades.map(i => i.nome), [{
+            label: 'Cidade (R$)', data: currentData.vtCidades.map(i => i.valor), backgroundColor: chartColors.secondary, borderRadius: 4
+        }], { isCurrency: true, type: 'bar' });
+    } else { renderBarChart('chartVgVtCidades', [], []); }
+
+    if (currentData && currentData.vtEscalas) {
+        renderBarChart('chartVgVtEscalas', currentData.vtEscalas.map(i => i.nome), [{
+            label: 'Escala (R$)', data: currentData.vtEscalas.map(i => i.valor), backgroundColor: chartColors.info, borderRadius: 4
+        }], { isCurrency: true, type: 'bar' });
+    } else { renderBarChart('chartVgVtEscalas', [], []); }
+
     // Contele
-    renderBarChart('chartVgContele', monthLabels, [{
-        label: 'Visitas',
-        data: getValues(yearlyData, 'visitasContele'),
-        backgroundColor: chartColors.info,
-        borderRadius: 4
-    }]);
+    renderBarChart('chartVgContele', monthLabels, [
+        {
+            label: 'Visitas',
+            data: getValues(yearlyData, 'visitasContele'),
+            backgroundColor: chartColors.info,
+            borderRadius: 4,
+            order: 2
+        },
+        {
+            label: 'Supervisores',
+            data: getValues(yearlyData, 'totalSupervisoresContele'),
+            borderColor: chartColors.danger,
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            type: 'line',
+            borderWidth: 2,
+            pointRadius: 3,
+            order: 1,
+            datalabels: { display: true, align: 'top', anchor: 'end' }
+        }
+    ]);
 
     let conteleLabels = [];
     let conteleData = [];
@@ -838,8 +870,13 @@ function renderReservaOperacional(currentData) {
     container.innerHTML = '';
     
     const criarCartao = (titulo, dados, icone, classe) => {
+        let totalAtual = 0;
+        let totalIdeal = 0;
         let linhas = '';
+        
         dados.forEach(item => {
+            totalAtual += (item.atual || 0);
+            totalIdeal += (item.ideal || 0);
             const dif = item.atual - item.ideal;
             const sinal = dif > 0 ? '+' : '';
             const pillClass = dif >= 0 ? 'positivo' : 'negativo';
@@ -856,7 +893,19 @@ function renderReservaOperacional(currentData) {
         return `
             <div class="reserva-card">
                 <div class="reserva-header ${classe}">
-                    <i class="fa-solid ${icone}"></i> ${titulo}
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <i class="fa-solid ${icone}"></i> ${titulo}
+                    </div>
+                    <div style="display:flex; gap:10px; margin-left:auto;">
+                        <div class="reserva-total-box">
+                            <span class="label">Atual</span>
+                            <span class="value">${totalAtual}</span>
+                        </div>
+                        <div class="reserva-total-box">
+                            <span class="label">Ideal</span>
+                            <span class="value">${totalIdeal}</span>
+                        </div>
+                    </div>
                 </div>
                 <table class="reserva-table">
                     <thead>
@@ -1089,9 +1138,21 @@ function renderResumoAnual(yearlyData, monthLabels) {
             data: {
                 labels: monthLabels,
                 datasets: [
-                    { label: 'App 99 (R$)', data: yearlyData.map(d => d.isEmpty ? 0 : (d.custo99 || 0)), borderColor: chartColors.app99, backgroundColor: 'rgba(250,204,21,0.08)', borderWidth: 2.5, tension: 0.4, fill: true, pointRadius: 4 },
-                    { label: 'Folgas Trabalhadas (R$)', data: yearlyData.map(d => d.isEmpty ? 0 : (d.gastosFolgas || 0)), borderColor: chartColors.success, backgroundColor: 'rgba(16,185,129,0.08)', borderWidth: 2.5, tension: 0.4, fill: true, pointRadius: 4 },
-                    { label: 'Horas Extras (R$)', data: yearlyData.map(d => d.isEmpty ? 0 : (d.horasExtrasGeral || 0)), borderColor: chartColors.danger, backgroundColor: 'rgba(239,68,68,0.08)', borderWidth: 2.5, tension: 0.4, fill: true, pointRadius: 4 }
+                    { 
+                        label: 'App 99 (R$)', 
+                        data: yearlyData.map(d => d.isEmpty ? 0 : (d.custo99 || 0)), 
+                        borderColor: chartColors.app99, backgroundColor: 'rgba(250,204,21,0.08)', borderWidth: 2.5, tension: 0.4, fill: true, pointRadius: 4 
+                    },
+                    { 
+                        label: 'Folgas Trabalhadas (R$)', 
+                        data: yearlyData.map(d => d.isEmpty ? 0 : (d.gastosFolgas || 0)), 
+                        borderColor: chartColors.success, backgroundColor: 'rgba(16,185,129,0.08)', borderWidth: 2.5, tension: 0.4, fill: true, pointRadius: 4 
+                    },
+                    { 
+                        label: 'Total Horas Extras (R$)', 
+                        data: yearlyData.map(d => d.isEmpty ? 0 : ((d.horasExtrasGeral || 0) + (d.horasExtrasIntra || 0) + (d.horasExtras100 || 0))), 
+                        borderColor: chartColors.danger, backgroundColor: 'rgba(239,68,68,0.08)', borderWidth: 2.5, tension: 0.4, fill: true, pointRadius: 4 
+                    }
                 ]
             },
             options: {

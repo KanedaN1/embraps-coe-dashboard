@@ -53,9 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Display today's date
-    const el = document.getElementById('ag-date-display');
-    if (el) el.textContent = new Date().toLocaleDateString('pt-BR', { weekday:'short', day:'numeric', month:'short' });
+    // Display today's date or filter
+    const curMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    if (document.getElementById('ag-filter-year')) document.getElementById('ag-filter-year').value = "2026";
+    if (document.getElementById('ag-filter-month')) document.getElementById('ag-filter-month').value = curMonth;
 });
 
 /* ================================================================
@@ -121,14 +122,17 @@ function ag_showApp() {
    DATA LAYER — Load / Save / Delete
    ================================================================ */
 async function ag_loadTasks() {
+    const month = document.getElementById('ag-filter-month')?.value || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = document.getElementById('ag-filter-year')?.value || new Date().getFullYear().toString();
+
     try {
         if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
-            const snap = await db.collection('agenda_tarefas').get();
+            const snap = await db.collection('agenda_tarefas').where('month', '==', month).where('year', '==', year).get();
             AG_TASKS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            // Sync to local
+            // Sync to local (scoped to month/year for safety)
             localStorage.setItem(AG_LS_KEY, JSON.stringify(AG_TASKS));
         } else {
-            AG_TASKS = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]');
+            AG_TASKS = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]').filter(t => t.month === month && t.year === year);
         }
     } catch (err) {
         console.warn('[AG] Firestore read failed, using local data:', err.message);
@@ -231,10 +235,10 @@ function ag_renderAdminKPIs() {
    ADMIN — TASKS TABLE
    ================================================================ */
 function ag_renderAdminTable() {
-    const opF  = document.getElementById('ag-filter-op').value;
-    const stF  = document.getElementById('ag-filter-status').value;
+    const month = localStorage.getItem('embraps_filter_month') || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = localStorage.getItem('embraps_filter_year') || new Date().getFullYear().toString();
 
-    let list = [...AG_TASKS];
+    let list = [...AG_TASKS].filter(t => t.month === month && t.year === year);
     if (opF)  list = list.filter(t => t.operadorId === opF);
     if (stF)  list = list.filter(t => t.status === stF);
 
@@ -348,7 +352,10 @@ function ag_renderOpKPIs() {
    OPERADOR — TASKS
    ================================================================ */
 function ag_renderOpTasks() {
-    const mine = AG_TASKS.filter(t => t.operadorId === AG_USER.id);
+    const month = localStorage.getItem('embraps_filter_month') || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = localStorage.getItem('embraps_filter_year') || new Date().getFullYear().toString();
+
+    const mine = AG_TASKS.filter(t => t.operadorId === AG_USER.id && t.month === month && t.year === year);
     const el   = document.getElementById('ag-op-tasks');
 
     if (!mine.length) {
@@ -446,6 +453,10 @@ async function ag_saveTask() {
     if (!deadline) { ag_toast('⚠️ Informe o prazo.');               return; }
 
     const existing = id ? AG_TASKS.find(t => t.id === id) : null;
+    const d = new Date();
+    const curMonth = document.getElementById('ag-filter-month')?.value || (d.getMonth() + 1).toString().padStart(2, '0');
+    const curYear = document.getElementById('ag-filter-year')?.value || d.getFullYear().toString();
+
     const data = {
         name,
         operadorId: opId,
@@ -454,7 +465,9 @@ async function ag_saveTask() {
         priority,
         desc,
         status:    existing ? existing.status : 'pendente',
-        criadaEm:  existing ? existing.criadaEm : new Date().toISOString()
+        criadaEm:  existing ? existing.criadaEm : d.toISOString(),
+        month:     existing ? (existing.month || curMonth) : curMonth,
+        year:      existing ? (existing.year || curYear) : curYear
     };
 
     const finalId = id || (typeof db !== 'undefined' && db ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now());
@@ -552,13 +565,16 @@ async function ag_loadSummaryForDashboard() {
     let tasks = [];
     let loadError = null;
 
+    const month = document.getElementById('filter-month')?.value || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = document.getElementById('filter-year')?.value || new Date().getFullYear().toString();
+
     try {
         if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
-            const snap = await db.collection('agenda_tarefas').get();
+            const snap = await db.collection('agenda_tarefas').where('month', '==', month).where('year', '==', year).get();
             tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             localStorage.setItem('ag_tasks_offline', JSON.stringify(tasks));
         } else {
-            tasks = JSON.parse(localStorage.getItem('ag_tasks_offline') || '[]');
+            tasks = JSON.parse(localStorage.getItem('ag_tasks_offline') || '[]').filter(t => t.month === month && t.year === year);
         }
     } catch (err) {
         console.warn('[AG] Dashboard sync failed:', err.message);
@@ -846,4 +862,185 @@ function ag_renderGroupedView() {
             </div>
         </div>`;
     }).join('');
+}
+
+/**
+ * DASHBOARD INTEGRATION
+ * Loads a summary of tasks to be displayed in the main index.html
+ */
+async function ag_loadSummaryForDashboard() {
+    const month = localStorage.getItem('embraps_filter_month') || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = localStorage.getItem('embraps_filter_year') || new Date().getFullYear().toString();
+
+    let tasks = [];
+    try {
+        if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
+            const snap = await db.collection('agenda_tarefas').where('month', '==', month).where('year', '==', year).get();
+            tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+            tasks = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]').filter(t => t.month === month && t.year === year);
+        }
+    } catch(e) {
+        tasks = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]').filter(t => t.month === month && t.year === year);
+    }
+
+    ag_renderDashboardMiniList(tasks);
+    ag_renderExecKPIs(tasks);
+    ag_renderExecRanking(tasks);
+    ag_renderExecOperatorSLA(tasks);
+    ag_renderExecGroupedList(tasks);
+}
+
+function ag_renderDashboardMiniList(tasks) {
+    const el = document.getElementById('dashboard-agenda-summary');
+    if (!el) return;
+
+    if (!tasks.length) {
+        el.innerHTML = '<p style="color:#94a3b8; font-size:0.9rem">Nenhuma atividade pendente para este mês.</p>';
+        return;
+    }
+
+    const pending = tasks.filter(t => t.status !== 'concluida').slice(0, 5);
+    el.innerHTML = pending.map(t => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f1f5f9">
+            <span style="font-size:0.85rem; font-weight:600; color:#334155">${t.name}</span>
+            <span style="font-size:0.75rem; color:#64748b">${AG_OPERATORS[t.operadorId] || t.operadorId}</span>
+        </div>
+    `).join('') || '<p style="color:#16a34a; font-size:0.9rem"><i class="fa-solid fa-circle-check"></i> Todas as atividades do mês concluídas!</p>';
+}
+
+function ag_renderExecKPIs(tasks) {
+    const el = document.getElementById('ag-exec-kpis');
+    if (!el) return;
+
+    const total = tasks.length;
+    const done = tasks.filter(t => t.status === 'concluida').length;
+    const late = tasks.filter(t => t.status === 'atrasada').length;
+    const sla = total > 0 ? Math.round(done / total * 100) : 100;
+
+    el.innerHTML = `
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-blue"><i class="fa-solid fa-tasks"></i></div>
+            <div class="kpi-info"><h3>Total Atividades</h3><h2>${total}</h2></div>
+        </div>
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-purple"><i class="fa-solid fa-history"></i></div>
+            <div class="kpi-info"><h3>Em Atraso</h3><h2 style="color:#ef4444">${late}</h2></div>
+        </div>
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-green"><i class="fa-solid fa-tachometer-alt"></i></div>
+            <div class="kpi-info"><h3>SLA Operacional</h3><h2>${sla}%</h2></div>
+        </div>
+    `;
+}
+
+function ag_renderExecRanking(tasks) {
+    const el = document.getElementById('ag-exec-ranking');
+    if (!el) return;
+
+    const stats = {};
+    Object.keys(AG_OPERATORS).forEach(id => stats[id] = { done:0, total:0 });
+    tasks.forEach(t => {
+        if (stats[t.operadorId]) {
+            stats[t.operadorId].total++;
+            if (t.status === 'concluida') stats[t.operadorId].done++;
+        }
+    });
+
+    const sorted = Object.entries(stats)
+        .map(([id, s]) => ({ id, name: AG_OPERATORS[id], ...s }))
+        .sort((a,b) => (b.done / (b.total||1)) - (a.done / (a.total||1)) || b.done - a.done);
+
+    el.innerHTML = sorted.map((op, i) => {
+        const sla = op.total > 0 ? Math.round(op.done / op.total * 100) : 100;
+        const color = sla >= 90 ? '#16a34a' : sla >= 70 ? '#f59e0b' : '#dc2626';
+        return `
+            <div style="margin-bottom:1rem; display:flex; align-items:center; gap:12px;">
+                <span style="font-weight:800; color:#94a3b8; width:20px;">${i+1}°</span>
+                <div style="flex:1">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span style="font-size:0.85rem; font-weight:600">${op.name}</span>
+                        <span style="font-size:0.85rem; font-weight:700; color:${color}">${sla}%</span>
+                    </div>
+                    <div style="height:4px; background:#f1f5f9; border-radius:2px; overflow:hidden">
+                        <div style="width:${sla}%; height:100%; background:${color}"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function ag_renderExecOperatorSLA(tasks) {
+    const el = document.getElementById('ag-exec-operator-sla');
+    if (!el) return;
+    
+    // Simple summary of counts
+    const statusCounts = { pendente: 0, atrasada: 0, concluida: 0 };
+    tasks.forEach(t => { if (statusCounts[t.status] !== undefined) statusCounts[t.status]++; });
+
+    el.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#f8fafc; border-radius:8px;">
+                <span style="font-size:0.9rem; font-weight:600; color:#64748b">Atividades Concluídas</span>
+                <span style="font-size:1.1rem; font-weight:800; color:#16a34a">${statusCounts.concluida}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#f8fafc; border-radius:8px;">
+                <span style="font-size:0.9rem; font-weight:600; color:#64748b">Pendentes</span>
+                <span style="font-size:1.1rem; font-weight:800; color:#f59e0b">${statusCounts.pendente}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#fef2f2; border-radius:8px;">
+                <span style="font-size:0.9rem; font-weight:600; color:#b91c1c">Em Atraso</span>
+                <span style="font-size:1.1rem; font-weight:800; color:#dc2626">${statusCounts.atrasada}</span>
+            </div>
+        </div>
+    `;
+}
+
+function ag_renderExecGroupedList(tasks) {
+    const el = document.getElementById('ag-exec-grouped-list');
+    if (!el) return;
+
+    const byOp = {};
+    tasks.forEach(t => {
+        const key = t.operadorId || 'outro';
+        if (!byOp[key]) byOp[key] = [];
+        byOp[key].push(t);
+    });
+
+    const STATUS_COLOR = { pendente:'#f59e0b', atrasada:'#dc2626', concluida:'#16a34a' };
+    const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
+
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem">';
+    Object.entries(byOp).forEach(([opId, opTasks]) => {
+        const opName = AG_OPERATORS[opId] || opId;
+        const sorted = [...opTasks].sort((a,b) => {
+            const o = { atrasada:0, pendente:1, concluida:2 };
+            return (o[a.status]??1) - (o[b.status]??1);
+        });
+
+        html += `
+        <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+            <div style="background:#f8fafc;padding:1rem;border-bottom:1px solid #e2e8f0">
+                <strong style="color:#1e3a8a">${opName}</strong>
+            </div>
+            <div>
+                ${sorted.map(t => {
+                    const sc = STATUS_COLOR[t.status] || '#64748b';
+                    const sl = STATUS_LABEL[t.status] || t.status;
+                    const prazo = t.deadline ? new Date(t.deadline).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : '';
+                    return `
+                    <div style="padding:.8rem 1rem;border-bottom:1px solid #f8fafc;display:flex;justify-content:space-between;align-items:center">
+                        <div style="min-width:0;flex:1">
+                            <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</div>
+                            <div style="font-size:.75rem;color:#94a3b8">${prazo} · ${t.freq || ''}</div>
+                        </div>
+                        <span style="color:${sc};font-weight:700;font-size:.7rem;text-transform:uppercase;margin-left:10px">${sl}</span>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
 }

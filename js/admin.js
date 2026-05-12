@@ -7,6 +7,7 @@ function doLogin() {
     console.log('[DEBUG] user:', user, 'pass:', pass);
     if (user.trim() === 'admin' && pass.trim() === 'admin') {
         sessionStorage.setItem('admin_logged', 'true');
+        localStorage.setItem('embraps_admin', 'true');
         showAdminPanel();
     } else {
         const errEl = document.getElementById('login-error');
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) btnLogout.addEventListener('click', () => {
         sessionStorage.removeItem('admin_logged');
+        localStorage.removeItem('embraps_admin');
         location.reload();
     });
 
@@ -91,7 +93,7 @@ const formFields = [
     'faltas', 'demissoes', 'punicoes', 'divergenciaFuncao', 'divergenciasResolvidas', 'pendenciasPonto',
     'gastosFolgas', 'valeTransporte', 'custo99',
     'horasExtrasGeral', 'horasExtrasIntra', 'horasExtras100',
-    'visitasContele', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
+    'visitasContele', 'totalSupervisoresContele', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
     'movTotal',
     'folgasPortaria_1', 'folgasPortaria_2', 'folgasPortaria_3', 'folgasPortaria_4',
     'folgasLimpeza_1', 'folgasLimpeza_2', 'folgasLimpeza_3', 'folgasLimpeza_4',
@@ -112,6 +114,8 @@ let stateVtCidades = [];
 let stateVtEscalas = [];
 let stateCoringasPostos = [];
 let stateCoringasUsuarios = [];
+let stateTopClientesFaltas = [];
+let stateTopClientesDemissoes = [];
 
 async function loadMonthData() {
     const year = document.getElementById('data-year').value;
@@ -143,6 +147,8 @@ async function loadMonthData() {
         stateVtEscalas = data.vtEscalas ? [...data.vtEscalas] : [];
         stateCoringasPostos = data.coringasPostos ? [...data.coringasPostos] : [];
         stateCoringasUsuarios = data.coringasUsuarios ? [...data.coringasUsuarios] : [];
+        stateTopClientesFaltas = data.topClientesFaltas ? [...data.topClientesFaltas] : [];
+        stateTopClientesDemissoes = data.topClientesDemissoes ? [...data.topClientesDemissoes] : [];
 
         renderDemissoesGridTabela(data.demissoesMotivosDiarios || {});
 
@@ -203,6 +209,8 @@ async function loadMonthData() {
         stateVtEscalas = [];
         stateCoringasPostos = [];
         stateCoringasUsuarios = [];
+        stateTopClientesFaltas = [];
+        stateTopClientesDemissoes = [];
 
         renderDemissoesGridTabela({});
         const resIds = ['res_limp_diurno', 'res_limp_vesp', 'res_limp_5x2', 'res_limp_12x36', 'res_limp_coringa', 'res_portdia_par', 'res_portdia_impar', 'res_portdia_manu', 'res_portdia_zel', 'res_portdia_coringa', 'res_portnoite_par', 'res_portnoite_impar', 'res_portnoite_limp', 'res_portnoite_coringa'];
@@ -235,6 +243,8 @@ async function loadMonthData() {
     renderVtEscalas();
     renderCoringasPostos();
     renderCoringasUsuarios();
+    renderTopClientesFaltas();
+    renderTopClientesDemissoes();
 }
 
 // ---- Supervisores 99 ----
@@ -456,7 +466,7 @@ function renderPontoSupervisores() {
 }
 
 // --- App 99 Motivos ---
-function addApp99Motivo() { stateApp99Motivos.push({ motivo: '', valor: 0 }); renderApp99Motivos(); }
+function addApp99Motivo() { stateApp99Motivos.push({ nome: '', valor: 0 }); renderApp99Motivos(); }
 function removeApp99Motivo(i) { stateApp99Motivos.splice(i, 1); renderApp99Motivos(); }
 function renderApp99Motivos() {
     const c = document.getElementById('list-app99Motivos'); c.innerHTML = '';
@@ -464,8 +474,8 @@ function renderApp99Motivos() {
     stateApp99Motivos.forEach((item, i) => {
         const div = document.createElement('div'); div.className = 'dynamic-item';
         div.innerHTML = `
-            <input type="text" placeholder="Motivo" value="${item.motivo}" onchange="stateApp99Motivos[${i}].motivo = this.value" style="flex: 2;">
-            <input type="number" placeholder="Valor (R$)" value="${item.valor}" step="0.01" onchange="stateApp99Motivos[${i}].valor = parseFloat(this.value) || 0" style="flex: 1;">
+            <input type="text" placeholder="Motivo" value="${item.nome || ''}" onchange="stateApp99Motivos[${i}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Valor (R$)" value="${item.valor || 0}" step="0.01" onchange="stateApp99Motivos[${i}].valor = parseFloat(this.value) || 0" style="flex: 1;">
             <button type="button" class="btn-icon" onclick="removeApp99Motivo(${i})"><i class="fa-solid fa-xmark"></i></button>`;
         c.appendChild(div);
     });
@@ -599,7 +609,7 @@ async function saveMonthData(e) {
     const year = document.getElementById('data-year').value;
     const month = document.getElementById('data-month').value;
 
-    const existingData = getDataByMonth(year, month) || {};
+    const existingData = (await getDataByMonth(year, month)) || {};
     const payload = { ...existingData };
 
     formFields.forEach(field => {
@@ -686,6 +696,10 @@ async function saveMonthData(e) {
     payload.vtEscalas = [...stateVtEscalas];
     payload.coringasPostos = [...stateCoringasPostos];
     payload.coringasUsuarios = [...stateCoringasUsuarios];
+    payload.topClientesFaltas = [...stateTopClientesFaltas];
+    payload.topClientesDemissoes = [...stateTopClientesDemissoes];
+    payload.topClientesFaltasPerc = [...stateTopClientesFaltas];
+    payload.topClientesDemissoesPerc = [...stateTopClientesDemissoes];
 
     try {
         await saveData(year, month, payload);
@@ -710,6 +724,46 @@ async function deleteMonthData() {
             showAdminAlert(`Não havia dados salvos para ${month}/${year}.`, 'warning');
         }
     }
+}
+
+// --- Top Clientes Faltas ---
+function addTopClienteFaltas() { stateTopClientesFaltas.push({ nome: '', faltas: 0, percentual: 0 }); renderTopClientesFaltas(); }
+function removeTopClienteFaltas(i) { stateTopClientesFaltas.splice(i, 1); renderTopClientesFaltas(); }
+function renderTopClientesFaltas() {
+    const c = document.getElementById('list-topClientesFaltas'); c.innerHTML = '';
+    if (!c) return;
+    if (stateTopClientesFaltas.length === 0) { c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum cliente adicionado.</p>'; return; }
+    stateTopClientesFaltas.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Cliente" value="${item.nome}" onchange="stateTopClientesFaltas[${index}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Faltas" value="${item.faltas}" onchange="stateTopClientesFaltas[${index}].faltas = parseInt(this.value) || 0" style="flex: 1;">
+            <input type="number" placeholder="%" value="${item.percentual}" step="0.1" onchange="stateTopClientesFaltas[${index}].percentual = parseFloat(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeTopClienteFaltas(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        c.appendChild(div);
+    });
+}
+
+// --- Top Clientes Demissoes ---
+function addTopClienteDemissoes() { stateTopClientesDemissoes.push({ nome: '', demissoes: 0, percentual: 0 }); renderTopClientesDemissoes(); }
+function removeTopClienteDemissoes(i) { stateTopClientesDemissoes.splice(i, 1); renderTopClientesDemissoes(); }
+function renderTopClientesDemissoes() {
+    const c = document.getElementById('list-topClientesDemissoes'); c.innerHTML = '';
+    if (!c) return;
+    if (stateTopClientesDemissoes.length === 0) { c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum cliente adicionado.</p>'; return; }
+    stateTopClientesDemissoes.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Cliente" value="${item.nome}" onchange="stateTopClientesDemissoes[${index}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Demissões" value="${item.demissoes}" onchange="stateTopClientesDemissoes[${index}].demissoes = parseInt(this.value) || 0" style="flex: 1;">
+            <input type="number" placeholder="%" value="${item.percentual}" step="0.1" onchange="stateTopClientesDemissoes[${index}].percentual = parseFloat(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeTopClienteDemissoes(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        c.appendChild(div);
+    });
 }
 
 function showAdminAlert(message, type = 'info') {

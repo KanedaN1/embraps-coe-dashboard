@@ -276,6 +276,10 @@
                             <input type="number" id="visitasContele" min="0">
                         </div>
                         <div class="form-group">
+                            <label>Total Supervisores (Mês)</label>
+                            <input type="number" id="totalSupervisoresContele" min="0">
+                        </div>
+                        <div class="form-group">
                             <label>Reservas Diurna</label>
                             <input type="number" id="reservasDiurna" min="0">
                         </div>
@@ -358,7 +362,15 @@
 
                     <h4 style="margin-bottom: 10px; color: var(--primary-color);">Vale Transporte (R$ por Escala)</h4>
                     <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addVtEscala()">+ Adicionar Escala</button>
-                    <div id="list-vtEscalas" class="dynamic-list-container"></div>
+                    <div id="list-vtEscalas" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Top 10 Clientes - Faltas (Qtd e %)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addTopClienteFaltas()">+ Adicionar Cliente</button>
+                    <div id="list-topClientesFaltas" class="dynamic-list-container mb-4"></div>
+
+                    <h4 style="margin-bottom: 10px; color: var(--primary-color);">Top 10 Clientes - Demissões (Qtd e %)</h4>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addTopClienteDemissoes()">+ Adicionar Cliente</button>
+                    <div id="list-topClientesDemissoes" class="dynamic-list-container"></div>
                 </div>
 
                 <div class="form-section">

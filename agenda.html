@@ -89,8 +89,28 @@
       <span>Agenda <strong>COE</strong></span>
     </a>
     <div class="ag-header-right">
+      <div class="ag-header-filters">
+        <select id="ag-filter-year" onchange="ag_loadTasks()">
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026" selected>2026</option>
+        </select>
+        <select id="ag-filter-month" onchange="ag_loadTasks()">
+          <option value="01">Jan</option>
+          <option value="02">Fev</option>
+          <option value="03">Mar</option>
+          <option value="04">Abr</option>
+          <option value="05">Mai</option>
+          <option value="06">Jun</option>
+          <option value="07">Jul</option>
+          <option value="08">Ago</option>
+          <option value="09">Set</option>
+          <option value="10">Out</option>
+          <option value="11">Nov</option>
+          <option value="12">Dez</option>
+        </select>
+      </div>
       <span id="ag-user-name" class="ag-user-badge"></span>
-      <span id="ag-date-display" class="ag-date"></span>
       <button class="ag-btn ag-btn-ghost" onclick="ag_logout()">
         <i class="fa-solid fa-right-from-bracket"></i> Sair
       </button>
@@ -230,9 +250,10 @@
           </select>
         </div>
         <div class="ag-form-group">
-          <label>Frequência</label>
+          <label>Frequência (Recorrência)</label>
           <select id="ag-task-freq">
-            <option value="diaria">Diária</option>
+            <option value="once">Apenas uma vez</option>
+            <option value="diaria">Diária (Todo dia)</option>
             <option value="semanal">Semanal</option>
             <option value="mensal">Mensal</option>
           </select>
