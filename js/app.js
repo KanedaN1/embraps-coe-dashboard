@@ -251,6 +251,7 @@ async function updateDashboard() {
 
 
     renderResumoAnual(yearlyData, monthLabels);
+    updateAgendaSummary();
 }
 
 const formatCurrency = (value) => {

@@ -915,8 +915,8 @@ function ag_renderGroupedView() {
  * Loads a summary of tasks to be displayed in the main index.html
  */
 async function ag_loadSummaryForDashboard() {
-    const month = localStorage.getItem('embraps_filter_month') || (new Date().getMonth() + 1).toString().padStart(2, '0');
-    const year = localStorage.getItem('embraps_filter_year') || new Date().getFullYear().toString();
+    const month = document.getElementById('filter-month')?.value || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = document.getElementById('filter-year')?.value || new Date().getFullYear().toString();
 
     let tasks = [];
     try {
