@@ -235,12 +235,14 @@ function ag_renderAdminKPIs() {
    ADMIN — TASKS TABLE
    ================================================================ */
 function ag_renderAdminTable() {
-    const month = localStorage.getItem('embraps_filter_month') || (new Date().getMonth() + 1).toString().padStart(2, '0');
-    const year = localStorage.getItem('embraps_filter_year') || new Date().getFullYear().toString();
+    const opF = document.getElementById('ag-filter-op')?.value;
+    const stF = document.getElementById('ag-filter-status')?.value;
+    const month = document.getElementById('ag-filter-month')?.value || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = document.getElementById('ag-filter-year')?.value || new Date().getFullYear().toString();
 
     let list = [...AG_TASKS].filter(t => t.month === month && t.year === year);
-    if (opF)  list = list.filter(t => t.operadorId === opF);
-    if (stF)  list = list.filter(t => t.status === stF);
+    if (opF) list = list.filter(t => t.operadorId === opF);
+    if (stF) list = list.filter(t => t.status === stF);
 
     // Sort: atrasada → pendente → concluida
     const ord = { atrasada:0, pendente:1, concluida:2 };
@@ -352,8 +354,8 @@ function ag_renderOpKPIs() {
    OPERADOR — TASKS
    ================================================================ */
 function ag_renderOpTasks() {
-    const month = localStorage.getItem('embraps_filter_month') || (new Date().getMonth() + 1).toString().padStart(2, '0');
-    const year = localStorage.getItem('embraps_filter_year') || new Date().getFullYear().toString();
+    const month = document.getElementById('ag-filter-month')?.value || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year = document.getElementById('ag-filter-year')?.value || new Date().getFullYear().toString();
 
     const mine = AG_TASKS.filter(t => t.operadorId === AG_USER.id && t.month === month && t.year === year);
     const el   = document.getElementById('ag-op-tasks');
@@ -453,32 +455,75 @@ async function ag_saveTask() {
     if (!deadline) { ag_toast('⚠️ Informe o prazo.');               return; }
 
     const existing = id ? AG_TASKS.find(t => t.id === id) : null;
-    const d = new Date();
-    const curMonth = document.getElementById('ag-filter-month')?.value || (d.getMonth() + 1).toString().padStart(2, '0');
-    const curYear = document.getElementById('ag-filter-year')?.value || d.getFullYear().toString();
+    const d = new Date(deadline);
+    const curMonth = (d.getMonth() + 1).toString().padStart(2, '0');
+    const curYear = d.getFullYear().toString();
 
-    const data = {
+    const baseData = {
         name,
         operadorId: opId,
         freq,
-        deadline,
         priority,
         desc,
         status:    existing ? existing.status : 'pendente',
-        criadaEm:  existing ? existing.criadaEm : d.toISOString(),
-        month:     existing ? (existing.month || curMonth) : curMonth,
-        year:      existing ? (existing.year || curYear) : curYear
+        criadaEm:  existing ? existing.criadaEm : new Date().toISOString()
     };
-
-    const finalId = id || (typeof db !== 'undefined' && db ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now());
-    data.id = finalId;
 
     ag_closeTaskModal();
     ag_toast('Salvando...');
 
-    await ag_persistTask(data, finalId);
+    // Se for edição, apenas salva
+    if (id) {
+        const payload = { ...baseData, deadline, month: existing.month || curMonth, year: existing.year || curYear, id };
+        await ag_persistTask(payload, id);
+    } 
+    // Se for nova tarefa, verifica recorrência
+    else {
+        if (freq === 'semanal') {
+            // Cria para todas as semanas restantes do mês
+            const startDay = d.getDate();
+            const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+            
+            for (let day = startDay; day <= lastDay; day += 7) {
+                const newD = new Date(d);
+                newD.setDate(day);
+                const finalId = (typeof db !== 'undefined' && db) ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now() + day;
+                const payload = { 
+                    ...baseData, 
+                    id: finalId,
+                    deadline: newD.toISOString().slice(0, 16),
+                    month: (newD.getMonth() + 1).toString().padStart(2, '0'),
+                    year: newD.getFullYear().toString()
+                };
+                await ag_persistTask(payload, finalId);
+            }
+        } else if (freq === 'mensal') {
+            // Cria para todos os meses restantes do ano
+            const startMonth = d.getMonth();
+            for (let m = startMonth; m < 12; m++) {
+                const newD = new Date(d);
+                newD.setMonth(m);
+                const finalId = (typeof db !== 'undefined' && db) ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now() + m;
+                const payload = { 
+                    ...baseData, 
+                    id: finalId,
+                    deadline: newD.toISOString().slice(0, 16),
+                    month: (newD.getMonth() + 1).toString().padStart(2, '0'),
+                    year: newD.getFullYear().toString()
+                };
+                await ag_persistTask(payload, finalId);
+            }
+        } else {
+            // Normal (uma vez ou diária - diária tratamos como apenas uma entrada que o operador faz todo dia?)
+            // O usuário pediu "um dia da semana" ou "um dia do mês pelo ano todo".
+            const finalId = (typeof db !== 'undefined' && db) ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now();
+            const payload = { ...baseData, id: finalId, deadline, month: curMonth, year: curYear };
+            await ag_persistTask(payload, finalId);
+        }
+    }
+
     await ag_loadTasks();
-    ag_toast(id ? '✅ Atividade atualizada!' : '✅ Atividade criada!');
+    ag_toast(id ? '✅ Atividade atualizada!' : '✅ Atividades geradas!');
 }
 
 /* ================================================================
@@ -685,19 +730,19 @@ function ag_renderExecutiveDashboard(tasks) {
     const kpiEl = document.getElementById('ag-exec-kpis');
     kpiEl.innerHTML = `
         <div class="card kpi-card">
-            <div class="kpi-icon bg-blue"><i class="fa-solid fa-list-check"></i></div>
+            <div class="kpi-icon bg-blue"><i class="fa-solid fa-tasks"></i></div>
             <div class="kpi-info"><h3>Total Atividades</h3><h2>${total}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon bg-green"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="kpi-icon bg-green"><i class="fa-solid fa-check-circle"></i></div>
             <div class="kpi-info"><h3>Concluídas</h3><h2>${concluidas}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon bg-purple"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <div class="kpi-icon bg-purple"><i class="fa-solid fa-exclamation-circle"></i></div>
             <div class="kpi-info"><h3>Em Atraso</h3><h2>${atrasadas}</h2></div>
         </div>
         <div class="card kpi-card">
-            <div class="kpi-icon" style="background:#f59e0b; color:white; display:flex; align-items:center; justify-content:center; border-radius:50%; width:50px; height:50px; font-size:1.5rem;"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="kpi-icon" style="background:#f59e0b;"><i class="fa-solid fa-chart-line"></i></div>
             <div class="kpi-info"><h3>SLA Operacional</h3><h2 style="color:${slaColor}">${sla}%</h2></div>
         </div>
     `;
@@ -760,7 +805,7 @@ function ag_renderExecutiveDashboard(tasks) {
 
     let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem">';
     Object.entries(byOp).forEach(([opId, opTasks]) => {
-        const opName = OPERATORS[opId] || opId;
+        const opName = AG_OPERATORS[opId] || opId;
         const sorted = [...opTasks].sort((a,b) => {
             const o = { atrasada:0, pendente:1, concluida:2 };
             return (o[a.status]??1) - (o[b.status]??1);
@@ -789,7 +834,8 @@ function ag_renderExecutiveDashboard(tasks) {
         </div>`;
     });
     html += '</div>';
-    document.getElementById('ag-exec-grouped-list').innerHTML = html;
+    const groupedEl = document.getElementById('ag-exec-grouped-list');
+    if (groupedEl) groupedEl.innerHTML = html;
 }
 
 /* ================================================================
