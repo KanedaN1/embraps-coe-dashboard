@@ -802,6 +802,22 @@ body {
         max-width: 100% !important;
         height: auto !important;
     }
+
+    /* Números dos dias do calendário mais claros na impressão P&B */
+    .cal-day-num {
+        color: #aaa !important;
+        font-weight: normal !important;
+    }
+
+    .cal-day-cell {
+        border-color: #ddd !important;
+    }
+
+    /* Heatmap: simplificar cores para P&B */
+    .heat-0, .heat-1, .heat-2, .heat-3, .heat-4, .heat-5 {
+        background-color: white !important;
+        color: #333 !important;
+    }
 }
 
 .cal-day-cell:hover {
