@@ -132,6 +132,48 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         updateAgendaSummary();
     }, 1500);
+
+    // Botão de Enviar Relatório (EmailJS)
+    const btnReport = document.getElementById('btn-email-report');
+    if (btnReport) {
+        btnReport.addEventListener('click', async () => {
+            const year = document.getElementById('filter-year').value;
+            const month = document.getElementById('filter-month').value;
+            
+            // Buscar dados brutos para o relatório
+            const data = await getDataByMonth(year, month);
+            if (!data) {
+                alert("Não há dados carregados para este mês para gerar o relatório.");
+                return;
+            }
+
+            // Calcular totais para o e-mail
+            const resTotal = (parseInt(data.reservasDiurna) || 0) + (parseInt(data.reservasNoturna) || 0) + (parseInt(data.reservasLimpeza) || 0);
+            
+            const ftPortaria = (parseFloat(data.folgasPortaria_1) || 0) + (parseFloat(data.folgasPortaria_2) || 0) + 
+                               (parseFloat(data.folgasPortaria_3) || 0) + (parseFloat(data.folgasPortaria_4) || 0);
+            
+            const ftLimpeza = (parseFloat(data.folgasLimpeza_1) || 0) + (parseFloat(data.folgasLimpeza_2) || 0) + 
+                              (parseFloat(data.folgasLimpeza_3) || 0) + (parseFloat(data.folgasLimpeza_4) || 0);
+            
+            const agendaSla = document.getElementById('kpi-agenda-sla')?.textContent || "100%";
+
+            const reportParams = {
+                reservaTotal: resTotal,
+                folgaPortaria: ftPortaria.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+                folgaLimpeza: ftLimpeza.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+                agendaSla: agendaSla.replace('%', '')
+            };
+
+            btnReport.disabled = true;
+            btnReport.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+            
+            await sendWeeklyReportEmail(reportParams);
+            
+            btnReport.disabled = false;
+            btnReport.innerHTML = '<i class="fa-solid fa-envelope"></i> Enviar Relatório';
+        });
+    }
 });
 
 async function updateAgendaSummary() {

@@ -181,6 +181,14 @@ function ag_checkLate() {
     AG_TASKS.forEach(t => {
         if (t.status === 'pendente' && t.deadline && new Date(t.deadline) < now) {
             t.status = 'atrasada';
+            
+            // Disparar e-mail se ainda não foi enviado
+            if (!t.emailAlertaEnviado && typeof sendLateTaskEmail === 'function') {
+                const opName = AG_OPERATORS[t.operadorId] || t.operadorId;
+                sendLateTaskEmail(t, opName);
+                t.emailAlertaEnviado = true;
+            }
+
             ag_persistTask({ ...t }, t.id);
         }
     });
