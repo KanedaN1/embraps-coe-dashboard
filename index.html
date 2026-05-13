@@ -67,6 +67,7 @@
             </nav>
             <div class="sidebar-footer">
                 <button id="btn-tv-mode" class="btn-primary w-100 mb-2"><i class="fa-solid fa-tv"></i> Modo TV</button>
+                <button id="btn-email-report" class="btn-primary w-100 mb-2" style="background-color: var(--success);"><i class="fa-solid fa-envelope"></i> Enviar Relatório</button>
                 <a href="admin.html" class="btn-admin w-100"><i class="fa-solid fa-lock"></i> Modo Admin</a>
             </div>
         </aside>
@@ -768,6 +769,13 @@
     <script src="js/agenda.js?v=2.0"></script>
     <script src="js/pos-venda.js?v=2.0"></script>
     <script src="js/app.js?v=2.0"></script>
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("YOUR_USER_ID"); // O usuário precisará trocar pelo ID dele depois
+        })();
+    </script>
 
     <!-- Modal Pós Venda -->
     <div id="pv-modal" class="pv-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">

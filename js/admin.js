@@ -85,8 +85,14 @@ function showAdminPanel() {
     // Inicializa filtros de ano/mês ao mostrar o painel
     const yearEl = document.getElementById('data-year');
     const monthEl = document.getElementById('data-month');
-    if (yearEl) yearEl.value = '2026';
-    if (monthEl) monthEl.value = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    if (yearEl) {
+        yearEl.value = '2026';
+        yearEl.addEventListener('change', () => { if (dataForm) dataForm.style.display = 'none'; });
+    }
+    if (monthEl) {
+        monthEl.value = (new Date().getMonth() + 1).toString().padStart(2, '0');
+        monthEl.addEventListener('change', () => { if (dataForm) dataForm.style.display = 'none'; });
+    }
 }
 
 const formFields = [
@@ -115,7 +121,9 @@ let stateVtEscalas = [];
 let stateCoringasPostos = [];
 let stateCoringasUsuarios = [];
 let stateTopClientesFaltas = [];
+let stateTopClientesFaltasPerc = [];
 let stateTopClientesDemissoes = [];
+let stateTopClientesDemissoesPerc = [];
 
 async function loadMonthData() {
     const year = document.getElementById('data-year').value;
@@ -148,7 +156,9 @@ async function loadMonthData() {
         stateCoringasPostos = data.coringasPostos ? [...data.coringasPostos] : [];
         stateCoringasUsuarios = data.coringasUsuarios ? [...data.coringasUsuarios] : [];
         stateTopClientesFaltas = data.topClientesFaltas ? [...data.topClientesFaltas] : [];
+        stateTopClientesFaltasPerc = data.topClientesFaltasPerc ? [...data.topClientesFaltasPerc] : [];
         stateTopClientesDemissoes = data.topClientesDemissoes ? [...data.topClientesDemissoes] : [];
+        stateTopClientesDemissoesPerc = data.topClientesDemissoesPerc ? [...data.topClientesDemissoesPerc] : [];
 
         renderDemissoesGridTabela(data.demissoesMotivosDiarios || {});
 
@@ -210,7 +220,9 @@ async function loadMonthData() {
         stateCoringasPostos = [];
         stateCoringasUsuarios = [];
         stateTopClientesFaltas = [];
+        stateTopClientesFaltasPerc = [];
         stateTopClientesDemissoes = [];
+        stateTopClientesDemissoesPerc = [];
 
         renderDemissoesGridTabela({});
         const resIds = ['res_limp_diurno', 'res_limp_vesp', 'res_limp_5x2', 'res_limp_12x36', 'res_limp_coringa', 'res_portdia_par', 'res_portdia_impar', 'res_portdia_manu', 'res_portdia_zel', 'res_portdia_coringa', 'res_portnoite_par', 'res_portnoite_impar', 'res_portnoite_limp', 'res_portnoite_coringa'];
@@ -244,7 +256,9 @@ async function loadMonthData() {
     renderCoringasPostos();
     renderCoringasUsuarios();
     renderTopClientesFaltas();
+    renderTopClientesFaltasPerc();
     renderTopClientesDemissoes();
+    renderTopClientesDemissoesPerc();
 }
 
 // ---- Supervisores 99 ----
@@ -697,9 +711,9 @@ async function saveMonthData(e) {
     payload.coringasPostos = [...stateCoringasPostos];
     payload.coringasUsuarios = [...stateCoringasUsuarios];
     payload.topClientesFaltas = [...stateTopClientesFaltas];
+    payload.topClientesFaltasPerc = [...stateTopClientesFaltasPerc];
     payload.topClientesDemissoes = [...stateTopClientesDemissoes];
-    payload.topClientesFaltasPerc = [...stateTopClientesFaltas];
-    payload.topClientesDemissoesPerc = [...stateTopClientesDemissoes];
+    payload.topClientesDemissoesPerc = [...stateTopClientesDemissoesPerc];
 
     try {
         await saveData(year, month, payload);
@@ -726,12 +740,12 @@ async function deleteMonthData() {
     }
 }
 
-// --- Top Clientes Faltas ---
-function addTopClienteFaltas() { stateTopClientesFaltas.push({ nome: '', faltas: 0, percentual: 0 }); renderTopClientesFaltas(); }
+// --- Top Clientes Faltas Qtd ---
+function addTopClienteFaltas() { stateTopClientesFaltas.push({ nome: '', faltas: 0 }); renderTopClientesFaltas(); }
 function removeTopClienteFaltas(i) { stateTopClientesFaltas.splice(i, 1); renderTopClientesFaltas(); }
 function renderTopClientesFaltas() {
-    const c = document.getElementById('list-topClientesFaltas'); c.innerHTML = '';
-    if (!c) return;
+    const c = document.getElementById('list-topClientesFaltas'); if (!c) return;
+    c.innerHTML = '';
     if (stateTopClientesFaltas.length === 0) { c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum cliente adicionado.</p>'; return; }
     stateTopClientesFaltas.forEach((item, index) => {
         const div = document.createElement('div');
@@ -739,19 +753,37 @@ function renderTopClientesFaltas() {
         div.innerHTML = `
             <input type="text" placeholder="Cliente" value="${item.nome}" onchange="stateTopClientesFaltas[${index}].nome = this.value" style="flex: 2;">
             <input type="number" placeholder="Faltas" value="${item.faltas}" onchange="stateTopClientesFaltas[${index}].faltas = parseInt(this.value) || 0" style="flex: 1;">
-            <input type="number" placeholder="%" value="${item.percentual}" step="0.1" onchange="stateTopClientesFaltas[${index}].percentual = parseFloat(this.value) || 0" style="flex: 1;">
             <button type="button" class="btn-icon" onclick="removeTopClienteFaltas(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
         `;
         c.appendChild(div);
     });
 }
 
-// --- Top Clientes Demissoes ---
-function addTopClienteDemissoes() { stateTopClientesDemissoes.push({ nome: '', demissoes: 0, percentual: 0 }); renderTopClientesDemissoes(); }
+// --- Top Clientes Faltas % ---
+function addTopClienteFaltasPerc() { stateTopClientesFaltasPerc.push({ nome: '', percentual: 0 }); renderTopClientesFaltasPerc(); }
+function removeTopClienteFaltasPerc(i) { stateTopClientesFaltasPerc.splice(i, 1); renderTopClientesFaltasPerc(); }
+function renderTopClientesFaltasPerc() {
+    const c = document.getElementById('list-topClientesFaltasPerc'); if (!c) return;
+    c.innerHTML = '';
+    if (stateTopClientesFaltasPerc.length === 0) { c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum cliente adicionado.</p>'; return; }
+    stateTopClientesFaltasPerc.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Cliente" value="${item.nome}" onchange="stateTopClientesFaltasPerc[${index}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="%" value="${item.percentual}" step="0.1" onchange="stateTopClientesFaltasPerc[${index}].percentual = parseFloat(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeTopClienteFaltasPerc(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        c.appendChild(div);
+    });
+}
+
+// --- Top Clientes Demissoes Qtd ---
+function addTopClienteDemissoes() { stateTopClientesDemissoes.push({ nome: '', demissoes: 0 }); renderTopClientesDemissoes(); }
 function removeTopClienteDemissoes(i) { stateTopClientesDemissoes.splice(i, 1); renderTopClientesDemissoes(); }
 function renderTopClientesDemissoes() {
-    const c = document.getElementById('list-topClientesDemissoes'); c.innerHTML = '';
-    if (!c) return;
+    const c = document.getElementById('list-topClientesDemissoes'); if (!c) return;
+    c.innerHTML = '';
     if (stateTopClientesDemissoes.length === 0) { c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum cliente adicionado.</p>'; return; }
     stateTopClientesDemissoes.forEach((item, index) => {
         const div = document.createElement('div');
@@ -759,8 +791,26 @@ function renderTopClientesDemissoes() {
         div.innerHTML = `
             <input type="text" placeholder="Cliente" value="${item.nome}" onchange="stateTopClientesDemissoes[${index}].nome = this.value" style="flex: 2;">
             <input type="number" placeholder="Demissões" value="${item.demissoes}" onchange="stateTopClientesDemissoes[${index}].demissoes = parseInt(this.value) || 0" style="flex: 1;">
-            <input type="number" placeholder="%" value="${item.percentual}" step="0.1" onchange="stateTopClientesDemissoes[${index}].percentual = parseFloat(this.value) || 0" style="flex: 1;">
             <button type="button" class="btn-icon" onclick="removeTopClienteDemissoes(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        c.appendChild(div);
+    });
+}
+
+// --- Top Clientes Demissoes % ---
+function addTopClienteDemissoesPerc() { stateTopClientesDemissoesPerc.push({ nome: '', percentual: 0 }); renderTopClientesDemissoesPerc(); }
+function removeTopClienteDemissoesPerc(i) { stateTopClientesDemissoesPerc.splice(i, 1); renderTopClientesDemissoesPerc(); }
+function renderTopClientesDemissoesPerc() {
+    const c = document.getElementById('list-topClientesDemissoesPerc'); if (!c) return;
+    c.innerHTML = '';
+    if (stateTopClientesDemissoesPerc.length === 0) { c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum cliente adicionado.</p>'; return; }
+    stateTopClientesDemissoesPerc.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Cliente" value="${item.nome}" onchange="stateTopClientesDemissoesPerc[${index}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="%" value="${item.percentual}" step="0.1" onchange="stateTopClientesDemissoesPerc[${index}].percentual = parseFloat(this.value) || 0" style="flex: 1;">
+            <button type="button" class="btn-icon" onclick="removeTopClienteDemissoesPerc(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
         `;
         c.appendChild(div);
     });
