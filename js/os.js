@@ -1,5 +1,5 @@
 // Inicializa Firestore
-const db = firebase.firestore();
+// O db já é inicializado no firebase-config.js
 
 let ordensServico = [];
 
