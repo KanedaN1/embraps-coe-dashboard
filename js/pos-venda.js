@@ -132,8 +132,8 @@ function pv_renderTable() {
                     <div style="font-size:0.75rem; color:#94a3b8">${d.supervisor || ''}</div>
                 </td>
                 <td style="padding: 12px;">
-                    <div style="font-size:0.75rem; color:#94a3b8">Início: ${new Date(d.dataInicial).toLocaleDateString('pt-BR')}</div>
-                    <div style="font-size:0.85rem; font-weight:700; color:${isLate ? '#e11d48' : '#1e293b'}">Retorno: ${dateLimit.toLocaleDateString('pt-BR')}</div>
+                    <div style="font-size:0.75rem; color:#94a3b8">Início: ${d.dataInicial ? d.dataInicial.split('-').reverse().join('/') : '—'}</div>
+                    <div style="font-size:0.85rem; font-weight:700; color:${isLate ? '#e11d48' : '#1e293b'}">Retorno: ${d.proximoRetorno ? d.proximoRetorno.split('-').reverse().join('/') : '—'}</div>
                 </td>
                 <td style="padding: 12px;"><span class="pv-badge ${badgeClass}" style="padding:4px 8px; border-radius:4px; font-size:0.7rem; font-weight:700; text-transform:uppercase;">${statusLabel}</span></td>
                 <td style="padding: 12px;">
@@ -276,8 +276,8 @@ function pv_print() {
             <td>${d.cliente}</td>
             <td>${COORDENADORES[d.coordenadorId] || d.coordenadorId}</td>
             <td>${d.supervisor || ''}</td>
-            <td>${new Date(d.dataInicial).toLocaleDateString('pt-BR')}</td>
-            <td>${new Date(d.proximoRetorno).toLocaleDateString('pt-BR')}</td>
+            <td>${d.dataInicial ? d.dataInicial.split('-').reverse().join('/') : '—'}</td>
+            <td>${d.proximoRetorno ? d.proximoRetorno.split('-').reverse().join('/') : '—'}</td>
             <td>${d.status === 'concluido' ? 'Concluído' : 'Pendente'}</td>
         </tr>
     `).join('');
