@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordens de Serviço - COE Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background-color: var(--bg-color);">
+    <!-- Mobile top bar -->
+    <div class="mobile-topbar" id="mobile-topbar-admin" style="display:none;">
+        <button id="btn-menu-toggle" class="btn-menu-toggle" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <img src="assets/img/Logo.png" alt="Embraps" style="height:36px;">
+    </div>
+
+    <!-- Sidebar overlay (mobile) -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <!-- Layout Container -->
+    <div id="admin-panel" class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header" style="text-align: center;">
+                <img src="assets/img/Logo.png" alt="Embraps Logo" style="max-height: 65px; margin-bottom: 10px;">
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html" class="nav-link"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+                    <li><a href="admin.html" class="nav-link"><i class="fa-solid fa-database"></i> Gerenciar Dados</a></li>
+                    <li><a href="pos-venda.html" class="nav-link"><i class="fa-solid fa-headset"></i> Pós Venda Negativo</a></li>
+                    <li><a href="agenda.html" class="nav-link"><i class="fa-solid fa-calendar-check"></i> Agenda COE</a></li>
+                    <li class="active"><a href="os.html" class="nav-link"><i class="fa-solid fa-file-contract"></i> Ordens de Serviço</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="btn-logout" class="btn-primary w-100"><i class="fa-solid fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="admin-header">
+                <div>
+                    <h1>Ordens de Serviço</h1>
+                    <p>Controle de documentos e avisos operacionais (OS)</p>
+                </div>
+                <div class="global-filters" style="display: flex; gap: 10px;">
+                    <button class="btn-primary" onclick="abrirModalNovaOS()"><i class="fa-solid fa-plus"></i> Nova OS</button>
+                </div>
+            </div>
+
+            <!-- Resumo Cards -->
+            <div class="admin-form-grid" style="margin-bottom: 20px;">
+                <div class="kpi-card" style="border-left: 4px solid var(--danger);">
+                    <div class="kpi-title" style="color: var(--danger); font-weight: 600;"><i class="fa-solid fa-triangle-exclamation"></i> Alerta (<= 3 dias)</div>
+                    <div class="kpi-value" id="kpi-alerta">0</div>
+                </div>
+                <div class="kpi-card" style="border-left: 4px solid #f59e0b;">
+                    <div class="kpi-title" style="color: #f59e0b; font-weight: 600;"><i class="fa-solid fa-clock"></i> A Vencer (<= 7 dias)</div>
+                    <div class="kpi-value" id="kpi-vencer">0</div>
+                </div>
+                <div class="kpi-card" style="border-left: 4px solid var(--success);">
+                    <div class="kpi-title" style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-check-circle"></i> No Prazo</div>
+                    <div class="kpi-value" id="kpi-prazo">0</div>
+                </div>
+                <div class="kpi-card" style="border-left: 4px solid var(--primary-color);">
+                    <div class="kpi-title" style="color: var(--primary-color); font-weight: 600;"><i class="fa-solid fa-list"></i> Total de OS</div>
+                    <div class="kpi-value" id="kpi-total">0</div>
+                </div>
+            </div>
+
+            <!-- Tabela Principal -->
+            <div class="form-section" style="overflow-x: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3><i class="fa-solid fa-table-list"></i> Lista de Ordens de Serviço</h3>
+                    <div>
+                        <input type="text" id="filtro-os" placeholder="Buscar Cliente ou OS..." class="ag-form-group" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;" onkeyup="filtrarTabelaOS()">
+                    </div>
+                </div>
+                
+                <table class="reserva-table" id="tabela-os" style="min-width: 900px; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Status</th>
+                            <th>Data Venc.</th>
+                            <th>OS Nº</th>
+                            <th>Motivo</th>
+                            <th>Cliente</th>
+                            <th>Função</th>
+                            <th style="text-align: center; width: 150px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-os">
+                        <tr><td colspan="7" style="text-align:center;">Carregando ordens de serviço...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal Nova/Editar OS -->
+    <div id="modal-os" class="ag-modal-overlay" style="display:none;">
+        <div class="ag-modal">
+            <div class="ag-modal-header">
+                <h3 id="modal-os-title"><i class="fa-solid fa-plus"></i> Nova Ordem de Serviço</h3>
+                <button class="ag-modal-close" onclick="fecharModalOS()">&#215;</button>
+            </div>
+            <div class="ag-modal-body">
+                <input type="hidden" id="os-id">
+                
+                <div class="admin-form-grid" style="margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label>Data de Vencimento *</label>
+                        <input type="date" id="os-data-venc" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Número da OS *</label>
+                        <input type="text" id="os-numero" placeholder="Ex: 4382026" required>
+                    </div>
+                </div>
+
+                <div class="admin-form-grid" style="margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label>Motivo *</label>
+                        <input type="text" id="os-motivo" placeholder="Ex: RENEGOCIAÇÃO, ESPORÁDICO" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cliente *</label>
+                        <input type="text" id="os-cliente" placeholder="Nome do Cliente" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Função *</label>
+                    <input type="text" id="os-funcao" placeholder="Ex: ASG, PORTARIA" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Link do Google Drive (PDF) *</label>
+                    <input type="url" id="os-link" placeholder="https://drive.google.com/..." required>
+                </div>
+            </div>
+            <div class="ag-modal-footer">
+                <button class="btn-danger" style="background-color: var(--text-muted);" onclick="fecharModalOS()">Cancelar</button>
+                <button class="btn-primary" onclick="salvarOS()"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .badge-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            display: inline-block;
+            text-align: center;
+            min-width: 80px;
+        }
+        .badge-alerta { background-color: var(--danger); }
+        .badge-vencer { background-color: #f59e0b; }
+        .badge-prazo { background-color: var(--success); }
+        
+        .ag-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .ag-modal {
+            background: white; border-radius: 8px; width: 100%; max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .ag-modal-header {
+            padding: 15px 20px; border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .ag-modal-header h3 { margin: 0; font-size: 1.1rem; color: var(--text-color); }
+        .ag-modal-close {
+            background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);
+        }
+        .ag-modal-body { padding: 20px; }
+        .ag-modal-footer {
+            padding: 15px 20px; border-top: 1px solid var(--border-color);
+            display: flex; justify-content: flex-end; gap: 10px;
+        }
+        .action-btn {
+            background: none; border: none; cursor: pointer; color: var(--text-muted);
+            margin: 0 5px; font-size: 1.1rem; transition: color 0.2s;
+        }
+        .action-btn:hover { color: var(--primary-color); }
+        .action-btn.edit:hover { color: #f59e0b; }
+        .action-btn.delete:hover { color: var(--danger); }
+        .action-btn.whatsapp { color: #25D366; }
+        .action-btn.whatsapp:hover { color: #128C7E; }
+    </style>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <!-- App Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/os.js"></script>
+</body>
+</html>
