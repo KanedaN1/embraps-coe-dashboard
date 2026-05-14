@@ -22,11 +22,20 @@ async function loadExpData() {
             expData.push({ id: doc.id, ...doc.data() });
         });
         
+        checkAdminAccess();
         populateAreaFilter();
         renderTable();
+        renderSLACharts();
     } catch (err) {
         console.error("Erro ao carregar experiência:", err);
     }
+}
+
+// 1.1 Verificar Acesso Admin
+function checkAdminAccess() {
+    const isAdmin = sessionStorage.getItem('admin_logged') === 'true';
+    const adminElements = document.querySelectorAll('.admin-only');
+    adminElements.forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
 }
 
 // 2. Configurar Importação XLSX
@@ -70,18 +79,25 @@ async function handleFile(file) {
             // Mapear e Salvar no Firebase
             const batch = dbExp.batch();
             rows.forEach(row => {
-                // Tenta mapear colunas (case insensitive ou nomes aproximados)
+                // Limpar chaves para evitar espaços ou acentos problemáticos
+                const cleanRow = {};
+                Object.keys(row).forEach(k => {
+                    const cleanKey = k.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                    cleanRow[cleanKey] = row[k];
+                });
+
                 const mapped = {
-                    empresa: row['Empresa'] || row['EMPRESA'] || '',
-                    re: row['Re'] || row['RE'] || '',
-                    nome: row['Funcionário'] || row['FUNCIONÁRIO'] || row['NOME'] || '',
-                    cargo: row['Cargo'] || row['CARGO'] || '',
-                    area: row['Área'] || row['ÁREA'] || '',
-                    cliente: row['Cliente'] || row['CLIENTE'] || '',
-                    admissao: formatDate(row['Admissão'] || row['ADMISSÃO']),
-                    exp1: formatDate(row['1 EXP'] || row['1ª EXP'] || row['EXP1']),
-                    exp2: formatDate(row['2 EXP'] || row['2ª EXP'] || row['EXP2']),
+                    empresa: cleanRow['empresa'] || '',
+                    re: cleanRow['re'] || '',
+                    nome: cleanRow['funcionario'] || cleanRow['nome'] || '',
+                    cargo: cleanRow['cargo'] || '',
+                    area: cleanRow['area'] || cleanRow['supervisao'] || '',
+                    cliente: cleanRow['cliente'] || '',
+                    admissao: formatDate(row['Admissão'] || row['ADMISSÃO'] || cleanRow['admissao']),
+                    exp1: formatDate(row['1 EXP'] || row['1ª EXP'] || cleanRow['1 exp'] || cleanRow['exp1']),
+                    exp2: formatDate(row['2 EXP'] || row['2ª EXP'] || cleanRow['2 exp'] || cleanRow['exp2']),
                     status: 'PENDENTE',
+                    finalizadoEm: null,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
@@ -124,11 +140,12 @@ function renderTable() {
 
     const today = new Date();
     today.setHours(0,0,0,0);
+    const isAdmin = sessionStorage.getItem('admin_logged') === 'true';
 
     const filtered = expData.filter(d => {
         const matchArea = !filterArea || d.area === filterArea;
         const matchStatus = !filterStatus || d.status === filterStatus;
-        const matchSearch = d.nome.toLowerCase().includes(search) || d.re.toString().includes(search);
+        const matchSearch = (d.nome || "").toLowerCase().includes(search) || (d.re || "").toString().includes(search);
         
         let matchAlert = true;
         if (filterAlert === 'vencendo') {
@@ -136,7 +153,7 @@ function renderTable() {
             const exp2 = new Date(d.exp2);
             const diff1 = (exp1 - today) / (1000*60*60*24);
             const diff2 = (exp2 - today) / (1000*60*60*24);
-            matchAlert = (diff1 >= 0 && diff1 <= 7) || (diff2 >= 0 && diff2 <= 7);
+            matchAlert = (diff1 >= 0 && diff1 <= 10) || (diff2 >= 0 && diff2 <= 10);
         } else if (filterAlert === 'vencido') {
             const exp1 = new Date(d.exp1);
             const exp2 = new Date(d.exp2);
@@ -153,13 +170,12 @@ function renderTable() {
 
     filtered.forEach(d => {
         const exp1 = new Date(d.exp1);
-        const exp2 = new Date(d.exp2);
         const diff1 = (exp1 - today) / (1000*60*60*24);
         
         let rowClass = '';
         if (d.status === 'PENDENTE') {
             if (exp1 < today) rowClass = 'row-overdue';
-            else if (diff1 <= 7) rowClass = 'row-attention';
+            else if (diff1 <= 10) rowClass = 'row-attention';
         }
 
         const tr = document.createElement('tr');
@@ -170,22 +186,24 @@ function renderTable() {
             <td style="font-size:0.8rem;">${d.area}</td>
             <td>${d.cliente}</td>
             <td>${formatBRDate(d.admissao)}</td>
-            <td><span class="date-badge ${diff1 <= 7 && d.status === 'PENDENTE' ? 'highlight' : ''}">${formatBRDate(d.exp1)}</span></td>
+            <td><span class="date-badge ${diff1 <= 10 && d.status === 'PENDENTE' ? 'highlight' : ''}">${formatBRDate(d.exp1)}</span></td>
             <td><span class="date-badge">${formatBRDate(d.exp2)}</span></td>
             <td>
                 <span class="status-pill status-${d.status.toLowerCase()}">${d.status}</span>
             </td>
             <td>
-                <div style="display:flex; gap:5px;">
-                    <button class="btn-action btn-status-toggle" onclick="toggleStatus('${d.id}', '${d.status}')" title="Mudar Status">
-                        <i class="fa-solid fa-arrows-rotate"></i>
-                    </button>
-                    ${d.status === 'INSUFICIENTE' ? `
-                        <button class="btn-action btn-email" onclick="sendTerminationEmail('${d.id}')" title="Solicitar Desligamento">
-                            <i class="fa-solid fa-envelope"></i>
+                ${isAdmin ? `
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn-action btn-status-toggle" onclick="toggleStatus('${d.id}', '${d.status}')" title="Mudar Status">
+                            <i class="fa-solid fa-arrows-rotate"></i>
                         </button>
-                    ` : ''}
-                </div>
+                        ${d.status === 'INSUFICIENTE' ? `
+                            <button class="btn-action btn-email" onclick="sendTerminationEmail('${d.id}')" title="Solicitar Desligamento">
+                                <i class="fa-solid fa-envelope"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                ` : '<span style="color:#cbd5e1; font-size:0.75rem;">Sem permissão</span>'}
             </td>
         `;
         tbody.appendChild(tr);
@@ -206,10 +224,16 @@ async function toggleStatus(id, currentStatus) {
     else if (currentStatus === 'INSUFICIENTE') next = 'PENDENTE';
 
     try {
-        await dbExp.collection('experiencia').doc(id).update({ status: next });
+        const finalizadoEm = next !== 'PENDENTE' ? new Date().toISOString() : null;
+        await dbExp.collection('experiencia').doc(id).update({ 
+            status: next,
+            finalizadoEm: finalizadoEm
+        });
         const idx = expData.findIndex(d => d.id === id);
         expData[idx].status = next;
+        expData[idx].finalizadoEm = finalizadoEm;
         renderTable();
+        renderSLACharts();
     } catch (err) {
         alert("Erro ao atualizar status");
     }
@@ -220,7 +244,6 @@ function sendTerminationEmail(id) {
     const emp = expData.find(d => d.id === id);
     if (!emp) return;
 
-    // Destinatários baseados no print
     const to = "adm.dop.embraps@gmail.com";
     const subject = `TÉRMINO DE CONTRATO DE EXPERIÊNCIA: ${emp.nome.toUpperCase()} RE: ${emp.re}`;
     
@@ -234,8 +257,69 @@ function sendTerminationEmail(id) {
                  `TÉRMINO DE 1° CONTRATO DE EXPERIÊNCIA: ${formatBRDate(emp.exp1)}\n\n` +
                  `Att,\nNikolas Cardoso`;
 
+    // Usar window.open para evitar bloqueios de alguns navegadores com mailto muito longo
     const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoUrl;
+}
+
+// 5.1 Gráficos de SLA
+let slaChart = null;
+function renderSLACharts() {
+    const ctx = document.getElementById('chart-exp-sla');
+    if (!ctx) return;
+
+    const completed = expData.filter(d => d.status !== 'PENDENTE');
+    if (completed.length === 0) return;
+
+    const withinDeadline = completed.filter(d => {
+        if (!d.finalizadoEm) return false;
+        const done = new Date(d.finalizadoEm);
+        const dead = new Date(d.exp1);
+        return done <= dead;
+    });
+
+    const slaPerc = Math.round((withinDeadline.length / completed.length) * 100);
+    const slaEl = document.getElementById('sla-perc-value');
+    if (slaEl) {
+        slaEl.textContent = slaPerc + '%';
+        slaEl.style.color = slaPerc >= 90 ? 'var(--exp-ok)' : (slaPerc >= 70 ? 'var(--exp-pending)' : 'var(--exp-fail)');
+    }
+
+    // Gráfico por Supervisor (Dentro do Prazo)
+    const supMap = {};
+    expData.forEach(d => {
+        if (!supMap[d.area]) supMap[d.area] = { total: 0, ok: 0 };
+        if (d.status !== 'PENDENTE') {
+            supMap[d.area].total++;
+            const done = new Date(d.finalizadoEm);
+            const dead = new Date(d.exp1);
+            if (done <= dead) supMap[d.area].ok++;
+        }
+    });
+
+    const labels = Object.keys(supMap);
+    const data = labels.map(l => supMap[l].total > 0 ? Math.round((supMap[l].ok / supMap[l].total) * 100) : 0);
+
+    if (slaChart) slaChart.destroy();
+    slaChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '% Avaliações no Prazo',
+                data: data,
+                backgroundColor: '#1e3a8a',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, max: 100 } }
+        }
+    });
 }
 
 // 6. Filtros e Busca

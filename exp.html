@@ -225,12 +225,27 @@
                     <p>Acompanhamento de prazos de 45 e 90 dias dos colaboradores.</p>
                 </div>
                 <div class="exp-actions">
-                    <button class="btn-import" onclick="document.getElementById('modal-import').style.display='flex'">
+                    <button class="btn-import admin-only" onclick="document.getElementById('modal-import').style.display='flex'">
                         <i class="fa-solid fa-file-import"></i> Importar XLSX
                     </button>
-                    <button class="btn-clear" onclick="clearAllData()">
+                    <button class="btn-clear admin-only" onclick="clearAllData()">
                         <i class="fa-solid fa-trash-can"></i> Limpar Mês
                     </button>
+                </div>
+            </div>
+
+            <!-- Dashboard de Experiência -->
+            <div style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 20px; margin-bottom: 2rem;">
+                <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm); text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;">SLA GERAL (NO PRAZO)</h3>
+                    <span id="sla-perc-value" style="font-size: 3.5rem; font-weight: 900; color: var(--primary);">0%</span>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Baseado em avaliações concluídas antes do vencimento.</p>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: var(--shadow-sm);">
+                    <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">DESEMPENHO POR SUPERVISOR (% NO PRAZO)</h3>
+                    <div style="height: 150px;">
+                        <canvas id="chart-exp-sla"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -309,6 +324,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js?v=2.0"></script>
+    
+    <!-- Chart.js para o gráfico de SLA -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- SheetJS para ler Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>

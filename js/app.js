@@ -251,6 +251,7 @@ async function updateDashboard() {
 
     updateKPIs(currentData);
     checkAlerts(currentData, month);
+    checkExperienceAlerts();
     renderCharts(yearlyData, monthLabels, currentData);
     renderContelePodium(currentData);
     updateDivergenciaBlocks(currentData);
@@ -295,6 +296,53 @@ async function updateDashboard() {
     renderResumoAnual(yearlyData, monthLabels);
     renderResumoAnualOS(year, monthLabels);
     updateAgendaSummary();
+}
+
+// --- NOVO: Alerta de Experiência no Dashboard ---
+async function checkExperienceAlerts() {
+    if (typeof db === 'undefined' || !db) return;
+    try {
+        const snapshot = await db.collection('experiencia').where('status', '==', 'PENDENTE').get();
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        let count = 0;
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            const exp1 = new Date(d.exp1);
+            const exp2 = new Date(d.exp2);
+            const diff1 = (exp1 - today) / (1000*60*60*24);
+            const diff2 = (exp2 - today) / (1000*60*60*24);
+            
+            if ((diff1 >= 0 && diff1 <= 10) || (diff2 >= 0 && diff2 <= 10)) {
+                count++;
+            }
+        });
+
+        const alertsArea = document.getElementById('alerts-container');
+        if (count > 0 && alertsArea) {
+            const div = document.createElement('div');
+            div.style.background = '#fffbeb';
+            div.style.borderLeft = '6px solid #f59e0b';
+            div.style.padding = '1rem';
+            div.style.borderRadius = '8px';
+            div.style.marginBottom = '1rem';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+            div.innerHTML = `
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b; font-size:1.2rem;"></i>
+                    <span style="color:#92400e; font-weight:600;">Atenção: Você tem ${count} avaliações de experiência vencendo nos próximos 10 dias.</span>
+                </div>
+                <a href="exp.html" style="background:#f59e0b; color:white; padding:5px 12px; border-radius:6px; text-decoration:none; font-size:0.8rem; font-weight:bold;">Resolver Agora</a>
+            `;
+            alertsArea.prepend(div);
+        }
+    } catch (err) {
+        console.error("Erro ao checar alertas de experiência:", err);
+    }
 }
 
 const formatCurrency = (value) => {
