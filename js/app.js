@@ -293,6 +293,7 @@ async function updateDashboard() {
 
 
     renderResumoAnual(yearlyData, monthLabels);
+    renderResumoAnualOS(year, monthLabels);
     updateAgendaSummary();
 }
 
@@ -1276,4 +1277,59 @@ function renderResumoAnual(yearlyData, monthLabels) {
                 </tr>`;
             }).join('');
     }
+}
+
+// ===================== GRÁFICO ANUAL DE OS =====================
+async function renderResumoAnualOS(year, monthLabels) {
+    const ctxOS = document.getElementById('chartAnualOS');
+    if (!ctxOS) return;
+
+    let osCounts = new Array(12).fill(0);
+
+    // O db vem do firebase-config.js
+    if (typeof useFirebase !== 'undefined' && useFirebase && db) {
+        try {
+            const snapshot = await db.collection('ordens_servico').get();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.dataVencimento) {
+                    const [anoOS, mesOS] = data.dataVencimento.split('-');
+                    if (anoOS === year.toString()) {
+                        const monthIndex = parseInt(mesOS, 10) - 1;
+                        if (monthIndex >= 0 && monthIndex < 12) {
+                            osCounts[monthIndex]++;
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Erro ao carregar OS para gráfico anual:", error);
+        }
+    }
+
+    if (charts['chartAnualOS']) charts['chartAnualOS'].destroy();
+    charts['chartAnualOS'] = new Chart(ctxOS.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: monthLabels,
+            datasets: [{
+                label: 'Ordens de Serviço (Vencimento)',
+                data: osCounts,
+                backgroundColor: chartColors.primary,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { 
+                legend: { display: false }, 
+                datalabels: { 
+                    display: ctx => ctx.dataset.data[ctx.dataIndex] > 0, 
+                    color: '#fff', 
+                    font: { weight: 'bold' } 
+                } 
+            },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
 }

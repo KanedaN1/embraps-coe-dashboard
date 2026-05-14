@@ -791,7 +791,7 @@ body {
         background-color: white;
         color: black;
     }
-    .sidebar, .mobile-topbar, .top-header, .btn-primary.print-btn {
+    .sidebar, .mobile-topbar, .top-header, .btn-primary.print-btn, .action-btn, #pv-modal, #modal-os {
         display: none !important;
     }
     .main-content {
