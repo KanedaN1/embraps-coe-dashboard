@@ -22,6 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
             overlay.classList.remove('active');
         });
     }
+
+    // Logout
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            // Limpa qualquer sessão se existir (seguindo padrão do admin.js)
+            sessionStorage.removeItem('admin_logged');
+            localStorage.removeItem('embraps_admin');
+            // Redireciona para o dashboard principal
+            window.location.href = 'index.html';
+        });
+    }
 });
 
 // Verifica Status com base na Data de Vencimento
