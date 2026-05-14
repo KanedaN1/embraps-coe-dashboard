@@ -257,20 +257,23 @@ function sendTerminationEmail(id) {
                  `TÉRMINO DE 1° CONTRATO DE EXPERIÊNCIA: ${formatBRDate(emp.exp1)}\n\n` +
                  `Att,\nNikolas Cardoso`;
 
-    // Usar window.open para evitar bloqueios de alguns navegadores com mailto muito longo
+    // Criar um link invisível para forçar o disparo do mailto
     const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoUrl;
+    const l = document.createElement('a');
+    l.href = mailtoUrl;
+    l.target = '_blank';
+    document.body.appendChild(l);
+    l.click();
+    document.body.removeChild(l);
 }
 
-// 5.1 Gráficos de SLA
-let slaChart = null;
+// 5.1 Tabela de Desempenho (SLA)
 function renderSLACharts() {
-    const ctx = document.getElementById('chart-exp-sla');
-    if (!ctx) return;
+    const tbodySup = document.getElementById('sup-performance-body');
+    if (!tbodySup) return;
 
     const completed = expData.filter(d => d.status !== 'PENDENTE');
-    if (completed.length === 0) return;
-
+    
     const withinDeadline = completed.filter(d => {
         if (!d.finalizadoEm) return false;
         const done = new Date(d.finalizadoEm);
@@ -278,47 +281,44 @@ function renderSLACharts() {
         return done <= dead;
     });
 
-    const slaPerc = Math.round((withinDeadline.length / completed.length) * 100);
+    // SLA Geral
+    const slaPerc = completed.length > 0 ? Math.round((withinDeadline.length / completed.length) * 100) : 0;
     const slaEl = document.getElementById('sla-perc-value');
     if (slaEl) {
         slaEl.textContent = slaPerc + '%';
         slaEl.style.color = slaPerc >= 90 ? 'var(--exp-ok)' : (slaPerc >= 70 ? 'var(--exp-pending)' : 'var(--exp-fail)');
     }
 
-    // Gráfico por Supervisor (Dentro do Prazo)
+    // Tabela por Supervisor
     const supMap = {};
     expData.forEach(d => {
-        if (!supMap[d.area]) supMap[d.area] = { total: 0, ok: 0 };
-        if (d.status !== 'PENDENTE') {
-            supMap[d.area].total++;
+        if (!supMap[d.area]) supMap[d.area] = { total: 0, ok: 0, pending: 0 };
+        supMap[d.area].total++;
+        
+        if (d.status === 'PENDENTE') {
+            supMap[d.area].pending++;
+        } else {
             const done = new Date(d.finalizadoEm);
             const dead = new Date(d.exp1);
             if (done <= dead) supMap[d.area].ok++;
         }
     });
 
-    const labels = Object.keys(supMap);
-    const data = labels.map(l => supMap[l].total > 0 ? Math.round((supMap[l].ok / supMap[l].total) * 100) : 0);
-
-    if (slaChart) slaChart.destroy();
-    slaChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '% Avaliações no Prazo',
-                data: data,
-                backgroundColor: '#1e3a8a',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { x: { beginAtZero: true, max: 100 } }
-        }
+    tbodySup.innerHTML = '';
+    const sortedSups = Object.keys(supMap).sort((a,b) => supMap[b].total - supMap[a].total);
+    
+    sortedSups.forEach(sup => {
+        const s = supMap[sup];
+        const perc = s.total - s.pending > 0 ? Math.round((s.ok / (s.total - s.pending)) * 100) : 0;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight:600;">${sup || 'Não Definido'}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #f1f5f9; text-align:center;">${s.total}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #f1f5f9; text-align:center; color: var(--exp-ok); font-weight:700;">${s.ok}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #f1f5f9; text-align:center; color: ${s.pending > 0 ? 'var(--exp-fail)' : 'var(--text-muted)'}; font-weight:700;">${s.pending}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #f1f5f9; text-align:center; font-weight:800; color: ${perc >= 90 ? 'var(--exp-ok)' : 'var(--exp-pending)'}">${perc}%</td>
+        `;
+        tbodySup.appendChild(tr);
     });
 }
 
