@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Experiência - Embraps</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <style>
+        :root {
+            --exp-pending: #f59e0b;
+            --exp-ok: #10b981;
+            --exp-fail: #ef4444;
+            --exp-attention: #facc15;
+        }
+
+        .exp-container {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .exp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 2rem;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .exp-title h1 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin: 0;
+            font-weight: 800;
+        }
+
+        .exp-title p {
+            color: var(--text-muted);
+            margin: 5px 0 0 0;
+        }
+
+        .exp-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-import { background-color: #1e3a8a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .btn-import:hover { background-color: #172554; transform: translateY(-2px); }
+        
+        .btn-clear { background-color: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn-clear:hover { background-color: #fee2e2; }
+
+        .exp-filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-family: inherit;
+            min-width: 200px;
+        }
+
+        .exp-table-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .exp-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .exp-table th {
+            background: #f8fafc;
+            padding: 15px;
+            text-align: left;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .exp-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .row-attention { background-color: #fffbeb; }
+        .row-overdue { background-color: #fef2f2; }
+
+        .status-pill {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pendente { background: #fef3c7; color: #92400e; }
+        .status-suficiente { background: #dcfce7; color: #166534; }
+        .status-insuficiente { background: #fee2e2; color: #991b1b; }
+
+        .date-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .date-badge.highlight { background: #fef08a; color: #854d0e; }
+
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-email { background: #1e3a8a; color: white; }
+        .btn-email:hover { background: #172554; }
+
+        .btn-status-toggle { background: #f1f5f9; color: var(--text-main); border: 1px solid #e2e8f0; }
+        .btn-status-toggle:hover { background: #e2e8f0; }
+
+        /* Modal Import */
+        #modal-import {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: #1e3a8a;
+            background: #f8fafc;
+        }
+
+        @media (max-width: 1024px) {
+            .exp-header { flex-direction: column; align-items: flex-start; }
+            .exp-filters { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="assets/img/Logo.png" alt="Embraps" class="logo">
+            <div class="sidebar-info">
+                <h3>COE Embraps</h3>
+                <p>Controle de Experiência</p>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="index.html" class="nav-link"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+                <li><a href="os.html" class="nav-link"><i class="fa-solid fa-file-contract"></i> Ordens de Serviço</a></li>
+                <li><a href="agenda.html" class="nav-link"><i class="fa-solid fa-calendar-check"></i> Agenda COE</a></li>
+                <li class="active"><a href="exp.html" class="nav-link"><i class="fa-solid fa-user-clock"></i> Controle de Experiência</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <button id="btn-logout" class="btn-primary w-100" onclick="location.href='index.html'"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="exp-container">
+            <div class="exp-header">
+                <div class="exp-title">
+                    <h1>Controle de Experiência</h1>
+                    <p>Acompanhamento de prazos de 45 e 90 dias dos colaboradores.</p>
+                </div>
+                <div class="exp-actions">
+                    <button class="btn-import" onclick="document.getElementById('modal-import').style.display='flex'">
+                        <i class="fa-solid fa-file-import"></i> Importar XLSX
+                    </button>
+                    <button class="btn-clear" onclick="clearAllData()">
+                        <i class="fa-solid fa-trash-can"></i> Limpar Mês
+                    </button>
+                </div>
+            </div>
+
+            <div class="exp-filters">
+                <div class="filter-group">
+                    <label>Supervisor / Área</label>
+                    <select id="filter-area" onchange="renderTable()">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filter-status" onchange="renderTable()">
+                        <option value="">Todos os Status</option>
+                        <option value="PENDENTE">Pendente</option>
+                        <option value="SUFICIENTE">Suficiente (Aprovado)</option>
+                        <option value="INSUFICIENTE">Insuficiente (Reprovado)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Alerta</label>
+                    <select id="filter-alert" onchange="renderTable()">
+                        <option value="">Sem filtro de alerta</option>
+                        <option value="vencendo">Vencendo nos próximos 7 dias</option>
+                        <option value="vencido">Prazos Vencidos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Pesquisar</label>
+                    <input type="text" id="search-name" placeholder="Nome ou RE..." oninput="renderTable()">
+                </div>
+            </div>
+
+            <div class="exp-table-card">
+                <table class="exp-table">
+                    <thead>
+                        <tr>
+                            <th>Funcionário</th>
+                            <th>Cargo</th>
+                            <th>Supervisor / Área</th>
+                            <th>Cliente</th>
+                            <th>Admissão</th>
+                            <th>1ª EXP (45d)</th>
+                            <th>2ª EXP (90d)</th>
+                            <th>Avaliação</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exp-table-body">
+                        <!-- Gerado via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Import -->
+    <div id="modal-import" onclick="if(event.target===this) this.style.display='none'">
+        <div class="modal-content">
+            <h2 style="color: #1e3a8a;">Importar Relatório</h2>
+            <p>Selecione o arquivo XLSX gerado pelo sistema.</p>
+            
+            <div class="drop-zone" id="drop-zone">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                <p>Clique aqui ou arraste o arquivo .xlsx</p>
+                <input type="file" id="file-input" accept=".xlsx" style="display: none;">
+            </div>
+
+            <div id="import-status" style="display: none; margin-bottom: 1rem; font-weight: 600;"></div>
+
+            <button class="btn-primary w-100" onclick="document.getElementById('modal-import').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js?v=2.0"></script>
+    
+    <!-- SheetJS para ler Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <script src="js/exp.js?v=1.0"></script>
+</body>
+</html>
