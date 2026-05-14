@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+const formatBRL = (v) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+};
+
 async function generateMonthlyPDF() {
     const btn = document.getElementById('btn-generate-pdf');
     const originalText = btn.innerHTML;
@@ -34,58 +38,47 @@ async function generateMonthlyPDF() {
         const currentData = allData[currentKey] || { isEmpty: true };
         const prevData = allData[prevKey] || { isEmpty: true };
 
-        // Dados anuais para tendências
-        const yearlyData = [];
-        for (let m = 1; m <= 12; m++) {
-            const mStr = m.toString().padStart(2, '0');
-            const key = `${year}-${mStr}`;
-            yearlyData.push(allData[key] || { isEmpty: true });
-        }
-
         // 2. Configurar PDF
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({
             orientation: 'landscape',
             unit: 'px',
-            format: [1280, 720] // Resolução HD para slides
+            format: [1280, 720]
         });
 
         // 3. Carregar Imagem de Fundo
         const bgImage = await loadImage('assets/img/background_slide.png');
 
-        // 4. Definir Slides
+        // 4. Definir Slides Consolidados
         const slides = [
-            { title: "Gastos com Folgas Trabalhadas (Anual)", type: "chart", chartId: "chartVgFolgas", dataKey: "gastosFolgas" },
-            { title: "Motivos das Folgas Trabalhadas (Mês)", type: "chart", chartId: "chartVgFolgasMotivos" },
-            { title: "Folgas Trabalhadas - Portaria (Semanal)", type: "chart", chartId: "chartVgFolgasPortaria", dataKey: "folgasPortaria" },
-            { title: "Folgas Trabalhadas - Limpeza (Semanal)", type: "chart", chartId: "chartVgFolgasLimpeza", dataKey: "folgasLimpeza" },
+            { title: "Gastos com Folgas Trabalhadas (Anual)", type: "chart", chartId: "chartVgFolgas", isCurrency: true, dataKey: "gastosFolgas" },
+            { title: "Motivos das Folgas Trabalhadas (Mês)", type: "chart", chartId: "chartVgFolgasMotivos", isCurrency: true },
+            { title: "Folgas Trabalhadas - Portaria (Semanal)", type: "chart", chartId: "chartVgFolgasPortaria", isCurrency: true, isLine: true },
+            { title: "Folgas Trabalhadas - Limpeza (Semanal)", type: "chart", chartId: "chartVgFolgasLimpeza", isCurrency: true, isLine: true },
             { title: "Quantidade de Punições Aplicadas (Anual)", type: "chart", chartId: "chartVgPunicoes", dataKey: "punicoes" },
             { title: "Motivos das Punições (Mês)", type: "chart", chartId: "chartVgPunicoesMotivos" },
             { title: "Tipos de Punições Aplicadas (Mês)", type: "chart", chartId: "chartVgPunicoesTipos" },
             { title: "Pendências de Cartão de Ponto (Anual)", type: "chart", chartId: "chartVgPonto", dataKey: "pendenciasPonto" },
             { title: "Pendências por Supervisor (Mês)", type: "chart", chartId: "chartVgPontoSupervisor" },
-            { title: "Gastos Mensais com App 99 (Anual)", type: "chart", chartId: "chartVgApp99", dataKey: "custo99" },
-            { title: "Gastos por Supervisor no App 99 (Mês)", type: "chart", chartId: "chartVgApp99Supervisor" },
-            { title: "Motivos de Viagens App 99 (Mês)", type: "chart", chartId: "chartVgApp99Motivos" },
-            { title: "Gastos com HE Geral (Anual)", type: "chart", chartId: "chartVgHeGeral", dataKey: "horasExtrasGeral" },
-            { title: "Gastos com HE 100% (Anual)", type: "chart", chartId: "chartVgHe100", dataKey: "horasExtras100" },
-            { title: "Gastos com HE Intrajornada (Anual)", type: "chart", chartId: "chartVgHeIntra", dataKey: "horasExtrasIntra" },
-            { title: "Vale Transporte (Visão Anual Bimestral)", type: "chart", chartId: "chartVgVt" },
-            { title: "Valores por Cidade - VT (Mês)", type: "chart", chartId: "chartVgVtCidades" },
-            { title: "Valores por Escala - VT (Mês)", type: "chart", chartId: "chartVgVtEscalas" },
+            { title: "Gastos Mensais com App 99 (Anual)", type: "chart", chartId: "chartVgApp99", isCurrency: true, dataKey: "custo99", compactLabels: true },
+            { title: "Gastos por Supervisor no App 99 (Mês)", type: "chart", chartId: "chartVgApp99Supervisor", isCurrency: true },
+            { title: "Motivos de Viagens App 99 (Mês)", type: "chart", chartId: "chartVgApp99Motivos", isCurrency: true },
+            { title: "Gastos com HE Geral (Anual)", type: "chart", chartId: "chartVgHeGeral", isCurrency: true, dataKey: "horasExtrasGeral" },
+            { title: "Gastos com HE 100% (Anual)", type: "chart", chartId: "chartVgHe100", isCurrency: true, dataKey: "horasExtras100" },
+            { title: "Gastos com HE Intrajornada (Anual)", type: "chart", chartId: "chartVgHeIntra", isCurrency: true, dataKey: "horasExtrasIntra" },
+            { title: "Vale Transporte (Visão Anual Bimestral)", type: "chart", chartId: "chartVgVt", isCurrency: true },
+            { title: "Valores por Cidade - VT (Mês)", type: "chart", chartId: "chartVgVtCidades", isCurrency: true },
+            { title: "Valores por Escala - VT (Mês)", type: "chart", chartId: "chartVgVtEscalas", isCurrency: true },
             { title: "Visitas Realizadas no App Contele (Anual)", type: "chart", chartId: "chartVgContele", dataKey: "visitasContele" },
             { title: "Visitas por Supervisor (Mês)", type: "chart", chartId: "chartVgConteleSupervisor" },
             { title: "Divergências de Função", type: "composite", contentId: "vg-divergencia-pdf" },
             { title: "Faltas Mensais (Anual)", type: "composite", contentId: "vg-faltas-pdf" },
             { title: "Top 10 Clientes com Mais Faltas (Quantitativo)", type: "chart", chartId: "chartVgTopClientes" },
             { title: "Top 10 Clientes com Mais Faltas (Percentual)", type: "chart", chartId: "chartVgTopClientesPerc" },
-            { title: "Reserva Operacional - Limpeza", type: "reserva", typeRes: "limpeza" },
-            { title: "Reserva Operacional - Portaria Dia", type: "reserva", typeRes: "portariaDia" },
-            { title: "Reserva Operacional - Portaria Noite", type: "reserva", typeRes: "portariaNoite" },
-            { title: "Movimentação Operacional - Total Mês", type: "composite", contentId: "vg-mov-total-pdf" },
-            { title: "Motivos das Movimentações", type: "chart", chartId: "chartMovMotivos" },
-            { title: "Reservas Movimentadas por Supervisor", type: "chart", chartId: "chartMovSupervisores" },
-            { title: "Colaboradores Movimentados por Transporte", type: "chart", chartId: "chartMovTransportes" },
+            { title: "Reserva Operacional - Visão Geral", type: "reserva_geral" },
+            { title: "Motivos das Movimentações", type: "chart", chartId: "chartMovMotivos", showMovBadge: true },
+            { title: "Reservas Movimentadas por Supervisor", type: "chart", chartId: "chartMovSupervisores", showMovBadge: true },
+            { title: "Colaboradores Movimentados por Transporte", type: "chart", chartId: "chartMovTransportes", showMovBadge: true },
             { title: "Quantidade de Treinamentos Coringa (Anual)", type: "chart", chartId: "chartCoringasTreinamentos", dataKey: "totalTreinamentos" },
             { title: "Usuários em Treinamento (Mês)", type: "chart", chartId: "chartCoringasUsuarios" },
             { title: "Postos com Treinamento (Mês)", type: "chart", chartId: "chartCoringasPostos" },
@@ -98,11 +91,9 @@ async function generateMonthlyPDF() {
             const slide = slides[i];
             if (i > 0) doc.addPage();
 
-            // Fundo
             doc.addImage(bgImage, 'PNG', 0, 0, 1280, 720);
 
-            // Cabeçalho do Slide
-            doc.setTextColor(30, 58, 138); // #1e3a8a
+            doc.setTextColor(30, 58, 138);
             doc.setFontSize(28);
             doc.setFont('helvetica', 'bold');
             doc.text(slide.title, 110, 60);
@@ -112,7 +103,6 @@ async function generateMonthlyPDF() {
             doc.setTextColor(100, 116, 139);
             doc.text(`${monthLabel} de ${year}`, 110, 85);
 
-            // Conteúdo do Slide
             const tempDiv = document.createElement('div');
             tempDiv.style.position = 'absolute';
             tempDiv.style.left = '-9999px';
@@ -126,46 +116,57 @@ async function generateMonthlyPDF() {
                 await renderChartSlide(tempDiv, slide, currentData, prevData);
             } else if (slide.type === "composite") {
                 await renderCompositeSlide(tempDiv, slide, currentData, prevData);
-            } else if (slide.type === "reserva") {
-                await renderReservaSlide(tempDiv, slide, currentData);
+            } else if (slide.type === "reserva_geral") {
+                await renderReservaGeralSlide(tempDiv, currentData);
             }
 
-            const canvas = await html2canvas(tempDiv, { scale: 2, backgroundColor: null });
+            // Badge de Movimentação (Slide Motivos, Supervisores, Transportes)
+            if (slide.showMovBadge) {
+                const badge = document.createElement('div');
+                badge.style.position = 'absolute';
+                badge.style.top = '20px';
+                badge.style.right = '20px';
+                badge.style.background = '#1e3a8a';
+                badge.style.color = 'white';
+                badge.style.padding = '15px 25px';
+                badge.style.borderRadius = '12px';
+                badge.style.textAlign = 'center';
+                badge.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                badge.innerHTML = `<span style="display:block; font-size:12px; opacity:0.8; font-weight:bold;">TOTAL MOVIMENTAÇÕES</span><span style="font-size:32px; font-weight:900;">${currentData.movTotal || 0}</span>`;
+                tempDiv.appendChild(badge);
+            }
+
+            const canvas = await html2canvas(tempDiv, { scale: 1.5, backgroundColor: null, useCORS: true });
             const imgData = canvas.toDataURL('image/png');
             doc.addImage(imgData, 'PNG', 140, 120, 1000, 500);
 
             document.body.removeChild(tempDiv);
+            
+            // Pequena pausa para evitar crash de memória (erro motivo 9)
+            await new Promise(r => setTimeout(r, 150));
         }
 
-        // 6. Download
-        doc.save(`Relatorio_Mensal_COE_${month}_${year}.pdf`);
+        doc.save(`Apresentacao_Mensal_COE_${month}_${year}.pdf`);
 
     } catch (error) {
         console.error("Erro ao gerar PDF:", error);
-        alert("Erro ao gerar o relatório PDF. Verifique o console para mais detalhes.");
+        alert("Erro ao gerar o relatório PDF. Verifique o console.");
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
 }
 
-/**
- * Renderiza um gráfico formatado para o PDF
- */
 async function renderChartSlide(container, slide, currentData, prevData) {
     const originalChart = Chart.getChart(slide.chartId);
-    if (!originalChart) {
-        container.innerHTML = `<p style="color:red">Gráfico ${slide.chartId} não encontrado.</p>`;
-        return;
-    }
+    if (!originalChart) return;
 
     const canvas = document.createElement('canvas');
     canvas.width = 1000;
     canvas.height = 500;
     container.appendChild(canvas);
 
-    // Calcular Variação MoM
-    let variationHtml = '';
+    // Variação MoM
     if (slide.dataKey) {
         const curVal = currentData[slide.dataKey] || 0;
         const preVal = prevData[slide.dataKey] || 0;
@@ -173,47 +174,43 @@ async function renderChartSlide(container, slide, currentData, prevData) {
             const diff = ((curVal - preVal) / preVal) * 100;
             const color = diff > 0 ? '#ef4444' : '#10b981';
             const icon = diff > 0 ? '▲' : '▼';
-            variationHtml = `<div style="position:absolute; top:-40px; right:20px; font-size:24px; font-weight:bold; color:${color}">
-                ${icon} ${Math.abs(diff).toFixed(1)}% vs mês anterior
-            </div>`;
+            const vDiv = document.createElement('div');
+            vDiv.style.position = 'absolute';
+            vDiv.style.top = '-40px';
+            vDiv.style.right = '20px';
+            vDiv.style.fontSize = '22px';
+            vDiv.style.fontWeight = 'bold';
+            vDiv.style.color = color;
+            vDiv.innerHTML = `${icon} ${Math.abs(diff).toFixed(1)}% vs mês anterior`;
+            container.appendChild(vDiv);
         }
     }
 
-    const varContainer = document.createElement('div');
-    varContainer.style.position = 'relative';
-    varContainer.innerHTML = variationHtml;
-    container.insertBefore(varContainer, canvas);
-
-    // Criar novo gráfico com tema "Projetor"
-    const isSupervisorOrCity = slide.chartId.toLowerCase().includes('supervisor') || slide.chartId.toLowerCase().includes('cidade') || slide.chartId.toLowerCase().includes('escala') || slide.chartId.toLowerCase().includes('topclientes');
+    const isHorizontal = slide.chartId.toLowerCase().includes('supervisor') || slide.chartId.toLowerCase().includes('cidade') || slide.chartId.toLowerCase().includes('escala') || slide.chartId.toLowerCase().includes('topclientes');
     
     const config = {
         type: originalChart.config.type,
         data: JSON.parse(JSON.stringify(originalChart.config.data)),
         options: {
             ...originalChart.config.options,
-            responsive: false,
-            animation: false,
-            maintainAspectRatio: false,
-            indexAxis: isSupervisorOrCity ? 'y' : (originalChart.config.options.indexAxis || 'x'),
+            responsive: false, animation: false, maintainAspectRatio: false,
+            layout: { padding: { top: 40, right: 60, left: 20, bottom: 20 } },
+            indexAxis: isHorizontal ? 'y' : (originalChart.config.options.indexAxis || 'x'),
             plugins: {
-                ...originalChart.config.options.plugins,
                 legend: {
-                    ...originalChart.config.options.plugins?.legend,
-                    display: true,
-                    position: 'bottom',
+                    display: true, position: 'bottom',
                     labels: { font: { size: 18, weight: 'bold' }, color: '#1e3a8a', padding: 20 }
                 },
                 datalabels: {
-                    display: true,
-                    color: '#1e3a8a',
-                    font: { size: 18, weight: 'bold' },
-                    anchor: isSupervisorOrCity ? 'end' : 'end',
-                    align: isSupervisorOrCity ? 'right' : 'top',
+                    display: true, color: '#1e3a8a',
+                    font: { size: slide.compactLabels ? 14 : 18, weight: 'bold' },
+                    anchor: isHorizontal ? 'end' : 'end',
+                    align: isHorizontal ? 'right' : 'top',
                     offset: 5,
                     formatter: (value) => {
                         if (typeof value === 'number') {
                             if (slide.chartId.toLowerCase().includes('perc')) return value.toFixed(1) + '%';
+                            if (slide.isCurrency) return formatBRL(value);
                             return value.toLocaleString('pt-BR');
                         }
                         return value;
@@ -234,27 +231,28 @@ async function renderChartSlide(container, slide, currentData, prevData) {
         }
     };
 
-    new Chart(canvas, config);
+    if (slide.isLine) {
+        config.data.datasets.forEach(ds => {
+            ds.fill = false;
+            ds.borderWidth = 4;
+            ds.pointRadius = 6;
+        });
+    }
 
-    // Forçar cores azuis se não for pizza/rosca
+    new Chart(canvas, config);
     const newChart = Chart.getChart(canvas);
     if (newChart.config.type !== 'pie' && newChart.config.type !== 'doughnut') {
         newChart.data.datasets.forEach(ds => {
-            ds.backgroundColor = '#1e3a8a';
+            ds.backgroundColor = slide.isLine ? 'transparent' : '#1e3a8a';
             ds.borderColor = '#1e3a8a';
         });
         newChart.update();
     }
 }
 
-/**
- * Renderiza slides compostos (blocos de info + texto)
- */
 async function renderCompositeSlide(container, slide, currentData, prevData) {
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
-    container.style.justifyContent = 'center';
-    container.style.alignItems = 'center';
     container.style.padding = '20px';
     container.style.fontFamily = 'Inter, sans-serif';
 
@@ -262,147 +260,107 @@ async function renderCompositeSlide(container, slide, currentData, prevData) {
         const total = currentData.divergenciaFuncao || 0;
         const res = currentData.divergenciasResolvidas || 0;
         container.innerHTML = `
-            <div style="display:flex; gap:40px;">
-                <div style="background:#1e3a8a; color:white; padding:40px; border-radius:20px; text-align:center; min-width:300px;">
-                    <h2 style="font-size:24px; margin-bottom:10px;">Total Ocorridas</h2>
-                    <span style="font-size:80px; font-weight:800;">${total}</span>
+            <div style="display:flex; gap:30px; margin-bottom:30px;">
+                <div style="flex:1; background:#1e3a8a; color:white; padding:25px; border-radius:15px; text-align:center;">
+                    <h2 style="font-size:20px; margin-bottom:5px;">Ocorridas</h2>
+                    <span style="font-size:50px; font-weight:800;">${total}</span>
                 </div>
-                <div style="background:#10b981; color:white; padding:40px; border-radius:20px; text-align:center; min-width:300px;">
-                    <h2 style="font-size:24px; margin-bottom:10px;">Total Resolvidas</h2>
-                    <span style="font-size:80px; font-weight:800;">${res}</span>
+                <div style="flex:1; background:#10b981; color:white; padding:25px; border-radius:15px; text-align:center;">
+                    <h2 style="font-size:20px; margin-bottom:5px;">Resolvidas</h2>
+                    <span style="font-size:50px; font-weight:800;">${res}</span>
+                </div>
+                <div style="flex:1; background:#f8fafc; border:2px solid #1e3a8a; color:#1e3a8a; padding:25px; border-radius:15px; text-align:center;">
+                    <h2 style="font-size:20px; margin-bottom:5px;">SLA</h2>
+                    <span style="font-size:50px; font-weight:800;">${total > 0 ? Math.round((res/total)*100) : 100}%</span>
                 </div>
             </div>
-            <p style="margin-top:40px; font-size:24px; font-weight:bold; color:#1e3a8a;">SLA de Resolução: ${total > 0 ? Math.round((res/total)*100) : 100}%</p>
+            <div style="flex:1; width:100%;"><canvas id="temp-div-anual"></canvas></div>
         `;
+        setTimeout(() => {
+            const ctx = document.getElementById('temp-div-anual').getContext('2d');
+            const original = Chart.getChart('chartVgDivergencia');
+            new Chart(ctx, {
+                type: 'bar',
+                data: JSON.parse(JSON.stringify(original.config.data)),
+                options: { responsive: false, maintainAspectRatio: false, plugins: { legend: { display: true }, datalabels: { display: true, color: '#1e3a8a', font: { weight: 'bold' } } } }
+            });
+        }, 100);
     } 
     else if (slide.contentId === 'vg-faltas-pdf') {
         const total = currentData.faltas || 0;
         const media = Math.round(total / 30);
         container.innerHTML = `
-            <div style="background:#f1f5f9; border-left:10px solid #1e3a8a; padding:40px; border-radius:10px; width:80%;">
-                <h2 style="font-size:32px; color:#1e3a8a; margin-bottom:20px;">Resumo Operacional</h2>
-                <p style="font-size:28px; line-height:1.5;">Total de faltas no mês: <strong>${total.toLocaleString('pt-BR')}</strong></p>
-                <p style="font-size:28px; line-height:1.5;">Média diária: <strong>${media} faltas/dia</strong></p>
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; border-left:10px solid #1e3a8a; padding:25px; border-radius:10px; margin-bottom:20px;">
+                <h2 style="font-size:24px; color:#1e3a8a; margin:0;">Total Mês: <strong>${total.toLocaleString('pt-BR')}</strong></h2>
+                <h2 style="font-size:24px; color:#1e3a8a; margin:0;">Média Diária: <strong>${media} faltas</strong></h2>
             </div>
-            <div style="margin-top:40px; width:100%; height:300px;">
-                <canvas id="temp-faltas-chart"></canvas>
-            </div>
+            <div style="flex:1; width:100%;"><canvas id="temp-faltas-anual"></canvas></div>
         `;
-        // Adicionar o gráfico anual de faltas também
         setTimeout(() => {
-            const ctx = document.getElementById('temp-faltas-chart').getContext('2d');
+            const ctx = document.getElementById('temp-faltas-anual').getContext('2d');
             const original = Chart.getChart('chartVgFaltas');
             new Chart(ctx, {
                 type: 'bar',
                 data: JSON.parse(JSON.stringify(original.config.data)),
-                options: { responsive: false, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: true, color: '#1e3a8a', font: { weight: 'bold', size: 14 } } } }
+                options: { responsive: false, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: true, color: '#1e3a8a', font: { weight: 'bold' } } } }
             });
         }, 100);
     }
-    else if (slide.contentId === 'vg-mov-total-pdf') {
-        const total = currentData.movTotal || 0;
+    else if (slide.contentId === 'vg-posvenda-pdf' || slide.contentId === 'vg-agenda-pdf') {
+        const isPV = slide.contentId === 'vg-posvenda-pdf';
+        const rankingHtml = document.getElementById(isPV ? 'pv-ranking' : 'ag-exec-ranking').innerHTML;
+        const kpisHtml = document.getElementById(isPV ? 'pv-kpis' : 'ag-exec-kpis').innerHTML;
         container.innerHTML = `
-            <div style="background:#1e3a8a; color:white; padding:60px; border-radius:30px; text-align:center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
-                <h2 style="font-size:36px; margin-bottom:20px;">Total de Movimentações</h2>
-                <span style="font-size:120px; font-weight:900;">${total}</span>
-                <p style="font-size:24px; margin-top:20px; opacity:0.8;">Colaboradores remanejados no período</p>
-            </div>
-        `;
-    }
-    else if (slide.contentId === 'vg-posvenda-pdf') {
-        const rankingHtml = document.getElementById('pv-ranking').innerHTML;
-        const kpisHtml = document.getElementById('pv-kpis').innerHTML;
-        container.innerHTML = `
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; width:100%;">
-                <div style="background:white; padding:20px; border-radius:15px; border:1px solid #e2e8f0;">
-                    <h3 style="color:#1e3a8a; margin-bottom:20px;">Indicadores de Retorno</h3>
-                    ${kpisHtml}
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:25px; width:100%; height:100%;">
+                <div style="background:white; padding:25px; border-radius:20px; border:2px solid #1e3a8a; box-shadow: 0 10px 15px rgba(0,0,0,0.05);">
+                    <h3 style="color:#1e3a8a; margin-top:0; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">Indicadores</h3>
+                    <div class="${isPV ? 'pv-kpi-grid' : 'ag-exec-kpi-grid'}" style="margin-top:20px;">${kpisHtml}</div>
                 </div>
-                <div style="background:white; padding:20px; border-radius:15px; border:1px solid #e2e8f0;">
-                    <h3 style="color:#1e3a8a; margin-bottom:20px;">Ranking Coordenadores</h3>
-                    ${rankingHtml}
-                </div>
-            </div>
-        `;
-    }
-    else if (slide.contentId === 'vg-agenda-pdf') {
-        const kpis = document.getElementById('ag-exec-kpis').innerHTML;
-        const ranking = document.getElementById('ag-exec-ranking').innerHTML;
-        container.innerHTML = `
-             <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:20px; width:100%;">
-                <div style="background:white; padding:20px; border-radius:15px; border:1px solid #e2e8f0;">
-                    <h3 style="color:#1e3a8a; margin-bottom:20px;">Status das Atividades</h3>
-                    ${kpis}
-                </div>
-                <div style="background:white; padding:20px; border-radius:15px; border:1px solid #e2e8f0;">
-                    <h3 style="color:#1e3a8a; margin-bottom:20px;">Ranking de Produtividade</h3>
-                    ${ranking}
+                <div style="background:white; padding:25px; border-radius:20px; border:2px solid #1e3a8a; box-shadow: 0 10px 15px rgba(0,0,0,0.05);">
+                    <h3 style="color:#1e3a8a; margin-top:0; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">Ranking</h3>
+                    <table style="width:100%; margin-top:15px; border-collapse:collapse;"><tbody class="ranking-table-body">${rankingHtml}</tbody></table>
                 </div>
             </div>
         `;
     }
 }
 
-/**
- * Renderiza tabelas de reserva
- */
-async function renderReservaSlide(container, slide, currentData) {
+async function renderReservaGeralSlide(container, currentData) {
     if (!currentData || !currentData.reservas) return;
-    
-    const dados = currentData.reservas[slide.typeRes];
-    if (!dados) return;
+    container.style.display = 'grid';
+    container.style.gridTemplateColumns = '1fr 1fr 1fr';
+    container.style.gap = '15px';
+    container.style.padding = '10px';
 
-    let totalAtual = 0;
-    let totalIdeal = 0;
-    let rows = '';
-    
-    dados.forEach(item => {
-        totalAtual += (item.atual || 0);
-        totalIdeal += (item.ideal || 0);
-        const dif = item.atual - item.ideal;
-        const color = dif >= 0 ? '#10b981' : '#ef4444';
-        rows += `
-            <tr style="border-bottom:1px solid #e2e8f0;">
-                <td style="padding:15px; font-size:20px;">${item.escala}</td>
-                <td style="padding:15px; font-size:20px; text-align:center;">${item.atual}</td>
-                <td style="padding:15px; font-size:20px; text-align:center;">${item.ideal}</td>
-                <td style="padding:15px; font-size:22px; text-align:center; font-weight:bold; color:${color}">${dif > 0 ? '+' : ''}${dif}</td>
-            </tr>
-        `;
-    });
-
-    container.innerHTML = `
-        <div style="width:100%; font-family:Inter, sans-serif;">
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#1e3a8a; color:white; padding:20px; border-radius:15px 15px 0 0;">
-                <h2 style="margin:0; font-size:24px;">Escalas de Operação</h2>
-                <div style="display:flex; gap:30px;">
-                    <div style="text-align:center;"><span style="display:block; font-size:12px; opacity:0.8;">ATUAL</span><span style="font-size:28px; font-weight:bold;">${totalAtual}</span></div>
-                    <div style="text-align:center;"><span style="display:block; font-size:12px; opacity:0.8;">IDEAL</span><span style="font-size:28px; font-weight:bold;">${totalIdeal}</span></div>
+    const renderCard = (title, type, icon) => {
+        const dados = currentData.reservas[type];
+        let totalA = 0, totalI = 0, rows = '';
+        dados.forEach(item => {
+            totalA += item.atual; totalI += item.ideal;
+            const d = item.atual - item.ideal;
+            rows += `<tr style="font-size:12px; border-bottom:1px solid #eee;"><td>${item.escala}</td><td>${item.atual}</td><td>${item.ideal}</td><td style="font-weight:bold; color:${d>=0?'#10b981':'#ef4444'}">${d>0?'+':''}${d}</td></tr>`;
+        });
+        return `
+            <div style="background:white; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden; display:flex; flex-direction:column;">
+                <div style="background:#1e3a8a; color:white; padding:10px; font-size:14px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+                    <span><i class="fa-solid ${icon}"></i> ${title}</span>
+                    <span style="font-size:18px;">${totalA}/${totalI}</span>
                 </div>
+                <table style="width:100%; border-collapse:collapse; text-align:center;">
+                    <thead style="background:#f8fafc; font-size:11px;"><tr><th>ESC</th><th>ATU</th><th>IDE</th><th>DIF</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
             </div>
-            <table style="width:100%; border-collapse:collapse; background:white; border-radius:0 0 15px 15px; overflow:hidden;">
-                <thead style="background:#f8fafc;">
-                    <tr>
-                        <th style="padding:15px; text-align:left; color:#64748b;">ESCALA</th>
-                        <th style="padding:15px; color:#64748b;">ATUAL</th>
-                        <th style="padding:15px; color:#64748b;">IDEAL</th>
-                        <th style="padding:15px; color:#64748b;">DIF.</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rows}
-                </tbody>
-            </table>
-        </div>
-    `;
+        `;
+    };
+
+    container.innerHTML = renderCard('LIMPEZA', 'limpeza', 'fa-broom') + renderCard('PORTARIA DIA', 'portariaDia', 'fa-sun') + renderCard('PORTARIA NOITE', 'portariaNoite', 'fa-moon');
 }
 
-/**
- * Utilitário para carregar imagem de forma assíncrona
- */
 function loadImage(src) {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        img.crossOrigin = "anonymous";
         img.onload = () => resolve(img);
         img.onerror = reject;
         img.src = src;
