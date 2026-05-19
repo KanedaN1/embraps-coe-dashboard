@@ -18,7 +18,7 @@ const LOOKER_STUDIO_URL = 'https://lookerstudio.google.com/navigation/reporting'
 // ==========================================
 
 async function exportToLookerStudio() {
-    if (WEBHOOK_URL === 'https://script.google.com/macros/s/AKfycbwy1LE1fMO6wMEyywlyWNUyq7Oqn9XQfmj4As8YiWjv7sjpBN8d7VH01KxJm7FAiqnNiw/exec') {
+    if (!WEBHOOK_URL || WEBHOOK_URL.includes('COLE_SUA_URL')) {
         alert('Atenção: A URL do Webhook não foi configurada.\n\nPor favor, abra o arquivo js/looker-integration.js e cole a URL do Google Apps Script na variável WEBHOOK_URL.');
         return;
     }
