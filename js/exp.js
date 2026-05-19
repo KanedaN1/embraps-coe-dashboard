@@ -4,6 +4,7 @@
  */
 
 let expData = [];
+let currentFilteredExp = [];
 const dbExp = db; // Usando o db global do firebase-config.js
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -142,7 +143,7 @@ function renderTable() {
     today.setHours(0,0,0,0);
     const isAdmin = sessionStorage.getItem('admin_logged') === 'true';
 
-    const filtered = expData.filter(d => {
+    currentFilteredExp = expData.filter(d => {
         const matchArea = !filterArea || d.area === filterArea;
         const matchStatus = !filterStatus || d.status === filterStatus;
         const matchSearch = (d.nome || "").toLowerCase().includes(search) || (d.re || "").toString().includes(search);
@@ -163,12 +164,12 @@ function renderTable() {
         return matchArea && matchStatus && matchSearch && matchAlert;
     });
 
-    if (filtered.length === 0) {
+    if (currentFilteredExp.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:3rem; color:var(--text-muted);">Nenhum colaborador encontrado.</td></tr>';
         return;
     }
 
-    filtered.forEach(d => {
+    currentFilteredExp.forEach(d => {
         const exp1 = new Date(d.exp1);
         const diff1 = (exp1 - today) / (1000*60*60*24);
         
@@ -352,4 +353,64 @@ async function clearAllData() {
     } catch (err) {
         alert("Erro ao limpar dados.");
     }
+}
+
+// 8. Imprimir Relatório
+function exp_print() {
+    const printWindow = window.open('', '_blank');
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const rows = currentFilteredExp.map(d => {
+        return `
+        <tr>
+            <td>${d.re} - ${d.nome}</td>
+            <td>${d.cargo}</td>
+            <td>${d.area}</td>
+            <td>${d.cliente}</td>
+            <td>${formatBRDate(d.admissao)}</td>
+            <td>${formatBRDate(d.exp1)}</td>
+            <td>${formatBRDate(d.exp2)}</td>
+            <td>${d.status}</td>
+        </tr>
+        `;
+    }).join('');
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Controle de Experiência - Impressão</title>
+            <style>
+                body { font-family: sans-serif; padding: 20px; color: #333; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }
+                th { background: #f4f4f4; }
+                h1 { color: #1e3a8a; font-size: 18px; margin-bottom: 5px; }
+                .footer { margin-top: 30px; font-size: 10px; color: #999; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <h1>Controle de Experiência - ${new Date().toLocaleDateString('pt-BR')}</h1>
+            <p style="color: #666; font-size: 12px; margin-top: 0;">Colaboradores exibidos: ${currentFilteredExp.length}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Funcionário</th>
+                        <th>Cargo</th>
+                        <th>Supervisor / Área</th>
+                        <th>Cliente</th>
+                        <th>Admissão</th>
+                        <th>1ª EXP (45d)</th>
+                        <th>2ª EXP (90d)</th>
+                        <th>Avaliação</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <div class="footer">Gerado via Embraps COE Dashboard em ${new Date().toLocaleString('pt-BR')}</div>
+            <script>window.print();</script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 }

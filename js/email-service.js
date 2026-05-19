@@ -81,6 +81,50 @@ async function sendWeeklyReportEmail(data) {
 }
 
 /**
+ * Envia apenas o resumo semanal de OS
+ */
+async function sendOSWeeklyEmail() {
+    if (EMAILJS_CONFIG.PUBLIC_KEY === "YOUR_PUBLIC_KEY") {
+        alert("Por favor, configure suas chaves do EmailJS no arquivo js/email-service.js");
+        return;
+    }
+
+    const btn = document.getElementById('btn-email-os');
+    if(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+    }
+
+    const osResumoHtml = await gerarResumoSemanalOS();
+
+    const templateParams = {
+        data_envio: new Date().toLocaleDateString('pt-BR'),
+        reserva_total: "-", // Valores vazios pois este email é apenas de OS
+        folga_portaria: "-",
+        folga_limpeza: "-",
+        agenda_sla: "-",
+        os_resumo: osResumoHtml
+    };
+
+    try {
+        const response = await emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID,
+            EMAILJS_CONFIG.TEMPLATE_RELATORIO,
+            templateParams
+        );
+        alert("Resumo de Ordens de Serviço enviado com sucesso!");
+    } catch (error) {
+        console.error("[EmailJS] Erro ao enviar relatório OS:", error);
+        alert("Erro ao enviar e-mail. Verifique o console.");
+    } finally {
+        if(btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-envelope"></i> Enviar Resumo';
+        }
+    }
+}
+
+/**
  * Busca as OS com vencimento nos próximos 7 dias no Firestore
  */
 async function gerarResumoSemanalOS() {
