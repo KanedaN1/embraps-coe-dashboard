@@ -109,8 +109,8 @@ async function gerarResumoSemanalOS() {
                     const dataVenc = new Date(ano, mes - 1, dia);
                     const diffDays = Math.ceil((dataVenc - hoje) / (1000 * 60 * 60 * 24));
 
-                    if (diffDays <= 3) status = 'Alerta';
-                    else if (diffDays <= 7) status = 'A Vencer';
+                    if (diffDays >= 0 && diffDays <= 3) status = 'Alerta';
+                    else if (diffDays > 3 && diffDays <= 7) status = 'A Vencer';
 
                     if (status === 'Alerta' || status === 'A Vencer') {
                         possuiOS = true;
