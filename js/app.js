@@ -247,6 +247,7 @@ async function updateDashboard() {
     });
 
     document.getElementById('alerts-container').innerHTML = '';
+    verificarAlertasDeVagas();
     const currentData = yearlyData.find(d => d.month === month);
 
     updateKPIs(currentData);
@@ -1380,4 +1381,52 @@ async function renderResumoAnualOS(year, monthLabels) {
             scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
     });
+}
+
+// ==========================================
+// INTEGRAÇÃO COM MÓDULO DE VAGAS (ALERTAS)
+// ==========================================
+async function verificarAlertasDeVagas() {
+    try {
+        const db = firebase.firestore();
+        const snapshot = await db.collection('vagas').where('status', '!=', 'Efetivado').get();
+        let vagasAtrasadas = [];
+        const hoje = new Date();
+
+        snapshot.forEach(doc => {
+            const vaga = doc.data();
+            if (vaga.dataAbertura) {
+                const [ano, mes, dia] = vaga.dataAbertura.split('-');
+                const dataAbert = new Date(ano, mes - 1, dia);
+                const diffTime = Math.abs(hoje - dataAbert);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 15) {
+                    vagasAtrasadas.push({...vaga, diffDays});
+                }
+            }
+        });
+
+        if (vagasAtrasadas.length > 0) {
+            const container = document.getElementById('alerts-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'custom-alert danger shake-alert';
+            
+            // Agrupar por coordenador
+            const coords = [...new Set(vagasAtrasadas.map(v => v.coord))];
+            
+            alertDiv.innerHTML = `
+                <div class="alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="alert-content">
+                    <h4>Alerta Crítico de SLAs (Vagas Abertas > 15 dias)</h4>
+                    <p>Existem <strong>${vagasAtrasadas.length} vagas</strong> com SLA estourado aguardando implantação. (Coordenadores: ${coords.join(', ')})</p>
+                    <a href="vagas.html" style="color: #991b1b; font-weight: bold; text-decoration: underline; font-size: 0.85rem; margin-top: 5px; display: inline-block;">Visualizar Vagas Pendentes</a>
+                </div>
+            `;
+            container.appendChild(alertDiv);
+        }
+
+    } catch (error) {
+        console.error("Erro ao verificar vagas atrasadas para alertas", error);
+    }
 }
