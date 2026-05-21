@@ -179,6 +179,23 @@ function atualizarDashboard() {
     document.getElementById('kpi-vagas-abertas').innerText = pendentes;
     document.getElementById('kpi-vagas-fechadas').innerText = fechadasMes;
     document.getElementById('kpi-sla-medio').innerText = mediaSLA;
+
+    const alertContainer = document.getElementById('vagas-alerts-container');
+    if (alertContainer) {
+        if (atrasadas > 0) {
+            alertContainer.innerHTML = `
+                <div class="custom-alert danger shake-alert">
+                    <div class="alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="alert-content">
+                        <h4>Atenção: Vagas com SLA Estourado</h4>
+                        <p>Existem <strong>${atrasadas} movimentações</strong> abertas há mais de 15 dias sem implantação efetiva. Por favor, regularize as informações.</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            alertContainer.innerHTML = '';
+        }
+    }
 }
 
 function filtrarTabelaVagas() {
@@ -235,6 +252,8 @@ function renderizarTabela(lista) {
         const tr = document.createElement('tr');
         if (rowClass) tr.className = rowClass;
         
+        const impHtml = vaga.implantado ? vaga.implantado : `<span style="color:var(--danger);font-size:0.75rem;font-weight:bold;"><i class="fa-solid fa-circle-exclamation"></i> PENDENTE</span>`;
+        
         tr.innerHTML = `
             <td><strong>${vaga.reSaiu || '-'}</strong></td>
             <td>${vaga.nomeSaiu || '-'}</td>
@@ -248,7 +267,7 @@ function renderizarTabela(lista) {
             <td>${formatarDataBR(vaga.dataAbertura)}</td>
             <td><strong style="color: ${estaAtrasada ? 'var(--danger)' : 'inherit'}">${dias} dias</strong></td>
             <td><span class="badge-status ${badgeClass}">${vaga.status}</span></td>
-            <td>${vaga.implantado || '-'}</td>
+            <td>${impHtml}</td>
             <td>${vaga.coord}</td>
             <td style="text-align: center;">${actionHtml}</td>
         `;
