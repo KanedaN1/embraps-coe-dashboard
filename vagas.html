@@ -137,8 +137,8 @@
     <!-- Sidebar overlay (mobile) -->
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-    <!-- Layout Container -->
-    <div id="admin-panel" class="dashboard-container" style="display:none;">
+    <!-- Layout Container (sem display:none inicial) -->
+    <div id="admin-panel" class="dashboard-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header" style="text-align: center;">
@@ -171,7 +171,8 @@
                     <p>Controle de movimentações, admissões e SLAs (Tempo de vaga aberta)</p>
                 </div>
                 <div class="global-filters" style="display: flex; gap: 10px;">
-                    <button class="btn-primary" onclick="abrirModalVaga()"><i class="fa-solid fa-plus"></i> Registrar Nova Movimentação</button>
+                    <button class="btn-primary" onclick="abrirModalVaga()" id="btn-nova-vaga"><i class="fa-solid fa-plus"></i> Registrar Movimentação</button>
+                    <button class="btn-primary" onclick="forcarLogin()" id="btn-fazer-login" style="background-color: var(--secondary-color);"><i class="fa-solid fa-lock"></i> Acesso Coordenador</button>
                 </div>
             </div>
 
@@ -223,6 +224,14 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h3 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-table-list"></i> Histórico de Vagas e Movimentações</h3>
                     <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="filtro-coord" class="ag-form-group" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;" onchange="filtrarTabelaVagas()">
+                            <option value="">Todos Coordenadores</option>
+                            <option value="Carlos Leme">Carlos Leme</option>
+                            <option value="Isaias Belchior">Isaias Belchior</option>
+                            <option value="Rejiane Teles">Rejiane Teles</option>
+                            <option value="Renato Augusto">Renato Augusto</option>
+                            <option value="Ricardo Faustino">Ricardo Faustino</option>
+                        </select>
                         <select id="filtro-status" class="ag-form-group" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;" onchange="filtrarTabelaVagas()">
                             <option value="">Todos os Status</option>
                             <option value="Pendente">Pendente</option>
@@ -239,10 +248,15 @@
                         <tr>
                             <th>RE Saiu</th>
                             <th>Colab. Substituído</th>
+                            <th>Nº Vaga</th>
                             <th>Posto</th>
+                            <th>Escala</th>
+                            <th>Função</th>
+                            <th>Supervisor</th>
+                            <th>Punição</th>
                             <th>Motivo</th>
                             <th>Abertura</th>
-                            <th>Dias Aberto</th>
+                            <th>Tempo Vaga</th>
                             <th>Status</th>
                             <th>Colab. Implantado</th>
                             <th>Coord</th>
@@ -282,12 +296,34 @@
 
                 <div class="admin-form-grid" style="margin-bottom: 15px;">
                     <div class="form-group">
+                        <label>Nº Vaga *</label>
+                        <input type="text" id="vaga-num" required>
+                    </div>
+                    <div class="form-group">
                         <label>Posto / Cliente *</label>
                         <input type="text" id="vaga-posto" required>
+                    </div>
+                </div>
+
+                <div class="admin-form-grid" style="margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label>Escala *</label>
+                        <input type="text" id="vaga-escala" placeholder="Ex: 5x1, 12x36" required>
                     </div>
                     <div class="form-group">
                         <label>Função *</label>
                         <input type="text" id="vaga-funcao" placeholder="Ex: Porteiro, ASG" required>
+                    </div>
+                </div>
+
+                <div class="admin-form-grid" style="margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label>Supervisor *</label>
+                        <input type="text" id="vaga-supervisor" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Punição (Se houver) *</label>
+                        <input type="text" id="vaga-punicao" value="Nenhuma" required>
                     </div>
                 </div>
 

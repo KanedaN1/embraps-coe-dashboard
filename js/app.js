@@ -296,6 +296,7 @@ async function updateDashboard() {
 
     renderResumoAnual(yearlyData, monthLabels);
     renderResumoAnualOS(year, monthLabels);
+    renderResumoVagasAnual();
     updateAgendaSummary();
 }
 
@@ -1381,6 +1382,94 @@ async function renderResumoAnualOS(year, monthLabels) {
             scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
     });
+}
+
+// ===================== GRÁFICOS DE VAGAS =====================
+async function renderResumoVagasAnual() {
+    const ctxCoord = document.getElementById('chartVagasCoord');
+    const ctxSuper = document.getElementById('chartVagasSuper');
+    if (!ctxCoord || !ctxSuper) return;
+
+    if (typeof useFirebase !== 'undefined' && useFirebase && db) {
+        try {
+            const snapshot = await db.collection('vagas').get();
+            const coordCounts = {};
+            const superCounts = {};
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                
+                // Agrupando por Coordenador
+                if (data.coord) {
+                    coordCounts[data.coord] = (coordCounts[data.coord] || 0) + 1;
+                }
+                // Agrupando por Supervisor
+                if (data.supervisor) {
+                    superCounts[data.supervisor] = (superCounts[data.supervisor] || 0) + 1;
+                }
+            });
+
+            // Preparando arrays e ordenando para Coordenador
+            const coordSorted = Object.entries(coordCounts).sort((a, b) => b[1] - a[1]);
+            const coordLabels = coordSorted.map(item => item[0]);
+            const coordData = coordSorted.map(item => item[1]);
+
+            // Preparando arrays e ordenando para Supervisor (Top 10)
+            const superSorted = Object.entries(superCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            const superLabels = superSorted.map(item => item[0]);
+            const superData = superSorted.map(item => item[1]);
+
+            // Gráfico Coordenadores
+            if (charts['chartVagasCoord']) charts['chartVagasCoord'].destroy();
+            charts['chartVagasCoord'] = new Chart(ctxCoord.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: coordLabels,
+                    datasets: [{
+                        label: 'Movimentações no Ano',
+                        data: coordData,
+                        backgroundColor: chartColors.info,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { display: ctx => ctx.dataset.data[ctx.dataIndex] > 0, color: '#fff', font: { weight: 'bold' } }
+                    },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            // Gráfico Supervisores
+            if (charts['chartVagasSuper']) charts['chartVagasSuper'].destroy();
+            charts['chartVagasSuper'] = new Chart(ctxSuper.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: superLabels,
+                    datasets: [{
+                        label: 'Movimentações no Ano',
+                        data: superData,
+                        backgroundColor: chartColors.warning,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Fica melhor barras horizontais para Top 10 nomes
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { display: ctx => ctx.dataset.data[ctx.dataIndex] > 0, color: '#fff', font: { weight: 'bold' } }
+                    },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+        } catch (error) {
+            console.error("Erro ao carregar gráficos de vagas:", error);
+        }
+    }
 }
 
 // ==========================================

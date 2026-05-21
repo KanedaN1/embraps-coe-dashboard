@@ -30,10 +30,19 @@ function verificarLogin() {
         loggedUser = coordSession;
         liberarAcesso(coordSession);
     } else {
-        // Mostra a tela de login se não houver sessão
-        document.getElementById('login-overlay').style.display = 'flex';
-        document.getElementById('admin-panel').style.display = 'none';
+        // Modo Público: Não mostra login, apenas oculta botões de coordenador
+        loggedUser = null;
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'flex';
+        document.getElementById('span-logged-user').innerText = 'Visitante';
+        document.getElementById('btn-logout').style.display = 'none';
+        document.getElementById('btn-fazer-login').style.display = 'inline-block';
+        carregarVagas();
     }
+}
+
+function forcarLogin() {
+    document.getElementById('login-overlay').style.display = 'flex';
 }
 
 function autenticarVagas() {
@@ -68,6 +77,8 @@ function liberarAcesso(nome) {
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'flex';
     document.getElementById('span-logged-user').innerText = nome;
+    document.getElementById('btn-logout').style.display = 'block';
+    document.getElementById('btn-fazer-login').style.display = 'none';
     
     // Se for um coordenador específico, trava o select de coordenador no formulário
     const selectCoord = document.getElementById('vaga-coord');
@@ -173,6 +184,7 @@ function atualizarDashboard() {
 function filtrarTabelaVagas() {
     const textFilter = document.getElementById('filtro-vagas').value.toLowerCase();
     const statusFilter = document.getElementById('filtro-status').value;
+    const coordFilter = document.getElementById('filtro-coord').value;
     
     const filtradas = currentVagas.filter(vaga => {
         const matchText = vaga.posto.toLowerCase().includes(textFilter) || 
@@ -180,7 +192,9 @@ function filtrarTabelaVagas() {
                           (vaga.reSaiu && vaga.reSaiu.toString().includes(textFilter));
         
         const matchStatus = statusFilter === "" || vaga.status === statusFilter;
-        return matchText && matchStatus;
+        const matchCoord = coordFilter === "" || vaga.coord === coordFilter;
+        
+        return matchText && matchStatus && matchCoord;
     });
     
     renderizarTabela(filtradas);
@@ -224,7 +238,12 @@ function renderizarTabela(lista) {
         tr.innerHTML = `
             <td><strong>${vaga.reSaiu || '-'}</strong></td>
             <td>${vaga.nomeSaiu || '-'}</td>
+            <td><strong>${vaga.numVaga || '-'}</strong></td>
             <td>${vaga.posto}</td>
+            <td>${vaga.escala || '-'}</td>
+            <td>${vaga.funcao || '-'}</td>
+            <td>${vaga.supervisor || '-'}</td>
+            <td>${vaga.punicao || '-'}</td>
             <td>${vaga.motivo}</td>
             <td>${formatarDataBR(vaga.dataAbertura)}</td>
             <td><strong style="color: ${estaAtrasada ? 'var(--danger)' : 'inherit'}">${dias} dias</strong></td>
@@ -241,11 +260,20 @@ function renderizarTabela(lista) {
 // MODAL DE REGISTRO
 // ==========================================
 function abrirModalVaga() {
+    if (!loggedUser) {
+        forcarLogin();
+        return;
+    }
+
     document.getElementById('vaga-id').value = '';
     document.getElementById('vaga-re-saiu').value = '';
     document.getElementById('vaga-nome-saiu').value = '';
+    document.getElementById('vaga-num').value = '';
     document.getElementById('vaga-posto').value = '';
+    document.getElementById('vaga-escala').value = '';
     document.getElementById('vaga-funcao').value = '';
+    document.getElementById('vaga-supervisor').value = '';
+    document.getElementById('vaga-punicao').value = 'Nenhuma';
     document.getElementById('vaga-motivo').value = '';
     document.getElementById('vaga-abertura').value = new Date().toISOString().split('T')[0];
     document.getElementById('vaga-status').value = 'Pendente';
@@ -272,8 +300,12 @@ function editarVaga(id) {
     document.getElementById('vaga-id').value = vaga.id;
     document.getElementById('vaga-re-saiu').value = vaga.reSaiu || '';
     document.getElementById('vaga-nome-saiu').value = vaga.nomeSaiu || '';
+    document.getElementById('vaga-num').value = vaga.numVaga || '';
     document.getElementById('vaga-posto').value = vaga.posto || '';
+    document.getElementById('vaga-escala').value = vaga.escala || '';
     document.getElementById('vaga-funcao').value = vaga.funcao || '';
+    document.getElementById('vaga-supervisor').value = vaga.supervisor || '';
+    document.getElementById('vaga-punicao').value = vaga.punicao || 'Nenhuma';
     document.getElementById('vaga-motivo').value = vaga.motivo || '';
     document.getElementById('vaga-abertura').value = vaga.dataAbertura || '';
     document.getElementById('vaga-status').value = vaga.status || 'Pendente';
@@ -288,8 +320,12 @@ async function salvarVaga() {
     const id = document.getElementById('vaga-id').value;
     const reSaiu = document.getElementById('vaga-re-saiu').value;
     const nomeSaiu = document.getElementById('vaga-nome-saiu').value;
+    const numVaga = document.getElementById('vaga-num').value;
     const posto = document.getElementById('vaga-posto').value;
+    const escala = document.getElementById('vaga-escala').value;
     const funcao = document.getElementById('vaga-funcao').value;
+    const supervisor = document.getElementById('vaga-supervisor').value;
+    const punicao = document.getElementById('vaga-punicao').value;
     const motivo = document.getElementById('vaga-motivo').value;
     const dataAbertura = document.getElementById('vaga-abertura').value;
     const status = document.getElementById('vaga-status').value;
@@ -297,7 +333,7 @@ async function salvarVaga() {
     const coord = document.getElementById('vaga-coord').value;
 
     // Validações básicas
-    if (!reSaiu || !nomeSaiu || !posto || !funcao || !motivo || !dataAbertura || !coord) {
+    if (!reSaiu || !nomeSaiu || !numVaga || !posto || !escala || !funcao || !supervisor || !motivo || !dataAbertura || !coord) {
         alert('Por favor, preencha todos os campos obrigatórios (*).');
         return;
     }
@@ -314,8 +350,12 @@ async function salvarVaga() {
     const vagaData = {
         reSaiu: parseInt(reSaiu) || reSaiu,
         nomeSaiu,
+        numVaga,
         posto,
+        escala,
         funcao,
+        supervisor,
+        punicao,
         motivo,
         dataAbertura,
         status,
