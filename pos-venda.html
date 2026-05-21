@@ -53,6 +53,31 @@
             </div>
 
             <div class="pv-table-card">
+                <!-- Barra de ações da tabela -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-table-list" style="color: #1e3a8a;"></i>
+                        <strong style="color: #1e293b; font-size: 0.95rem;">Histórico de Pós Vendas Negativos</strong>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button 
+                            onclick="pv_handleAcaoRestrita('novo')" 
+                            style="display: flex; align-items: center; gap: 8px; padding: 9px 18px; background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; box-shadow: 0 2px 8px rgba(30,58,138,0.3); transition: opacity 0.2s;"
+                            onmouseover="this.style.opacity='0.85'"
+                            onmouseout="this.style.opacity='1'"
+                        >
+                            <i class="fa-solid fa-plus"></i> Registrar Pós Venda
+                        </button>
+                        <button 
+                            onclick="pv_print()"
+                            style="display: flex; align-items: center; gap: 8px; padding: 9px 16px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.2s;"
+                            onmouseover="this.style.opacity='0.75'"
+                            onmouseout="this.style.opacity='1'"
+                        >
+                            <i class="fa-solid fa-print"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
                 <table class="pv-table">
                     <thead>
                         <tr>
