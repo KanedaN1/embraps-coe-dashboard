@@ -14,6 +14,171 @@ const formatBRL = (v) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 };
 
+function adjustLightness(hex, percent) {
+    let r = parseInt(hex.slice(1, 3), 16);
+    let g = parseInt(hex.slice(3, 5), 16);
+    let b = parseInt(hex.slice(5, 7), 16);
+
+    if (percent > 0) {
+        r = Math.round(r + (255 - r) * percent);
+        g = Math.round(g + (255 - g) * percent);
+        b = Math.round(b + (255 - b) * percent);
+    } else {
+        r = Math.round(r * (1 + percent));
+        g = Math.round(g * (1 + percent));
+        b = Math.round(b * (1 + percent));
+    }
+
+    const rHex = Math.min(255, Math.max(0, r)).toString(16).padStart(2, '0');
+    const gHex = Math.min(255, Math.max(0, g)).toString(16).padStart(2, '0');
+    const bHex = Math.min(255, Math.max(0, b)).toString(16).padStart(2, '0');
+    return `#${rHex}${gHex}${bHex}`;
+}
+
+const chart3DPlugin = {
+    id: 'chart3D',
+    beforeDatasetsDraw(chart, args, options) {
+        if (chart.config.type !== 'bar') return;
+        
+        const ctx = chart.ctx;
+        const meta = chart.getDatasetMeta(0);
+        if (meta.hidden) return;
+
+        const isHorizontal = chart.options.indexAxis === 'y';
+        if (isHorizontal) return;
+
+        const dataset = chart.data.datasets[0];
+        const data = dataset.data;
+        const slide = chart.options.slideConfig;
+
+        ctx.save();
+
+        meta.data.forEach((bar, index) => {
+            const val = data[index];
+            if (val === null || val === undefined || val === 0) return;
+
+            const { x, y, base, width } = bar;
+            const left = x - width / 2;
+            const right = x + width / 2;
+            const top = y;
+            const bottom = base;
+
+            const depth = Math.min(Math.max(width * 0.22, 10), 30);
+
+            let baseColor = dataset.backgroundColor || '#4285F4';
+            if (typeof baseColor === 'string') {
+                if (baseColor.includes('rgba')) {
+                    const match = baseColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                    if (match) {
+                        const r = parseInt(match[1]).toString(16).padStart(2, '0');
+                        const g = parseInt(match[2]).toString(16).padStart(2, '0');
+                        const b = parseInt(match[3]).toString(16).padStart(2, '0');
+                        baseColor = `#${r}${g}${b}`;
+                    }
+                }
+            }
+
+            let hexColor = baseColor;
+            if (hexColor === '#1e3a8a' || hexColor === '#3b82f6') {
+                hexColor = '#4285F4';
+            }
+
+            const frontColor = hexColor;
+            const topColor = adjustLightness(hexColor, 0.35);
+            const sideColor = adjustLightness(hexColor, -0.25);
+            const shadowColor = 'rgba(0, 0, 0, 0.08)';
+
+            ctx.fillStyle = shadowColor;
+            ctx.beginPath();
+            ctx.moveTo(left, bottom);
+            ctx.lineTo(right, bottom);
+            ctx.lineTo(right + depth, bottom - depth);
+            ctx.lineTo(left + depth, bottom - depth);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = frontColor;
+            ctx.beginPath();
+            ctx.rect(left, top, width, bottom - top);
+            ctx.fill();
+
+            ctx.fillStyle = topColor;
+            ctx.beginPath();
+            ctx.moveTo(left, top);
+            ctx.lineTo(right, top);
+            ctx.lineTo(right + depth, top - depth);
+            ctx.lineTo(left + depth, top - depth);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = sideColor;
+            ctx.beginPath();
+            ctx.moveTo(right, top);
+            ctx.lineTo(right + depth, top - depth);
+            ctx.lineTo(right + depth, bottom - depth);
+            ctx.lineTo(right, bottom);
+            ctx.closePath();
+            ctx.fill();
+
+            const barHeight = bottom - top;
+            if (barHeight > 25) {
+                ctx.fillStyle = '#ffffff';
+                const valFontSize = Math.min(Math.max(width * 0.22, 10), 15);
+                ctx.font = `bold ${valFontSize}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                let valStr = '';
+                const isCurrency = slide && slide.isCurrency;
+                const isPerc = slide && slide.chartId && slide.chartId.toLowerCase().includes('perc');
+                
+                if (isCurrency) {
+                    valStr = formatBRL(val);
+                } else if (isPerc) {
+                    valStr = val.toFixed(1) + '%';
+                } else {
+                    valStr = val.toLocaleString('pt-BR');
+                }
+                
+                ctx.fillText(valStr, x, top + barHeight / 2);
+            }
+
+            if (index > 0) {
+                const prevVal = data[index - 1];
+                if (prevVal && prevVal > 0) {
+                    const diff = ((val - prevVal) / prevVal) * 100;
+                    
+                    let diffStr = '';
+                    if (diff < 0) {
+                        diffStr = `(${Math.abs(diff).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)`;
+                    } else {
+                        diffStr = diff.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+                    }
+
+                    ctx.fillStyle = '#1e3a8a';
+                    const percFontSize = Math.min(Math.max(width * 0.20, 10), 14);
+                    ctx.font = `bold ${percFontSize}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    
+                    const labelX = x + depth / 2;
+                    const labelY = top - depth / 2 - 4;
+                    
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(diffStr, labelX, labelY);
+                    
+                    ctx.fillText(diffStr, labelX, labelY);
+                }
+            }
+        });
+
+        ctx.restore();
+        return false;
+    }
+};
+
+
 async function generateMonthlyPDF() {
     const btn = document.getElementById('btn-generate-pdf');
     const originalText = btn.innerHTML;
@@ -53,8 +218,8 @@ async function generateMonthlyPDF() {
         const slides = [
             { title: "Gastos com Folgas Trabalhadas (Anual)", type: "chart", chartId: "chartVgFolgas", isCurrency: true, dataKey: "gastosFolgas" },
             { title: "Motivos das Folgas Trabalhadas (Mês)", type: "chart", chartId: "chartVgFolgasMotivos", isCurrency: true },
-            { title: "Folgas Trabalhadas - Portaria (Semanal)", type: "chart", chartId: "chartVgFolgasPortaria", isCurrency: true, isLine: true },
-            { title: "Folgas Trabalhadas - Limpeza (Semanal)", type: "chart", chartId: "chartVgFolgasLimpeza", isCurrency: true, isLine: true },
+            { title: "Folgas Trabalhadas - Portaria (Semanal)", type: "chart", chartId: "chartVgFolgasPortaria", isCurrency: true },
+            { title: "Folgas Trabalhadas - Limpeza (Semanal)", type: "chart", chartId: "chartVgFolgasLimpeza", isCurrency: true },
             { title: "Quantidade de Punições Aplicadas (Anual)", type: "chart", chartId: "chartVgPunicoes", dataKey: "punicoes" },
             { title: "Motivos das Punições (Mês)", type: "chart", chartId: "chartVgPunicoesMotivos" },
             { title: "Tipos de Punições Aplicadas (Mês)", type: "chart", chartId: "chartVgPunicoesTipos" },
@@ -188,21 +353,28 @@ async function renderChartSlide(container, slide, currentData, prevData) {
 
     const isHorizontal = slide.chartId.toLowerCase().includes('supervisor') || slide.chartId.toLowerCase().includes('cidade') || slide.chartId.toLowerCase().includes('escala') || slide.chartId.toLowerCase().includes('topclientes');
     
+    let chartType = originalChart.config.type;
+    if (slide.chartId === 'chartVgFolgasPortaria' || slide.chartId === 'chartVgFolgasLimpeza') {
+        chartType = 'bar';
+    }
+
     const config = {
-        type: originalChart.config.type,
+        type: chartType,
         data: JSON.parse(JSON.stringify(originalChart.config.data)),
         options: {
             ...originalChart.config.options,
             responsive: false, animation: false, maintainAspectRatio: false,
-            layout: { padding: { top: 40, right: 60, left: 20, bottom: 20 } },
+            layout: { padding: { top: 45, right: 60, left: 20, bottom: 20 } },
             indexAxis: isHorizontal ? 'y' : (originalChart.config.options.indexAxis || 'x'),
+            slideConfig: slide,
             plugins: {
                 legend: {
                     display: true, position: 'bottom',
                     labels: { font: { size: 18, weight: 'bold' }, color: '#1e3a8a', padding: 20 }
                 },
                 datalabels: {
-                    display: true, color: '#1e3a8a',
+                    display: (chartType === 'bar' && !isHorizontal) ? false : true,
+                    color: '#1e3a8a',
                     font: { size: slide.compactLabels ? 14 : 18, weight: 'bold' },
                     anchor: isHorizontal ? 'end' : 'end',
                     align: isHorizontal ? 'right' : 'top',
@@ -217,21 +389,25 @@ async function renderChartSlide(container, slide, currentData, prevData) {
                     }
                 }
             },
-            scales: originalChart.config.type === 'pie' || originalChart.config.type === 'doughnut' ? {} : {
+            scales: chartType === 'pie' || chartType === 'doughnut' ? {} : {
                 x: { 
                     beginAtZero: true,
                     ticks: { font: { size: 16, weight: 'bold' }, color: '#1e3a8a' },
-                    grid: { color: 'rgba(226, 232, 240, 0.5)' }
+                    grid: { display: isHorizontal, color: 'rgba(226, 232, 240, 0.5)' }
                 },
                 y: { 
                     ticks: { font: { size: 16, weight: 'bold' }, color: '#1e3a8a' },
-                    grid: { display: false }
+                    grid: { display: !isHorizontal, color: 'rgba(226, 232, 240, 0.5)' }
                 }
             }
         }
     };
 
-    if (slide.isLine) {
+    if (chartType === 'bar' && !isHorizontal) {
+        config.plugins = [chart3DPlugin];
+    }
+
+    if (slide.isLine && chartType === 'line') {
         config.data.datasets.forEach(ds => {
             ds.fill = false;
             ds.borderWidth = 4;
@@ -239,15 +415,24 @@ async function renderChartSlide(container, slide, currentData, prevData) {
         });
     }
 
-    new Chart(canvas, config);
-    const newChart = Chart.getChart(canvas);
-    if (newChart.config.type !== 'pie' && newChart.config.type !== 'doughnut') {
-        newChart.data.datasets.forEach(ds => {
-            ds.backgroundColor = slide.isLine ? 'transparent' : '#1e3a8a';
-            ds.borderColor = '#1e3a8a';
+    if (chartType !== 'pie' && chartType !== 'doughnut') {
+        config.data.datasets.forEach(ds => {
+            if (chartType === 'bar' && !isHorizontal) {
+                if (slide.chartId.toLowerCase().includes('limpeza')) {
+                    ds.backgroundColor = '#10b981';
+                    ds.borderColor = '#10b981';
+                } else {
+                    ds.backgroundColor = '#4285F4';
+                    ds.borderColor = '#4285F4';
+                }
+            } else {
+                ds.backgroundColor = slide.isLine ? 'transparent' : '#1e3a8a';
+                ds.borderColor = '#1e3a8a';
+            }
         });
-        newChart.update();
     }
+
+    new Chart(canvas, config);
 }
 
 async function renderCompositeSlide(container, slide, currentData, prevData) {
@@ -279,10 +464,28 @@ async function renderCompositeSlide(container, slide, currentData, prevData) {
         setTimeout(() => {
             const ctx = document.getElementById('temp-div-anual').getContext('2d');
             const original = Chart.getChart('chartVgDivergencia');
+            const cloneData = JSON.parse(JSON.stringify(original.config.data));
+            cloneData.datasets.forEach(ds => {
+                ds.backgroundColor = '#4285F4';
+                ds.borderColor = '#4285F4';
+            });
             new Chart(ctx, {
                 type: 'bar',
-                data: JSON.parse(JSON.stringify(original.config.data)),
-                options: { responsive: false, maintainAspectRatio: false, plugins: { legend: { display: true }, datalabels: { display: true, color: '#1e3a8a', font: { weight: 'bold' } } } }
+                data: cloneData,
+                options: { 
+                    responsive: false, 
+                    maintainAspectRatio: false, 
+                    slideConfig: { chartId: 'chartVgDivergencia' },
+                    plugins: { 
+                        legend: { display: true }, 
+                        datalabels: { display: false } 
+                    },
+                    scales: {
+                        x: { ticks: { font: { size: 14, weight: 'bold' }, color: '#1e3a8a' }, grid: { display: false } },
+                        y: { ticks: { font: { size: 14, weight: 'bold' }, color: '#1e3a8a' }, grid: { display: true, color: 'rgba(226, 232, 240, 0.5)' } }
+                    }
+                },
+                plugins: [chart3DPlugin]
             });
         }, 100);
     } 
@@ -299,10 +502,28 @@ async function renderCompositeSlide(container, slide, currentData, prevData) {
         setTimeout(() => {
             const ctx = document.getElementById('temp-faltas-anual').getContext('2d');
             const original = Chart.getChart('chartVgFaltas');
+            const cloneData = JSON.parse(JSON.stringify(original.config.data));
+            cloneData.datasets.forEach(ds => {
+                ds.backgroundColor = '#4285F4';
+                ds.borderColor = '#4285F4';
+            });
             new Chart(ctx, {
                 type: 'bar',
-                data: JSON.parse(JSON.stringify(original.config.data)),
-                options: { responsive: false, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: true, color: '#1e3a8a', font: { weight: 'bold' } } } }
+                data: cloneData,
+                options: { 
+                    responsive: false, 
+                    maintainAspectRatio: false, 
+                    slideConfig: { chartId: 'chartVgFaltas' },
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { display: false } 
+                    },
+                    scales: {
+                        x: { ticks: { font: { size: 14, weight: 'bold' }, color: '#1e3a8a' }, grid: { display: false } },
+                        y: { ticks: { font: { size: 14, weight: 'bold' }, color: '#1e3a8a' }, grid: { display: true, color: 'rgba(226, 232, 240, 0.5)' } }
+                    }
+                },
+                plugins: [chart3DPlugin]
             });
         }, 100);
     }
