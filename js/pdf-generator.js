@@ -351,7 +351,8 @@ async function renderChartSlide(container, slide, currentData, prevData) {
         }
     }
 
-    const isHorizontal = slide.chartId.toLowerCase().includes('supervisor') || slide.chartId.toLowerCase().includes('cidade') || slide.chartId.toLowerCase().includes('escala') || slide.chartId.toLowerCase().includes('topclientes');
+    const isHorizontal = slide.chartId.toLowerCase().includes('topclientes');
+    const hasLongLabels = slide.chartId.toLowerCase().includes('supervisor') || slide.chartId.toLowerCase().includes('cidade') || slide.chartId.toLowerCase().includes('escala');
     
     let chartType = originalChart.config.type;
     if (slide.chartId === 'chartVgFolgasPortaria' || slide.chartId === 'chartVgFolgasLimpeza') {
@@ -365,7 +366,7 @@ async function renderChartSlide(container, slide, currentData, prevData) {
             ...originalChart.config.options,
             responsive: false, animation: false, maintainAspectRatio: false,
             layout: { padding: { top: 45, right: 60, left: 20, bottom: 20 } },
-            indexAxis: isHorizontal ? 'y' : (originalChart.config.options.indexAxis || 'x'),
+            indexAxis: isHorizontal ? 'y' : 'x', // Override to force vertical
             slideConfig: slide,
             plugins: {
                 legend: {
@@ -392,7 +393,12 @@ async function renderChartSlide(container, slide, currentData, prevData) {
             scales: chartType === 'pie' || chartType === 'doughnut' ? {} : {
                 x: { 
                     beginAtZero: true,
-                    ticks: { font: { size: 16, weight: 'bold' }, color: '#1e3a8a' },
+                    ticks: { 
+                        font: { size: hasLongLabels ? 12 : 16, weight: 'bold' }, 
+                        color: '#1e3a8a',
+                        maxRotation: hasLongLabels ? 30 : 0,
+                        minRotation: hasLongLabels ? 30 : 0
+                    },
                     grid: { display: isHorizontal, color: 'rgba(226, 232, 240, 0.5)' }
                 },
                 y: { 
@@ -445,21 +451,21 @@ async function renderCompositeSlide(container, slide, currentData, prevData) {
         const total = currentData.divergenciaFuncao || 0;
         const res = currentData.divergenciasResolvidas || 0;
         container.innerHTML = `
-            <div style="display:flex; gap:30px; margin-bottom:30px;">
-                <div style="flex:1; background:#1e3a8a; color:white; padding:25px; border-radius:15px; text-align:center;">
-                    <h2 style="font-size:20px; margin-bottom:5px;">Ocorridas</h2>
-                    <span style="font-size:50px; font-weight:800;">${total}</span>
+            <div style="display:flex; gap:25px; margin-bottom:20px; justify-content: center; width: 100%;">
+                <div style="flex:1; max-width: 250px; background:#1e3a8a; color:white; padding:12px; border-radius:16px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); font-family:'Inter', sans-serif;">
+                    <h3 style="font-size:15px; margin:0 0 5px 0; font-weight:700; opacity: 0.95;">Ocorridas</h3>
+                    <span style="font-size:32px; font-weight:800;">${total}</span>
                 </div>
-                <div style="flex:1; background:#10b981; color:white; padding:25px; border-radius:15px; text-align:center;">
-                    <h2 style="font-size:20px; margin-bottom:5px;">Resolvidas</h2>
-                    <span style="font-size:50px; font-weight:800;">${res}</span>
+                <div style="flex:1; max-width: 250px; background:#10b981; color:white; padding:12px; border-radius:16px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); font-family:'Inter', sans-serif;">
+                    <h3 style="font-size:15px; margin:0 0 5px 0; font-weight:700; opacity: 0.95;">Resolvidas</h3>
+                    <span style="font-size:32px; font-weight:800;">${res}</span>
                 </div>
-                <div style="flex:1; background:#f8fafc; border:2px solid #1e3a8a; color:#1e3a8a; padding:25px; border-radius:15px; text-align:center;">
-                    <h2 style="font-size:20px; margin-bottom:5px;">SLA</h2>
-                    <span style="font-size:50px; font-weight:800;">${total > 0 ? Math.round((res/total)*100) : 100}%</span>
+                <div style="flex:1; max-width: 250px; background:#f8fafc; border:2px solid #1e3a8a; color:#1e3a8a; padding:12px; border-radius:16px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); font-family:'Inter', sans-serif;">
+                    <h3 style="font-size:15px; margin:0 0 5px 0; font-weight:700;">SLA</h3>
+                    <span style="font-size:32px; font-weight:800;">${total > 0 ? Math.round((res/total)*100) : 100}%</span>
                 </div>
             </div>
-            <div style="flex:1; width:100%;"><canvas id="temp-div-anual"></canvas></div>
+            <div style="flex:1; width:100%; height: 320px;"><canvas id="temp-div-anual"></canvas></div>
         `;
         setTimeout(() => {
             const ctx = document.getElementById('temp-div-anual').getContext('2d');
@@ -477,7 +483,7 @@ async function renderCompositeSlide(container, slide, currentData, prevData) {
                     maintainAspectRatio: false, 
                     slideConfig: { chartId: 'chartVgDivergencia' },
                     plugins: { 
-                        legend: { display: true }, 
+                        legend: { display: false }, 
                         datalabels: { display: false } 
                     },
                     scales: {
@@ -493,11 +499,17 @@ async function renderCompositeSlide(container, slide, currentData, prevData) {
         const total = currentData.faltas || 0;
         const media = Math.round(total / 30);
         container.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; border-left:10px solid #1e3a8a; padding:25px; border-radius:10px; margin-bottom:20px;">
-                <h2 style="font-size:24px; color:#1e3a8a; margin:0;">Total Mês: <strong>${total.toLocaleString('pt-BR')}</strong></h2>
-                <h2 style="font-size:24px; color:#1e3a8a; margin:0;">Média Diária: <strong>${media} faltas</strong></h2>
+            <div style="display:flex; gap:25px; margin-bottom:20px; justify-content: center; width: 100%;">
+                <div style="flex:1; max-width: 250px; background:#1e3a8a; color:white; padding:12px; border-radius:16px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); font-family:'Inter', sans-serif;">
+                    <h3 style="font-size:15px; margin:0 0 5px 0; font-weight:700; opacity: 0.95;">Total no Mês</h3>
+                    <span style="font-size:32px; font-weight:800;">${total.toLocaleString('pt-BR')}</span>
+                </div>
+                <div style="flex:1; max-width: 250px; background:#f8fafc; border:2px solid #1e3a8a; color:#1e3a8a; padding:12px; border-radius:16px; text-align:center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); font-family:'Inter', sans-serif;">
+                    <h3 style="font-size:15px; margin:0 0 5px 0; font-weight:700;">Média Diária</h3>
+                    <span style="font-size:32px; font-weight:800;">${media}</span>
+                </div>
             </div>
-            <div style="flex:1; width:100%;"><canvas id="temp-faltas-anual"></canvas></div>
+            <div style="flex:1; width:100%; height: 320px;"><canvas id="temp-faltas-anual"></canvas></div>
         `;
         setTimeout(() => {
             const ctx = document.getElementById('temp-faltas-anual').getContext('2d');
@@ -550,32 +562,82 @@ async function renderReservaGeralSlide(container, currentData) {
     if (!currentData || !currentData.reservas) return;
     container.style.display = 'grid';
     container.style.gridTemplateColumns = '1fr 1fr 1fr';
-    container.style.gap = '15px';
-    container.style.padding = '10px';
+    container.style.gap = '20px';
+    container.style.padding = '20px';
+    container.style.background = '#f8fafc';
+    container.style.boxSizing = 'border-box';
+    container.style.height = '100%';
 
-    const renderCard = (title, type, icon) => {
-        const dados = currentData.reservas[type];
+    const renderCard = (title, type, icon, headerBg) => {
+        const dados = currentData.reservas[type] || [];
         let totalA = 0, totalI = 0, rows = '';
+        
         dados.forEach(item => {
             totalA += item.atual; totalI += item.ideal;
             const d = item.atual - item.ideal;
-            rows += `<tr style="font-size:12px; border-bottom:1px solid #eee;"><td>${item.escala}</td><td>${item.atual}</td><td>${item.ideal}</td><td style="font-weight:bold; color:${d>=0?'#10b981':'#ef4444'}">${d>0?'+':''}${d}</td></tr>`;
+            
+            let difBadge = '';
+            if (d > 0) {
+                difBadge = `<span style="background: #10b981; color: white; border-radius: 12px; padding: 2px 10px; font-weight: bold; font-size: 13px; display: inline-block;">+${d}</span>`;
+            } else if (d === 0) {
+                difBadge = `<span style="background: #10b981; color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">0</span>`;
+            } else {
+                difBadge = `<span style="background: #ef4444; color: white; border-radius: 12px; padding: 2px 10px; font-weight: bold; font-size: 13px; display: inline-block;">${d}</span>`;
+            }
+
+            rows += `
+                <tr style="border-bottom: 1px solid #f1f5f9; height: 42px;">
+                    <td style="font-size: 13px; font-weight: 600; color: #1e293b; text-align: left; padding-left: 15px; font-family:'Inter', sans-serif;">${item.escala}</td>
+                    <td style="font-size: 14px; font-weight: 700; color: #334155; text-align: center; font-family:'Inter', sans-serif;">${item.atual}</td>
+                    <td style="font-size: 14px; font-weight: 700; color: #334155; text-align: center; font-family:'Inter', sans-serif;">${item.ideal}</td>
+                    <td style="text-align: center; padding-right: 15px;">${difBadge}</td>
+                </tr>
+            `;
         });
+
         return `
-            <div style="background:white; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden; display:flex; flex-direction:column;">
-                <div style="background:#1e3a8a; color:white; padding:10px; font-size:14px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-                    <span><i class="fa-solid ${icon}"></i> ${title}</span>
-                    <span style="font-size:18px;">${totalA}/${totalI}</span>
+            <div style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; height: 100%;">
+                <!-- Header -->
+                <div style="background: ${headerBg}; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: white;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid ${icon}" style="font-size: 18px;"></i>
+                        <span style="font-weight: 800; font-size: 16px; letter-spacing: 0.5px;">${title}</span>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <!-- Atual Card -->
+                        <div style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 6px; padding: 3px 8px; display: flex; flex-direction: column; align-items: center; min-width: 45px;">
+                          <span style="font-size: 8px; font-weight: 800; letter-spacing: 0.5px; opacity: 0.9;">ATUAL</span>
+                          <span style="font-size: 14px; font-weight: 900;">${totalA}</span>
+                        </div>
+                        <!-- Ideal Card -->
+                        <div style="background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 6px; padding: 3px 8px; display: flex; flex-direction: column; align-items: center; min-width: 45px;">
+                          <span style="font-size: 8px; font-weight: 800; letter-spacing: 0.5px; opacity: 0.9;">IDEAL</span>
+                          <span style="font-size: 14px; font-weight: 900;">${totalI}</span>
+                        </div>
+                    </div>
                 </div>
-                <table style="width:100%; border-collapse:collapse; text-align:center;">
-                    <thead style="background:#f8fafc; font-size:11px;"><tr><th>ESC</th><th>ATU</th><th>IDE</th><th>DIF</th></tr></thead>
-                    <tbody>${rows}</tbody>
+                <!-- Table -->
+                <table style="width: 100%; border-collapse: collapse; margin-top: 5px;">
+                    <thead>
+                        <tr style="height: 30px; border-bottom: 2px solid #f1f5f9;">
+                            <th style="font-size: 11px; font-weight: 700; color: #64748b; text-align: left; padding-left: 15px; text-transform: uppercase; font-family:'Inter', sans-serif;">ESCALA</th>
+                            <th style="font-size: 11px; font-weight: 700; color: #64748b; text-align: center; text-transform: uppercase; width: 55px; font-family:'Inter', sans-serif;">ATUAL</th>
+                            <th style="font-size: 11px; font-weight: 700; color: #64748b; text-align: center; text-transform: uppercase; width: 55px; font-family:'Inter', sans-serif;">IDEAL</th>
+                            <th style="font-size: 11px; font-weight: 700; color: #64748b; text-align: center; text-transform: uppercase; width: 65px; padding-right: 15px; font-family:'Inter', sans-serif;">DIF.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
                 </table>
             </div>
         `;
     };
 
-    container.innerHTML = renderCard('LIMPEZA', 'limpeza', 'fa-broom') + renderCard('PORTARIA DIA', 'portariaDia', 'fa-sun') + renderCard('PORTARIA NOITE', 'portariaNoite', 'fa-moon');
+    container.innerHTML = 
+        renderCard('LIMPEZA', 'limpeza', 'fa-broom', 'linear-gradient(135deg, #3b82f6, #1d4ed8)') + 
+        renderCard('PORTARIA DIA', 'portariaDia', 'fa-sun', 'linear-gradient(135deg, #0ea5e9, #0369a1)') + 
+        renderCard('PORTARIA NOITE', 'portariaNoite', 'fa-moon', 'linear-gradient(135deg, #1e3a8a, #111827)');
 }
 
 function loadImage(src) {
