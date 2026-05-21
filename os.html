@@ -7,6 +7,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        @media print {
+            /* Anula o visibility:hidden do style.css global */
+            body * { visibility: visible !important; }
+
+            /* Oculta elementos desnecessários */
+            .sidebar, .mobile-topbar, .sidebar-overlay, .print-btn,
+            #btn-logout, #filtro-os, .action-btn, #modal-os,
+            .admin-header .global-filters { 
+                display: none !important; 
+            }
+
+            /* Ajusta layout para impressão */
+            .dashboard-container { display: block !important; }
+            .main-content { 
+                margin-left: 0 !important; 
+                padding: 15px !important; 
+                width: 100% !important;
+            }
+            .kpi-cards { 
+                display: grid !important; 
+                grid-template-columns: repeat(4, 1fr) !important; 
+                gap: 10px !important; 
+                margin-bottom: 20px !important;
+            }
+            .kpi-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+            .form-section { box-shadow: none !important; border: 1px solid #ccc !important; }
+            .reserva-table { width: 100% !important; font-size: 11px !important; }
+            body { background: white !important; }
+            @page { margin: 1.5cm; size: A4 landscape; }
+        }
+    </style>
 </head>
 <body>
     <!-- Mobile top bar -->

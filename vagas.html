@@ -62,6 +62,32 @@
             background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             width: 100%; max-width: 400px; text-align: center; border: 1px solid #e2e8f0;
         }
+
+        @media print {
+            /* Anula o visibility:hidden do style.css global */
+            body * { visibility: visible !important; }
+
+            /* Oculta elementos desnecessários */
+            .sidebar, .mobile-topbar, .sidebar-overlay, .print-btn,
+            #login-overlay, #btn-logout, .action-btn, .ag-modal-overlay,
+            #filtro-vagas, #filtro-status, .admin-header .global-filters { 
+                display: none !important; 
+            }
+
+            /* Ajusta layout para impressão */
+            .dashboard-container { display: block !important; }
+            .main-content { 
+                margin-left: 0 !important; 
+                padding: 15px !important; 
+                width: 100% !important;
+            }
+            .form-section { box-shadow: none !important; border: 1px solid #ccc !important; }
+            .reserva-table { width: 100% !important; font-size: 10px !important; min-width: unset !important; }
+            .badge-status { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .row-atrasada { background-color: #fee2e2 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            body { background: white !important; }
+            @page { margin: 1.5cm; size: A4 landscape; }
+        }
     </style>
 </head>
 <body>
