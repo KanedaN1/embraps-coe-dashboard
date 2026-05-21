@@ -40,20 +40,14 @@
                 <h1 style="margin:0; color:#1e3a8a;">Pós Venda Negativo</h1>
                 <p style="color:#64748b; margin:5px 0 0 0;">Controle de acompanhamento e efetivação de retornos</p>
             </div>
-            <div id="pv-admin-actions" style="display: none;">
-                <button class="btn-add" onclick="pv_openModal()"><i class="fa-solid fa-plus"></i> Novo Pós Venda</button>
+            <div id="pv-admin-actions" style="display: flex; gap: 10px;">
+                <button class="btn-add" onclick="pv_handleAcaoRestrita('novo')" id="btn-novo-pv"><i class="fa-solid fa-plus"></i> Novo Pós Venda</button>
+                <button class="btn-primary" onclick="pv_forcarLogin()" id="btn-fazer-login-pv" style="background-color: var(--secondary-color); border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-lock"></i> Acesso Coordenador</button>
+                <button class="btn-primary" onclick="pv_logout()" id="btn-logout-pv" style="display: none; background-color: var(--danger); border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-sign-out-alt"></i> Sair do Acesso</button>
             </div>
         </div>
 
-        <div id="pv-login-section" style="background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 400px; margin: 4rem auto; text-align: center;">
-            <i class="fa-solid fa-lock" style="font-size: 3rem; color: #e11d48; margin-bottom: 1.5rem;"></i>
-            <h3>Acesso Restrito</h3>
-            <p style="color: #64748b; margin-bottom: 2rem;">Escolha seu perfil de acesso:</p>
-            <button onclick="pv_login('admin')" class="btn-primary w-100" style="margin-bottom: 1rem; background: #1e3a8a;">Acesso Admin</button>
-            <button onclick="pv_login('coordenador')" class="btn-primary w-100" style="background: #e11d48;">Acesso Coordenador</button>
-        </div>
-
-        <div id="pv-app-content" style="display: none;">
+        <div id="pv-app-content">
             <div class="pv-kpi-grid" id="pv-kpis">
                 <!-- KPIs via JS -->
             </div>
@@ -68,6 +62,7 @@
                             <th>Data Inicial</th>
                             <th>Próximo Retorno</th>
                             <th>Status</th>
+                            <th>Observação</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -119,6 +114,38 @@
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                 <button onclick="pv_closeModal()" class="btn-secondary" style="flex: 1; padding: 10px;">Cancelar</button>
                 <button onclick="pv_save()" class="btn-primary" style="flex: 1; padding: 10px; background: #1e3a8a;">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login -->
+    <div id="pv-login-overlay" class="login-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="login-box" style="background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: center;">
+            <div style="width: 60px; height: 60px; background: rgba(30, 58, 138, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                <i class="fa-solid fa-shield-halved" style="font-size: 1.5rem; color: #1e3a8a;"></i>
+            </div>
+            <h2 style="color: #0f172a; margin-bottom: 0.5rem;">Acesso Restrito</h2>
+            <p style="color: #64748b; margin-bottom: 2rem; font-size: 0.95rem;">Digite sua credencial de coordenador ou admin para realizar essa ação.</p>
+            
+            <div class="ag-form-group" style="text-align: left; margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155;">Identificação</label>
+                <select id="pv-login-user" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    <option value="admin">Admin</option>
+                    <option value="Carlos Leme">Carlos Leme</option>
+                    <option value="Isaias Belchior">Isaias Belchior</option>
+                    <option value="Rejiane Teles">Rejiane Teles</option>
+                    <option value="Renato Augusto">Renato Augusto</option>
+                    <option value="Ricardo Faustino">Ricardo Faustino</option>
+                </select>
+            </div>
+            <div class="ag-form-group" style="text-align: left; margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155;">PIN de Acesso</label>
+                <input type="password" id="pv-login-pin" placeholder="Digite seu PIN numérico" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="pv_fecharLogin()" style="flex: 1; padding: 0.75rem; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancelar</button>
+                <button onclick="pv_autenticar()" style="flex: 1; padding: 0.75rem; background: #1e3a8a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Entrar</button>
             </div>
         </div>
     </div>
