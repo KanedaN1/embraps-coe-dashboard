@@ -1,9 +1,9 @@
 :root {
-    /* Color Palette Embraps */
-    --primary-color: #173f8a; /* Deep Blue Embraps */
-    --primary-light: #2c6eb5; /* Medium Blue Embraps */
-    --accent-color: #3b82f6; /* Action Blue */
-    --accent-hover: #2563eb; /* Action Blue Hover */
+    /* Color Palette Embraps (Updated to match new Logo) */
+    --primary-color: #003bbd; /* Deep Blue from new logo */
+    --primary-light: #2b6aff; /* Vibrant Blue from new logo */
+    --accent-color: #2b6aff; /* Action Blue */
+    --accent-hover: #003bbd; /* Action Blue Hover */
     
     /* Semantic Colors */
     --success: #10b981; /* Green */
@@ -66,7 +66,7 @@ body {
 /* Sidebar */
 .sidebar {
     width: var(--sidebar-width);
-    background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
     color: white;
     display: flex;
     flex-direction: column;
