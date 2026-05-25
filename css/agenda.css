@@ -1,4 +1,4 @@
-/* ==========================================================
+﻿/* ==========================================================
    AGENDA COE — CSS
    ========================================================== */
 :root {
@@ -29,7 +29,7 @@
 .ag-login-logo h1 { font-size: 1.6rem; color: #1e3a8a; margin: .5rem 0; }
 .ag-login-logo h1 span { color: #3b82f6; }
 .ag-login-logo p { color: var(--ag-muted); font-size: .9rem; margin: 0; }
-.ag-login-logo img { max-height: 56px; margin-bottom: .5rem; }
+.ag-login-logo img { max-height: 120px; margin-bottom: .5rem; }
 
 .ag-type-tabs { display: flex; gap: .4rem; background: #f1f5f9; padding: .3rem; border-radius: 8px; margin: 1.5rem 0; }
 .ag-type-tab { flex: 1; border: none; background: transparent; padding: .5rem; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--ag-muted); transition: .2s; }
@@ -70,7 +70,7 @@
   position: sticky; top: 0; z-index: 50;
 }
 .ag-header-logo { display: flex; align-items: center; gap: .7rem; text-decoration: none; color: #1e3a8a; }
-.ag-header-logo img { height: 34px; }
+.ag-header-logo img { height: 70px; }
 .ag-header-logo span { font-size: 1.2rem; font-weight: 700; }
 .ag-header-right { display: flex; align-items: center; gap: 1rem; }
 .ag-user-badge { background: #eff6ff; color: #1e40af; padding: .4rem 1rem; border-radius: 20px; font-weight: 600; font-size: .85rem; }
@@ -193,3 +193,4 @@
   .ag-actions-bar { flex-direction: column; align-items: stretch; }
   .ag-filters { margin-left: 0; flex-direction: column; }
 }
+
