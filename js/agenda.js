@@ -463,9 +463,10 @@ async function ag_saveTask() {
     if (!deadline) { ag_toast('⚠️ Informe o prazo.');               return; }
 
     const existing = id ? AG_TASKS.find(t => t.id === id) : null;
-    const d = new Date(deadline);
-    const curMonth = (d.getMonth() + 1).toString().padStart(2, '0');
-    const curYear = d.getFullYear().toString();
+    // Extrair mês/ano diretamente da string do prazo (ex: "2026-05-31T23:59")
+    // para evitar problema de fuso horário ao converter para Date
+    const [datePart] = deadline.split('T');
+    const [curYear, curMonth] = datePart.split('-');
 
     const baseData = {
         name,
@@ -489,34 +490,47 @@ async function ag_saveTask() {
     else {
         if (freq === 'semanal') {
             // Cria para todas as semanas restantes do mês
-            const startDay = d.getDate();
-            const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+            const [_dp] = deadline.split('T');
+            const [_yr, _mo, _dy] = _dp.split('-').map(Number);
+            const startDay = _dy;
+            const lastDay = new Date(_yr, _mo, 0).getDate(); // último dia do mês
             
             for (let day = startDay; day <= lastDay; day += 7) {
-                const newD = new Date(d);
+                const newD = new Date(deadline);
                 newD.setDate(day);
+                // Formatar no padrão local sem converter para UTC
+                const mm = String(newD.getMonth() + 1).padStart(2, '0');
+                const dd = String(newD.getDate()).padStart(2, '0');
+                const hhmm = deadline.includes('T') ? deadline.split('T')[1] : '00:00';
+                const newDeadline = `${newD.getFullYear()}-${mm}-${dd}T${hhmm}`;
                 const finalId = (typeof db !== 'undefined' && db) ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now() + day;
                 const payload = { 
                     ...baseData, 
                     id: finalId,
-                    deadline: newD.toISOString().slice(0, 16),
-                    month: (newD.getMonth() + 1).toString().padStart(2, '0'),
+                    deadline: newDeadline,
+                    month: mm,
                     year: newD.getFullYear().toString()
                 };
                 await ag_persistTask(payload, finalId);
             }
         } else if (freq === 'mensal') {
             // Cria para todos os meses restantes do ano
-            const startMonth = d.getMonth();
+            const [_dp2] = deadline.split('T');
+            const [_yr2, _mo2] = _dp2.split('-').map(Number);
+            const startMonth = _mo2 - 1; // 0-indexed
             for (let m = startMonth; m < 12; m++) {
-                const newD = new Date(d);
+                const newD = new Date(deadline);
                 newD.setMonth(m);
+                const mm = String(newD.getMonth() + 1).padStart(2, '0');
+                const dd = String(newD.getDate()).padStart(2, '0');
+                const hhmm = deadline.includes('T') ? deadline.split('T')[1] : '00:00';
+                const newDeadline = `${newD.getFullYear()}-${mm}-${dd}T${hhmm}`;
                 const finalId = (typeof db !== 'undefined' && db) ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now() + m;
                 const payload = { 
                     ...baseData, 
                     id: finalId,
-                    deadline: newD.toISOString().slice(0, 16),
-                    month: (newD.getMonth() + 1).toString().padStart(2, '0'),
+                    deadline: newDeadline,
+                    month: mm,
                     year: newD.getFullYear().toString()
                 };
                 await ag_persistTask(payload, finalId);

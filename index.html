@@ -226,7 +226,7 @@
                             <button class="btn-primary" onclick="pv_print()" style="background: #64748b; border: none; font-size: 0.85rem; padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer; font-weight: 600;">
                                 <i class="fa-solid fa-print"></i> Imprimir
                             </button>
-                            <button id="pv-btn-novo" class="btn-primary" onclick="pv_openModal()" style="background: #e11d48; border: none; font-size: 0.85rem; padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer; font-weight: 600;">
+                            <button id="pv-btn-novo" class="btn-primary" onclick="pv_handleAcaoRestrita('novo')" style="background: #e11d48; border: none; font-size: 0.85rem; padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer; font-weight: 600;">
                                 <i class="fa-solid fa-plus"></i> Novo Registro
                             </button>
                         </div>
@@ -840,6 +840,37 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Login Pós-Venda -->
+    <div id="pv-login-overlay" class="login-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="login-box" style="background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: center;">
+            <div style="width: 60px; height: 60px; background: rgba(30, 58, 138, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                <i class="fa-solid fa-shield-halved" style="font-size: 1.5rem; color: #1e3a8a;"></i>
+            </div>
+            <h2 style="color: #0f172a; margin-bottom: 0.5rem;">Acesso Coordenador</h2>
+            <p style="color: #64748b; margin-bottom: 2rem; font-size: 0.95rem;">Selecione seu nome e digite o PIN para registrar um Pós-Venda.</p>
+            
+            <div class="ag-form-group" style="text-align: left; margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155;">Identificação</label>
+                <select id="pv-login-user" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    <option value="Carlos Leme">Carlos Leme</option>
+                    <option value="Isaias Belchior">Isaias Belchior</option>
+                    <option value="Rejiane Teles">Rejiane Teles</option>
+                    <option value="Renato Augusto">Renato Augusto</option>
+                    <option value="Ricardo Faustino">Ricardo Faustino</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="ag-form-group" style="text-align: left; margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155;">PIN de Acesso</label>
+                <input type="password" id="pv-login-pin" placeholder="Digite seu PIN numérico" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px;" onkeyup="if(event.key==='Enter') pv_autenticar()">
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="pv_fecharLogin()" style="flex: 1; padding: 0.75rem; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancelar</button>
+                <button onclick="pv_autenticar()" style="flex: 1; padding: 0.75rem; background: #1e3a8a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Entrar</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
-
