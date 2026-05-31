@@ -8,6 +8,13 @@ let currentFilteredExp = [];
 const dbExp = db; // Usando o db global do firebase-config.js
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const filterMonth = document.getElementById('filter-month');
+    if (filterMonth) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        filterMonth.value = `${yyyy}-${mm}`;
+    }
     await loadExpData();
     setupImport();
 });
@@ -77,6 +84,9 @@ async function handleFile(file) {
 
             status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvando ${rows.length} colaboradores...`;
 
+            const mesRef = document.getElementById('filter-month')?.value;
+            if (!mesRef) throw new Error("Selecione um mês de referência no filtro superior antes de importar.");
+
             // Mapear e Salvar no Firebase
             const batch = dbExp.batch();
             rows.forEach(row => {
@@ -97,6 +107,7 @@ async function handleFile(file) {
                     admissao: formatDate(row['Admissão'] || row['ADMISSÃO'] || cleanRow['admissao']),
                     exp1: formatDate(row['1 EXP'] || row['1ª EXP'] || cleanRow['1 exp'] || cleanRow['exp1']),
                     exp2: formatDate(row['2 EXP'] || row['2ª EXP'] || cleanRow['2 exp'] || cleanRow['exp2']),
+                    mesReferencia: mesRef,
                     status: 'PENDENTE',
                     finalizadoEm: null,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -132,6 +143,7 @@ function formatDate(val) {
 // 3. Renderizar Tabela
 function renderTable() {
     const tbody = document.getElementById('exp-table-body');
+    const filterMonth = document.getElementById('filter-month').value;
     const filterArea = document.getElementById('filter-area').value;
     const filterStatus = document.getElementById('filter-status').value;
     const filterAlert = document.getElementById('filter-alert').value;
@@ -144,6 +156,7 @@ function renderTable() {
     const isAdmin = sessionStorage.getItem('admin_logged') === 'true';
 
     currentFilteredExp = expData.filter(d => {
+        const matchMonth = !filterMonth || d.mesReferencia === filterMonth;
         const matchArea = !filterArea || d.area === filterArea;
         const matchStatus = !filterStatus || d.status === filterStatus;
         const matchSearch = (d.nome || "").toLowerCase().includes(search) || (d.re || "").toString().includes(search);
@@ -161,7 +174,7 @@ function renderTable() {
             matchAlert = (exp1 < today || exp2 < today) && d.status === 'PENDENTE';
         }
 
-        return matchArea && matchStatus && matchSearch && matchAlert;
+        return matchMonth && matchArea && matchStatus && matchSearch && matchAlert;
     });
 
     if (currentFilteredExp.length === 0) {
@@ -248,24 +261,21 @@ function sendTerminationEmail(id) {
     const to = "adm.dop.embraps@gmail.com";
     const subject = `TÉRMINO DE CONTRATO DE EXPERIÊNCIA: ${emp.nome.toUpperCase()} RE: ${emp.re}`;
     
-    const body = `Bom dia,\n\n` +
-                 `Por gentileza, solicito o envio do telegrama para a colaboradora, a mesma se encontra na falta.\n\n` +
-                 `RE: ${emp.re}\n` +
-                 `NOME: ${emp.nome.toUpperCase()}\n` +
-                 `PCD: NÃO\n` +
-                 `POSTO: ${emp.cliente}\n` +
-                 `CARGO: ${emp.cargo}\n` +
-                 `TÉRMINO DE 1° CONTRATO DE EXPERIÊNCIA: ${formatBRDate(emp.exp1)}\n\n` +
-                 `Att,\nNikolas Cardoso`;
+    const body = `Bom dia,<br><br>` +
+                 `Por gentileza, solicito o envio do telegrama para a colaboradora, a mesma se encontra na falta.<br><br>` +
+                 `RE: ${emp.re}<br>` +
+                 `NOME: ${emp.nome.toUpperCase()}<br>` +
+                 `PCD: NÃO<br>` +
+                 `POSTO: ${emp.cliente}<br>` +
+                 `CARGO: ${emp.cargo}<br>` +
+                 `TÉRMINO DE 1° CONTRATO DE EXPERIÊNCIA: ${formatBRDate(emp.exp1)}<br><br>` +
+                 `Att,<br>Nikolas Cardoso`;
 
-    // Criar um link invisível para forçar o disparo do mailto
-    const mailtoUrl = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const l = document.createElement('a');
-    l.href = mailtoUrl;
-    l.target = '_blank';
-    document.body.appendChild(l);
-    l.click();
-    document.body.removeChild(l);
+    // Disparar via emailJS em vez de abrir mailto
+    enviarEmail(to, subject, body).then(success => {
+        if (success) alert("E-mail de desligamento enviado com sucesso!");
+        else alert("Falha ao enviar e-mail. Verifique o console ou a configuração do EmailJS.");
+    });
 }
 
 // 5.1 Tabela de Desempenho (SLA)

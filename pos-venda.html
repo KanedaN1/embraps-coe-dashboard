@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -41,7 +41,7 @@
                 <p style="color:#64748b; margin:5px 0 0 0;">Controle de acompanhamento e efetivação de retornos</p>
             </div>
             <div id="pv-admin-actions" style="display: flex; gap: 10px;">
-                <button class="btn-add" onclick="pv_handleAcaoRestrita('novo')" id="btn-novo-pv"><i class="fa-solid fa-plus"></i> Novo Pós Venda</button>
+                <button class="btn-add" onclick="pv_openModal()" id="btn-novo-pv"><i class="fa-solid fa-plus"></i> Novo Pós Venda</button>
                 <button class="btn-primary" onclick="pv_forcarLogin()" id="btn-fazer-login-pv" style="background-color: var(--secondary-color); border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-lock"></i> Acesso Coordenador</button>
                 <button class="btn-primary" onclick="pv_logout()" id="btn-logout-pv" style="display: none; background-color: var(--danger); border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-sign-out-alt"></i> Sair do Acesso</button>
             </div>
@@ -61,13 +61,18 @@
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <button 
-                            onclick="pv_handleAcaoRestrita('novo')" 
+                            onclick="pv_openModal()" 
                             style="display: flex; align-items: center; gap: 8px; padding: 9px 18px; background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; box-shadow: 0 2px 8px rgba(30,58,138,0.3); transition: opacity 0.2s;"
                             onmouseover="this.style.opacity='0.85'"
                             onmouseout="this.style.opacity='1'"
                         >
                             <i class="fa-solid fa-plus"></i> Registrar Pós Venda
                         </button>
+                        <select id="pv-filter-status" onchange="pv_renderTable()" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; color: #475569; outline: none; background: white;">
+                            <option value="">Todos os Status</option>
+                            <option value="pendente">Pendente</option>
+                            <option value="concluido">Concluído</option>
+                        </select>
                         <button 
                             onclick="pv_print()"
                             style="display: flex; align-items: center; gap: 8px; padding: 9px 16px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: opacity 0.2s;"

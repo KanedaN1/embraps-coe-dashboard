@@ -37,7 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Verifica Status com base na Data de Vencimento
-function calcularStatus(dataVencimentoStr) {
+function calcularStatus(dataVencimentoStr, statusOS) {
+    if (statusOS === 'concluida') return { classe: 'badge-concluida', texto: 'Concluída' };
     if (!dataVencimentoStr) return { classe: 'badge-prazo', texto: 'No Prazo' };
 
     // Converter YYYY-MM-DD para objeto Date (considerando fuso local)
@@ -85,8 +86,10 @@ function renderizarTabela(lista = ordensServico) {
         return;
     }
 
+    const isAdmin = sessionStorage.getItem('admin_logged') === 'true';
+
     lista.forEach(os => {
-        const status = calcularStatus(os.dataVencimento);
+        const status = calcularStatus(os.dataVencimento, os.status_os);
         const tr = document.createElement('tr');
         
         // Formatar data para DD/MM/YYYY
@@ -96,6 +99,10 @@ function renderizarTabela(lista = ordensServico) {
             dataFormatada = `${dia}/${mes}/${ano}`;
         }
 
+        const btnConcluir = (isAdmin && os.status_os !== 'concluida') 
+            ? `<button class="action-btn" style="color:var(--success)" title="Concluir" onclick="concluirOS('${os.id}')"><i class="fa-solid fa-check"></i></button>` 
+            : '';
+
         tr.innerHTML = `
             <td><span class="badge-status ${status.classe}">${status.texto}</span></td>
             <td>${dataFormatada}</td>
@@ -104,6 +111,7 @@ function renderizarTabela(lista = ordensServico) {
             <td>${os.cliente}</td>
             <td>${os.funcao}</td>
             <td style="text-align: center;">
+                ${btnConcluir}
                 <button class="action-btn" title="Abrir PDF no Drive" onclick="window.open('${os.link}', '_blank')"><i class="fa-solid fa-link"></i></button>
                 <button class="action-btn whatsapp" title="Avisar Supervisor" onclick="notificarWhatsApp('${os.id}')"><i class="fa-brands fa-whatsapp"></i></button>
                 <button class="action-btn edit" title="Editar" onclick="abrirModalEditarOS('${os.id}')"><i class="fa-solid fa-pen"></i></button>
@@ -116,29 +124,35 @@ function renderizarTabela(lista = ordensServico) {
 
 function filtrarTabelaOS() {
     const termo = document.getElementById('filtro-os').value.toLowerCase();
-    const listaFiltrada = ordensServico.filter(os => 
-        os.cliente.toLowerCase().includes(termo) || 
-        os.numero.toLowerCase().includes(termo) ||
-        os.motivo.toLowerCase().includes(termo)
-    );
+    const filtroStatus = document.getElementById('filtro-status-os').value;
+
+    const listaFiltrada = ordensServico.filter(os => {
+        const matchTerm = os.cliente.toLowerCase().includes(termo) || 
+                          os.numero.toLowerCase().includes(termo) ||
+                          os.motivo.toLowerCase().includes(termo);
+        const statusCalc = calcularStatus(os.dataVencimento, os.status_os).texto;
+        const matchStatus = filtroStatus === '' || statusCalc === filtroStatus;
+
+        return matchTerm && matchStatus;
+    });
     renderizarTabela(listaFiltrada);
 }
 
 function atualizarKPIs() {
     let alerta = 0;
     let vencer = 0;
-    let prazo = 0;
+    let concluida = 0;
 
     ordensServico.forEach(os => {
-        const status = calcularStatus(os.dataVencimento);
+        const status = calcularStatus(os.dataVencimento, os.status_os);
         if (status.texto === 'Alerta') alerta++;
         else if (status.texto === 'A Vencer') vencer++;
-        else prazo++;
+        else if (status.texto === 'Concluída') concluida++;
     });
 
     document.getElementById('kpi-alerta').innerText = alerta;
     document.getElementById('kpi-vencer').innerText = vencer;
-    document.getElementById('kpi-prazo').innerText = prazo;
+    document.getElementById('kpi-concluidas').innerText = concluida;
     document.getElementById('kpi-total').innerText = ordensServico.length;
 }
 
@@ -219,6 +233,21 @@ async function excluirOS(id) {
         } catch (error) {
             console.error("Erro ao excluir OS:", error);
             alert("Erro ao excluir a Ordem de Serviço.");
+        }
+    }
+}
+
+async function concluirOS(id) {
+    if (confirm("Deseja marcar esta Ordem de Serviço como Concluída?")) {
+        try {
+            await db.collection('ordens_servico').doc(id).update({
+                status_os: 'concluida',
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            carregarOS();
+        } catch (error) {
+            console.error("Erro ao concluir OS:", error);
+            alert("Erro ao concluir a Ordem de Serviço.");
         }
     }
 }

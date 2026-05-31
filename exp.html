@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -274,6 +274,10 @@
 
             <div class="exp-filters">
                 <div class="filter-group">
+                    <label>Mês de Referência</label>
+                    <input type="month" id="filter-month" onchange="renderTable()">
+                </div>
+                <div class="filter-group">
                     <label>Supervisor / Área</label>
                     <select id="filter-area" onchange="renderTable()">
                         <option value="">Todos</option>
@@ -346,6 +350,9 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="js/email-service.js?v=2.0"></script>
     <script src="js/firebase-config.js?v=2.0"></script>
     
     <!-- Chart.js para o gráfico de SLA -->

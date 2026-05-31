@@ -421,3 +421,28 @@ async function excluirVaga(id) {
         }
     }
 }
+
+// ==========================================
+// EXPORTAÇÃO
+// ==========================================
+function exportarPDFVagas() {
+    const tableContainer = document.querySelector('.form-section');
+    if (!tableContainer) return;
+
+    // Remove temporariamente botões de ação e campos não importantes
+    const elementsToHide = document.querySelectorAll('.action-btn, .print-btn, #filtro-vagas, #filtro-status, #filtro-coord');
+    elementsToHide.forEach(el => el.style.display = 'none');
+
+    const opt = {
+        margin:       0.2,
+        filename:     'Gestao_de_Vagas.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(tableContainer).save().then(() => {
+        // Restaura elementos
+        elementsToHide.forEach(el => el.style.display = '');
+    });
+}

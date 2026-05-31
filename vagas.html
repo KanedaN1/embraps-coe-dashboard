@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -172,7 +172,7 @@
                 </div>
                 <div class="global-filters" style="display: flex; gap: 10px;">
                     <button class="btn-primary" onclick="abrirModalVaga()" id="btn-nova-vaga"><i class="fa-solid fa-plus"></i> Registrar Movimentação</button>
-                    <button class="btn-primary" onclick="forcarLogin()" id="btn-fazer-login" style="background-color: var(--secondary-color);"><i class="fa-solid fa-lock"></i> Acesso Coordenador</button>
+                    <button class="btn-primary" onclick="forcarLogin()" id="btn-fazer-login" style="background-color: #1e293b; color: white; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: 700;"><i class="fa-solid fa-user-shield"></i> Acesso Coordenador</button>
                 </div>
             </div>
 
@@ -243,6 +243,7 @@
                         </select>
                         <input type="text" id="filtro-vagas" placeholder="Buscar Cliente ou RE..." class="ag-form-group" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;" onkeyup="filtrarTabelaVagas()">
                         <button class="btn-primary print-btn" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir</button>
+                        <button class="btn-primary print-btn" onclick="exportarPDFVagas()" style="background-color: #ef4444; border: none;"><i class="fa-solid fa-file-pdf"></i> PDF</button>
                     </div>
                 </div>
                 
@@ -393,6 +394,9 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    
+    <!-- html2pdf para geração de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <!-- App Scripts -->
     <script src="js/firebase-config.js"></script>

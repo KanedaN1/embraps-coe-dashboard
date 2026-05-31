@@ -216,12 +216,23 @@ function pv_renderTable() {
     const tbody = document.getElementById('pv-table-body');
     if (!tbody) return;
 
-    if (PV_DATA.length === 0) {
+    const statusFilter = document.getElementById('pv-filter-status')?.value || '';
+    
+    let filteredData = PV_DATA;
+    if (statusFilter) {
+        filteredData = PV_DATA.filter(d => {
+            if (statusFilter === 'concluido') return d.status === 'concluido' || d.status === 'concluida';
+            if (statusFilter === 'pendente') return d.status === 'pendente';
+            return true;
+        });
+    }
+
+    if (filteredData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:#94a3b8;">Nenhum registro encontrado.</td></tr>';
         return;
     }
 
-    const sorted = [...PV_DATA].sort((a, b) => {
+    const sorted = [...filteredData].sort((a, b) => {
         if (a.status !== b.status) return a.status === 'pendente' ? -1 : 1;
         return new Date(a.proximoRetorno) - new Date(b.proximoRetorno);
     });
@@ -480,7 +491,17 @@ async function pv_salvarObservacao(id, texto) {
 // =============================================
 function pv_print() {
     const printWindow = window.open('', '_blank');
-    const rows = PV_DATA.map(d => `
+    const statusFilter = document.getElementById('pv-filter-status')?.value || '';
+    let filteredData = PV_DATA;
+    if (statusFilter) {
+        filteredData = PV_DATA.filter(d => {
+            if (statusFilter === 'concluido') return d.status === 'concluido' || d.status === 'concluida';
+            if (statusFilter === 'pendente') return d.status === 'pendente';
+            return true;
+        });
+    }
+
+    const rows = filteredData.map(d => `
         <tr>
             <td>${d.cliente}</td>
             <td>${COORDENADORES[d.coordenadorId] || d.coordenadorId}</td>
