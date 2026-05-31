@@ -89,16 +89,46 @@ body {
     gap: 12px;
 }
 
+/* Global Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
 .sidebar-nav {
     flex: 1;
     padding: 24px 0;
     overflow-y: auto;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: rgba(255,255,255,0.3) transparent;
 }
 
 .sidebar-nav::-webkit-scrollbar {
-    width: 0px;
+    width: 6px;
     background: transparent; /* Chrome/Safari/Webkit */
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.4);
 }
 
 .sidebar-nav ul {

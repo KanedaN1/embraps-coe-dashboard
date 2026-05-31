@@ -437,8 +437,8 @@ function exportarPDFVagas() {
         margin:       0.2,
         filename:     'Gestao_de_Vagas.pdf',
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+        html2canvas:  { scale: 2, windowWidth: 1600 },
+        jsPDF:        { unit: 'in', format: 'a3', orientation: 'landscape' }
     };
 
     html2pdf().set(opt).from(tableContainer).save().then(() => {
