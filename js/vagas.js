@@ -99,13 +99,20 @@ function logoutVagas() {
 // ==========================================
 // OPERAÇÕES FIREBASE (CRUD)
 // ==========================================
-async function carregarVagas() {
+async function carregarVagas(limite = 600) {
     const tbody = document.getElementById('tbody-vagas');
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Carregando...</td></tr>';
     
     try {
         const db = firebase.firestore();
-        const snapshot = await db.collection('vagas').orderBy('dataAbertura', 'desc').get();
+        let query = db.collection('vagas').orderBy('dataAbertura', 'desc');
+        
+        // Aplica o limite se for maior que zero
+        if (limite > 0) {
+            query = query.limit(limite);
+        }
+
+        const snapshot = await query.get();
         currentVagas = [];
         
         snapshot.forEach(doc => {
@@ -114,10 +121,39 @@ async function carregarVagas() {
         
         atualizarDashboard();
         renderizarTabela(currentVagas);
+
+        // Se trouxer o máximo do limite, mostra botão para carregar mais
+        mostrarBotaoCarregarMais(limite > 0 && currentVagas.length === limite);
+
     } catch (error) {
         console.error('Erro ao buscar vagas:', error);
         tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:red;">Erro ao carregar os dados.</td></tr>';
     }
+}
+
+function carregarTodoHistorico() {
+    // Passa 0 para não ter limite de carregamento
+    carregarVagas(0);
+}
+
+function mostrarBotaoCarregarMais(mostrar) {
+    let btnContainer = document.getElementById('container-carregar-mais');
+    
+    if (!btnContainer) {
+        btnContainer = document.createElement('div');
+        btnContainer.id = 'container-carregar-mais';
+        btnContainer.style.textAlign = 'center';
+        btnContainer.style.marginTop = '15px';
+        btnContainer.innerHTML = `
+            <button class="btn-primary" onclick="carregarTodoHistorico()" style="background-color: #64748b; border: none; padding: 8px 15px; font-size: 0.9rem;">
+                <i class="fa-solid fa-clock-rotate-left"></i> Carregar Histórico Antigo
+            </button>
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Atualmente exibindo os últimos registros para garantir performance.</p>
+        `;
+        document.querySelector('.form-section').appendChild(btnContainer);
+    }
+
+    btnContainer.style.display = mostrar ? 'block' : 'none';
 }
 
 function calcularDiasAberto(dataAberturaStr, status, dataFechamentoStr) {
@@ -255,21 +291,21 @@ function renderizarTabela(lista) {
         const impHtml = vaga.implantado ? vaga.implantado : `<span style="color:var(--danger);font-size:0.75rem;font-weight:bold;"><i class="fa-solid fa-circle-exclamation"></i> PENDENTE</span>`;
         
         tr.innerHTML = `
-            <td><strong>${vaga.reSaiu || '-'}</strong></td>
-            <td>${vaga.nomeSaiu || '-'}</td>
-            <td><strong>${vaga.numVaga || '-'}</strong></td>
-            <td>${vaga.posto}</td>
-            <td>${vaga.escala || '-'}</td>
-            <td>${vaga.funcao || '-'}</td>
-            <td>${vaga.supervisor || '-'}</td>
-            <td>${vaga.punicao || '-'}</td>
-            <td>${vaga.motivo}</td>
-            <td>${formatarDataBR(vaga.dataAbertura)}</td>
-            <td><strong style="color: ${estaAtrasada ? 'var(--danger)' : 'inherit'}">${dias} dias</strong></td>
-            <td><span class="badge-status ${badgeClass}">${vaga.status}</span></td>
-            <td>${impHtml}</td>
-            <td>${vaga.coord}</td>
-            <td style="text-align: center;">${actionHtml}</td>
+            <td data-label="RE Saiu"><strong>${vaga.reSaiu || '-'}</strong></td>
+            <td data-label="Colab. Substituído">${vaga.nomeSaiu || '-'}</td>
+            <td data-label="Nº Vaga"><strong>${vaga.numVaga || '-'}</strong></td>
+            <td data-label="Posto">${vaga.posto}</td>
+            <td data-label="Escala">${vaga.escala || '-'}</td>
+            <td data-label="Função">${vaga.funcao || '-'}</td>
+            <td data-label="Supervisor">${vaga.supervisor || '-'}</td>
+            <td data-label="Punição">${vaga.punicao || '-'}</td>
+            <td data-label="Motivo">${vaga.motivo}</td>
+            <td data-label="Abertura">${formatarDataBR(vaga.dataAbertura)}</td>
+            <td data-label="Tempo Vaga"><strong style="color: ${estaAtrasada ? 'var(--danger)' : 'inherit'}">${dias} dias</strong></td>
+            <td data-label="Status"><span class="badge-status ${badgeClass}">${vaga.status}</span></td>
+            <td data-label="Implantado">${impHtml}</td>
+            <td data-label="Coord">${vaga.coord}</td>
+            <td data-label="Ações" style="text-align: center;">${actionHtml}</td>
         `;
         tbody.appendChild(tr);
     });

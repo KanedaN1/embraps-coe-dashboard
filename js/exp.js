@@ -195,17 +195,17 @@ function renderTable() {
         const tr = document.createElement('tr');
         tr.className = rowClass;
         tr.innerHTML = `
-            <td style="font-weight:700;">${d.re} - ${d.nome}</td>
-            <td>${d.cargo}</td>
-            <td style="font-size:0.8rem;">${d.area}</td>
-            <td>${d.cliente}</td>
-            <td>${formatBRDate(d.admissao)}</td>
-            <td><span class="date-badge ${diff1 <= 10 && d.status === 'PENDENTE' ? 'highlight' : ''}">${formatBRDate(d.exp1)}</span></td>
-            <td><span class="date-badge">${formatBRDate(d.exp2)}</span></td>
-            <td>
+            <td data-label="Funcionário" style="font-weight:700;">${d.re} - ${d.nome}</td>
+            <td data-label="Cargo">${d.cargo}</td>
+            <td data-label="Área" style="font-size:0.8rem;">${d.area}</td>
+            <td data-label="Cliente">${d.cliente}</td>
+            <td data-label="Admissão">${formatBRDate(d.admissao)}</td>
+            <td data-label="1ª EXP (45d)"><span class="date-badge ${diff1 <= 10 && d.status === 'PENDENTE' ? 'highlight' : ''}">${formatBRDate(d.exp1)}</span></td>
+            <td data-label="2ª EXP (90d)"><span class="date-badge">${formatBRDate(d.exp2)}</span></td>
+            <td data-label="Avaliação">
                 <span class="status-pill status-${d.status.toLowerCase()}">${d.status}</span>
             </td>
-            <td>
+            <td data-label="Ações">
                 ${isAdmin ? `
                     <div style="display:flex; gap:5px;">
                         <button class="btn-action btn-status-toggle" onclick="toggleStatus('${d.id}', '${d.status}')" title="Mudar Status">

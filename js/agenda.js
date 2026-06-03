@@ -267,14 +267,14 @@ function ag_renderAdminTable() {
         const prazo   = t.deadline ? new Date(t.deadline).toLocaleString('pt-BR') : '—';
         const canDone = t.status !== 'concluida';
         return `<tr>
-            <td>
+            <td data-label="Atividade">
                 <strong>${ag_esc(t.name)}</strong>
                 ${t.desc ? `<br><small style="color:#64748b">${ag_esc(t.desc)}</small>` : ''}
             </td>
-            <td>${ag_esc(opName)}</td>
-            <td><small>${prazo}</small></td>
-            <td><span class="ag-badge ag-badge-${t.status}">${t.status}</span></td>
-            <td>
+            <td data-label="Responsável">${ag_esc(opName)}</td>
+            <td data-label="Prazo"><small>${prazo}</small></td>
+            <td data-label="Status"><span class="ag-badge ag-badge-${t.status}">${t.status}</span></td>
+            <td data-label="Ações">
                 <div style="display:flex;gap:5px;flex-wrap:wrap">
                     ${canDone ? `<button class="ag-icon-btn ok" onclick="ag_openConclude('${t.id}')" title="Concluir"><i class="fa-solid fa-check"></i></button>` : ''}
                     <button class="ag-icon-btn edit" onclick="ag_openTaskModal('${t.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
@@ -330,11 +330,11 @@ function ag_renderHistory() {
         return;
     }
     tbody.innerHTML = hist.map(t => `<tr>
-        <td><strong>${ag_esc(t.name)}</strong></td>
-        <td>${ag_esc(AG_OPERATORS[t.operadorId] || t.operadorId)}</td>
-        <td><small>${t.concluidaEm ? new Date(t.concluidaEm).toLocaleString('pt-BR') : '—'}</small></td>
-        <td>${ag_esc(t.concluidaPor || '—')}</td>
-        <td><small>${ag_esc(t.concluidaObs || '—')}</small></td>
+        <td data-label="Atividade"><strong>${ag_esc(t.name)}</strong></td>
+        <td data-label="Responsável">${ag_esc(AG_OPERATORS[t.operadorId] || t.operadorId)}</td>
+        <td data-label="Concluída Em"><small>${t.concluidaEm ? new Date(t.concluidaEm).toLocaleString('pt-BR') : '—'}</small></td>
+        <td data-label="Por">${ag_esc(t.concluidaPor || '—')}</td>
+        <td data-label="Obs"><small>${ag_esc(t.concluidaObs || '—')}</small></td>
     </tr>`).join('');
 }
 
