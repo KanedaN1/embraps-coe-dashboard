@@ -265,8 +265,8 @@ function toggleTvMode() {
             }
         }, 15);
 
-        // Troca de aba a cada 25 segundos
-        tvModeInterval = setInterval(switchTab, 25000);
+        // Troca de aba a cada 50 segundos
+        tvModeInterval = setInterval(switchTab, 50000);
     }
 }
 
