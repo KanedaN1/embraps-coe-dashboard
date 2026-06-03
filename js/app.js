@@ -215,9 +215,13 @@ function toggleTvMode() {
         if (currentIndex === -1) currentIndex = 0;
         
         tvModeInterval = setInterval(() => {
-            currentIndex++;
-            if (currentIndex >= navLinks.length) {
+            if (navLinks[currentIndex] && navLinks[currentIndex].getAttribute('href') === '#vg-pos-venda') {
                 currentIndex = 0;
+            } else {
+                currentIndex++;
+                if (currentIndex >= navLinks.length) {
+                    currentIndex = 0;
+                }
             }
             
             // Simular click no link
