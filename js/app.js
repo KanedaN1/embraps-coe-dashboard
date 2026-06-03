@@ -3,6 +3,7 @@ Chart.register(ChartDataLabels);
 
 let charts = {};
 let tvModeInterval = null;
+let tvScrollInterval = null;
 let currentSectionIndex = 0;
 
 const chartColors = {
@@ -190,6 +191,12 @@ function toggleTvMode() {
         // Parar Modo TV
         clearInterval(tvModeInterval);
         tvModeInterval = null;
+        
+        if (tvScrollInterval) {
+            clearInterval(tvScrollInterval);
+            tvScrollInterval = null;
+        }
+
         btn.innerHTML = '<i class="fa-solid fa-tv"></i> Modo TV';
         btn.classList.remove('bg-danger');
         btn.style.backgroundColor = 'var(--accent-color)';
@@ -220,7 +227,14 @@ function toggleTvMode() {
         let currentIndex = navLinks.findIndex(l => l.parentElement.classList.contains('active'));
         if (currentIndex === -1) currentIndex = 0;
         
-        tvModeInterval = setInterval(() => {
+        // Voltar ao topo imediatamente ao iniciar
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        const mainContentStart = document.querySelector('.main-content');
+        if (mainContentStart) {
+            mainContentStart.scrollTo({ top: 0, behavior: 'instant' });
+        }
+        
+        const switchTab = () => {
             if (navLinks[currentIndex] && navLinks[currentIndex].getAttribute('href') === '#vg-pos-venda') {
                 currentIndex = 0;
             } else {
@@ -233,7 +247,26 @@ function toggleTvMode() {
             // Simular click no link
             navLinks[currentIndex].click();
             
-        }, 8000); // 8 segundos por aba
+            // Voltar ao topo imediatamente ao trocar a aba
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.scrollTo({ top: 0, behavior: 'instant' });
+            }
+        };
+
+        // Scroll suave dentro da aba
+        if (tvScrollInterval) clearInterval(tvScrollInterval);
+        tvScrollInterval = setInterval(() => {
+            window.scrollBy(0, 1);
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.scrollBy(0, 1);
+            }
+        }, 15);
+
+        // Troca de aba a cada 25 segundos
+        tvModeInterval = setInterval(switchTab, 25000);
     }
 }
 
