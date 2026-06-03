@@ -194,6 +194,9 @@ function toggleTvMode() {
         btn.classList.remove('bg-danger');
         btn.style.backgroundColor = 'var(--accent-color)';
         
+        // Sair do modo TV (remove classe)
+        document.body.classList.remove('tv-mode');
+        
         // Sair de tela cheia
         if (document.fullscreenElement) {
             document.exitFullscreen().catch(err => console.log(err));
@@ -203,6 +206,9 @@ function toggleTvMode() {
         // Iniciar Modo TV
         btn.innerHTML = '<i class="fa-solid fa-stop"></i> Parar TV';
         btn.style.backgroundColor = 'var(--danger)';
+        
+        // Entrar no modo TV (adiciona classe)
+        document.body.classList.add('tv-mode');
         
         // Entrar em tela cheia (opcional mas recomendado para TV)
         const elem = document.documentElement;
