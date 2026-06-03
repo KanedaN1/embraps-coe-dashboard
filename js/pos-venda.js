@@ -292,6 +292,10 @@ function pv_renderTable() {
         } else if (podeAgir === false) {
             // Para visitante, excluir não aparece
         }
+        
+        if (podeAgir) {
+            acoes += `<button onclick="pv_openModal('${d.id}')" title="Editar" style="padding:5px 10px; background:#f59e0b; border:none; border-radius:6px; color:white; cursor:pointer; font-size:0.7rem; margin-left:4px;"><i class="fa-solid fa-pen"></i></button>`;
+        }
 
         return `
             <tr style="border-bottom: 1px solid #f1f5f9; ${isLate ? 'background: #fff5f5;' : ''}">
@@ -371,6 +375,20 @@ function pv_openModal(id = null) {
     select.innerHTML = '<option value="">Selecione...</option>' +
         Object.entries(COORDENADORES).map(([val, name]) => `<option value="${val}">${name}</option>`).join('');
 
+    if (id) {
+        const item = PV_DATA.find(x => x.id === id);
+        if (item) {
+            document.getElementById('pv-id').value = item.id;
+            document.getElementById('pv-cliente').value = item.cliente || '';
+            document.getElementById('pv-coordenador').value = item.coordenadorId || '';
+            document.getElementById('pv-supervisor').value = item.supervisor || '';
+            document.getElementById('pv-data-inicial').value = item.dataInicial || '';
+            document.getElementById('pv-proximo-retorno').value = item.proximoRetorno || '';
+            document.getElementById('pv-modal-title').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Pós Venda';
+            return;
+        }
+    }
+
     // Se coordenador logado, pré-seleciona ele mesmo
     if (PV_USER && PV_USER !== 'Admin') {
         const coordKey = Object.keys(COORDENADORES).find(k => COORDENADORES[k] === PV_USER);
@@ -391,6 +409,7 @@ function pv_closeModal() {
 }
 
 async function pv_save() {
+    const idField  = document.getElementById('pv-id').value;
     const cliente  = document.getElementById('pv-cliente').value.trim();
     const coordId  = document.getElementById('pv-coordenador').value;
     const superv   = document.getElementById('pv-supervisor').value.trim();
@@ -402,22 +421,34 @@ async function pv_save() {
         return;
     }
 
-    const id = 'pv_' + Date.now();
-    const payload = {
-        cliente,
-        coordenadorId: coordId,
-        supervisor: superv,
-        dataInicial: dataIni,
-        proximoRetorno: proxRet,
-        status: 'pendente',
-        observacao: '',
-        criadoEm: new Date().toISOString(),
-        criadoPor: PV_USER || 'Desconhecido'
-    };
-
     try {
         if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
-            await db.collection('pos_venda_negativo').doc(id).set(payload);
+            if (idField) {
+                // Editar registro existente
+                await db.collection('pos_venda_negativo').doc(idField).update({
+                    cliente,
+                    coordenadorId: coordId,
+                    supervisor: superv,
+                    dataInicial: dataIni,
+                    proximoRetorno: proxRet,
+                    atualizadoEm: new Date().toISOString()
+                });
+            } else {
+                // Criar novo
+                const id = 'pv_' + Date.now();
+                const payload = {
+                    cliente,
+                    coordenadorId: coordId,
+                    supervisor: superv,
+                    dataInicial: dataIni,
+                    proximoRetorno: proxRet,
+                    status: 'pendente',
+                    observacao: '',
+                    criadoEm: new Date().toISOString(),
+                    criadoPor: PV_USER || 'Desconhecido'
+                };
+                await db.collection('pos_venda_negativo').doc(id).set(payload);
+            }
         }
     } catch (e) {
         console.error('[PV] Erro ao salvar:', e);
