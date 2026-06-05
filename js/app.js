@@ -1300,7 +1300,7 @@ function renderResumoAnual(yearlyData, monthLabels) {
         });
     }
 
-    // Gráfico: Termômetro Faltas x Demissões
+    // Gráfico: Termômetro Faltas x Demissões x Admissões
     const ctxFD = document.getElementById('chartAnualFaltasDemissoes');
     if (ctxFD) {
         if (charts['chartAnualFaltasDemissoes']) charts['chartAnualFaltasDemissoes'].destroy();
@@ -1310,7 +1310,8 @@ function renderResumoAnual(yearlyData, monthLabels) {
                 labels: monthLabels,
                 datasets: [
                     { label: 'Faltas', data: yearlyData.map(d => d.isEmpty ? 0 : (d.faltas || 0)), backgroundColor: chartColors.warning, borderRadius: 4 },
-                    { label: 'Demissões', data: yearlyData.map(d => d.isEmpty ? 0 : (d.demissoes || 0)), backgroundColor: chartColors.danger, borderRadius: 4 }
+                    { label: 'Demissões', data: yearlyData.map(d => d.isEmpty ? 0 : (d.demissoes || 0)), backgroundColor: chartColors.danger, borderRadius: 4 },
+                    { label: 'Admissões', data: yearlyData.map(d => d.isEmpty ? 0 : (d.admissoes || 0)), backgroundColor: chartColors.success, borderRadius: 4 }
                 ]
             },
             options: {
