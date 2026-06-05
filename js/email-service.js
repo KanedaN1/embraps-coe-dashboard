@@ -163,12 +163,12 @@ async function gerarResumoExperienciasVencendo() {
         });
 
         if (count === 0) {
-            return '<p>Nenhuma experiência a vencer nos próximos 7 dias.</p>';
+            return 'Nenhuma experiência a vencer nos próximos 7 dias.';
         }
-        return `<p><strong>${count} colaborador(es)</strong> com período de experiência a vencer nos próximos 7 dias. Acesse o módulo de Controle de Experiência para detalhes.</p>`;
+        return `${count} colaborador(es) com período de experiência a vencer nos próximos 7 dias. Acesse o módulo de Controle de Experiência para detalhes.`;
     } catch (error) {
         console.error('[EmailJS] Erro ao gerar resumo de experiências: ', error);
-        return '<p>Erro ao carregar dados de experiências.</p>';
+        return 'Erro ao carregar dados de experiências.';
     }
 }
 
@@ -196,7 +196,7 @@ async function gerarResumoVagasAtrasadas() {
         });
 
         if (vagasAtrasadas.length === 0) {
-            return '<p>Nenhuma vaga com SLA estourado no momento.</p>';
+            return 'Nenhuma vaga com SLA estourado no momento.';
         }
 
         // Agrupar coordenadores únicos
@@ -210,9 +210,9 @@ async function gerarResumoVagasAtrasadas() {
             .map(([nome, qtd]) => `${nome} (${qtd} vaga${qtd > 1 ? 's' : ''})`)
             .join(', ');
 
-        return `<p><strong>${vagasAtrasadas.length} vaga(s)</strong> com SLA estourado (abertas há mais de 15 dias). Coordenadores responsáveis: <strong>${coordsList}</strong>. Acesse o módulo de Gestão de Vagas para acompanhamento.</p>`;
+        return `${vagasAtrasadas.length} vaga(s) com SLA estourado (abertas há mais de 15 dias). Coordenadores responsáveis: ${coordsList}. Acesse o módulo de Gestão de Vagas para acompanhamento.`;
     } catch (error) {
         console.error('[EmailJS] Erro ao gerar resumo de vagas: ', error);
-        return '<p>Erro ao carregar dados de vagas.</p>';
+        return 'Erro ao carregar dados de vagas.';
     }
 }
