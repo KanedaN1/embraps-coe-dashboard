@@ -1,6 +1,7 @@
 /**
  * CONTROLE DE EXPERIÊNCIA — exp.js
- * Gerencia a importação de XLSX, prazos e avisos de desligamento.
+ * Novo modelo: campo único 'exp' (data) + 'numExp' (1 ou 2)
+ * Retrocompatível com registros antigos que usam exp1/exp2.
  */
 
 let expData = [];
@@ -19,7 +20,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupImport();
 });
 
-// 1. Carregar Dados do Firebase
+// ─── Helpers de compatibilidade ────────────────────────────────────────────
+// Retorna a data de experiência do registro, seja novo modelo (exp) ou antigo (exp1)
+function getExpDate(d) {
+    return d.exp || d.exp1 || '';
+}
+
+// Retorna o número da experiência do registro, seja novo modelo (numExp) ou antigo (deduzido de exp2)
+function getNumExp(d) {
+    if (d.numExp) return String(d.numExp);
+    // Retrocompatibilidade: se tinha exp2, considera que exp1 = 1ª experiência
+    if (d.exp1 && !d.exp2) return '1';
+    if (d.exp1 && d.exp2) return '1'; // linha era exp1; exp2 era outra linha
+    return '';
+}
+
+// ─── 1. Carregar Dados do Firebase ─────────────────────────────────────────
 async function loadExpData() {
     if (!dbExp) return;
 
@@ -29,7 +45,7 @@ async function loadExpData() {
         snapshot.forEach(doc => {
             expData.push({ id: doc.id, ...doc.data() });
         });
-        
+
         checkAdminAccess();
         populateAreaFilter();
         renderTable();
@@ -46,7 +62,7 @@ function checkAdminAccess() {
     adminElements.forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
 }
 
-// 2. Configurar Importação XLSX
+// ─── 2. Configurar Importação XLSX ─────────────────────────────────────────
 function setupImport() {
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
@@ -82,35 +98,59 @@ async function handleFile(file) {
 
             if (rows.length === 0) throw new Error("Planilha vazia");
 
-            status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvando ${rows.length} colaboradores...`;
+            status.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvando ${rows.length} registros...`;
 
             const mesRef = document.getElementById('filter-month')?.value;
             if (!mesRef) throw new Error("Selecione um mês de referência no filtro superior antes de importar.");
 
-            // Mapear e Salvar no Firebase
+            // ── Mapear e Salvar no Firebase ──
             const batch = dbExp.batch();
             rows.forEach(row => {
-                // Limpar chaves para evitar espaços ou acentos problemáticos
+                // Normalizar chaves: sem acento, minúsculo, sem espaços extras
                 const cleanRow = {};
                 Object.keys(row).forEach(k => {
-                    const cleanKey = k.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                    const cleanKey = k.trim()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .toLowerCase()
+                        .replace(/[°º]/g, ''); // remove símbolo de grau (1°/2° → 1/2)
                     cleanRow[cleanKey] = row[k];
                 });
 
+                // ── Novo modelo: coluna EXP (data) + coluna 1/2 (número) ──
+                // Aceita variações de nome de coluna: "exp", "data exp", "data de exp"
+                // Aceita variações do número: "1/2", "num", "numero exp", "n exp"
+                const expDate = formatDate(
+                    row['EXP'] || row['exp'] || row['Data EXP'] || row['DATA EXP'] ||
+                    cleanRow['exp'] || cleanRow['data exp'] || cleanRow['data de exp'] ||
+                    // retrocompatibilidade com colunas antigas
+                    row['1 EXP'] || row['1ª EXP'] || cleanRow['1 exp'] || cleanRow['exp1']
+                );
+
+                const numExpRaw = (
+                    row['1/2'] || row['1°/2°'] || row['1º/2º'] ||
+                    cleanRow['1/2'] || cleanRow['num'] || cleanRow['numero exp'] ||
+                    cleanRow['n exp'] || cleanRow['numexp'] ||
+                    // retrocompatibilidade: se não há coluna de número, usa '1' por padrão
+                    ''
+                );
+                // Normaliza para string '1' ou '2'
+                const numExp = String(numExpRaw).trim() === '2' ? '2' : '1';
+
                 const mapped = {
-                    empresa: cleanRow['empresa'] || '',
-                    re: cleanRow['re'] || '',
-                    nome: cleanRow['funcionario'] || cleanRow['nome'] || '',
-                    cargo: cleanRow['cargo'] || '',
-                    area: cleanRow['area'] || cleanRow['supervisao'] || '',
-                    cliente: cleanRow['cliente'] || '',
-                    admissao: formatDate(row['Admissão'] || row['ADMISSÃO'] || cleanRow['admissao']),
-                    exp1: formatDate(row['1 EXP'] || row['1ª EXP'] || cleanRow['1 exp'] || cleanRow['exp1']),
-                    exp2: formatDate(row['2 EXP'] || row['2ª EXP'] || cleanRow['2 exp'] || cleanRow['exp2']),
+                    empresa:       cleanRow['empresa'] || '',
+                    re:            cleanRow['re'] || '',
+                    nome:          cleanRow['funcionario'] || cleanRow['nome'] || '',
+                    cargo:         cleanRow['cargo'] || '',
+                    area:          cleanRow['area'] || cleanRow['supervisao'] || '',
+                    cliente:       cleanRow['cliente'] || '',
+                    admissao:      formatDate(row['Admissão'] || row['ADMISSÃO'] || cleanRow['admissao']),
+                    exp:           expDate,      // ← campo único de data
+                    numExp:        numExp,        // ← '1' ou '2'
                     mesReferencia: mesRef,
-                    status: 'PENDENTE',
-                    finalizadoEm: null,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    status:        'PENDENTE',
+                    finalizadoEm:  null,
+                    updatedAt:     firebase.firestore.FieldValue.serverTimestamp()
                 };
 
                 const ref = dbExp.collection('experiencia').doc();
@@ -133,45 +173,43 @@ async function handleFile(file) {
     reader.readAsArrayBuffer(file);
 }
 
-// Auxiliar para formatar data do Excel para string YYYY-MM-DD
+// Auxiliar: formatar data do Excel para string YYYY-MM-DD
 function formatDate(val) {
     if (!val) return '';
     if (val instanceof Date) return val.toISOString().split('T')[0];
     return val.toString();
 }
 
-// 3. Renderizar Tabela
+// ─── 3. Renderizar Tabela ───────────────────────────────────────────────────
 function renderTable() {
     const tbody = document.getElementById('exp-table-body');
-    const filterMonth = document.getElementById('filter-month').value;
-    const filterArea = document.getElementById('filter-area').value;
+    const filterMonth  = document.getElementById('filter-month').value;
+    const filterArea   = document.getElementById('filter-area').value;
     const filterStatus = document.getElementById('filter-status').value;
-    const filterAlert = document.getElementById('filter-alert').value;
-    const search = document.getElementById('search-name').value.toLowerCase();
+    const filterAlert  = document.getElementById('filter-alert').value;
+    const search       = document.getElementById('search-name').value.toLowerCase();
 
     tbody.innerHTML = '';
 
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
     const isAdmin = sessionStorage.getItem('admin_logged') === 'true';
 
     currentFilteredExp = expData.filter(d => {
-        const matchMonth = !filterMonth || d.mesReferencia === filterMonth;
-        const matchArea = !filterArea || d.area === filterArea;
+        const matchMonth  = !filterMonth  || d.mesReferencia === filterMonth;
+        const matchArea   = !filterArea   || d.area === filterArea;
         const matchStatus = !filterStatus || d.status === filterStatus;
-        const matchSearch = (d.nome || "").toLowerCase().includes(search) || (d.re || "").toString().includes(search);
-        
+        const matchSearch = (d.nome || "").toLowerCase().includes(search)
+                         || (d.re  || "").toString().includes(search);
+
         let matchAlert = true;
         if (filterAlert === 'vencendo') {
-            const exp1 = new Date(d.exp1);
-            const exp2 = new Date(d.exp2);
-            const diff1 = (exp1 - today) / (1000*60*60*24);
-            const diff2 = (exp2 - today) / (1000*60*60*24);
-            matchAlert = (diff1 >= 0 && diff1 <= 10) || (diff2 >= 0 && diff2 <= 10);
+            const expDate = new Date(getExpDate(d));
+            const diff    = (expDate - today) / (1000 * 60 * 60 * 24);
+            matchAlert = diff >= 0 && diff <= 10;
         } else if (filterAlert === 'vencido') {
-            const exp1 = new Date(d.exp1);
-            const exp2 = new Date(d.exp2);
-            matchAlert = (exp1 < today || exp2 < today) && d.status === 'PENDENTE';
+            const expDate = new Date(getExpDate(d));
+            matchAlert = expDate < today && d.status === 'PENDENTE';
         }
 
         return matchMonth && matchArea && matchStatus && matchSearch && matchAlert;
@@ -183,14 +221,21 @@ function renderTable() {
     }
 
     currentFilteredExp.forEach(d => {
-        const exp1 = new Date(d.exp1);
-        const diff1 = (exp1 - today) / (1000*60*60*24);
-        
+        const expDateStr = getExpDate(d);
+        const expDate    = new Date(expDateStr);
+        const diff       = (expDate - today) / (1000 * 60 * 60 * 24);
+        const numExp     = getNumExp(d);
+
         let rowClass = '';
         if (d.status === 'PENDENTE') {
-            if (exp1 < today) rowClass = 'row-overdue';
-            else if (diff1 <= 10) rowClass = 'row-attention';
+            if (expDate < today)  rowClass = 'row-overdue';
+            else if (diff <= 10)  rowClass = 'row-attention';
         }
+
+        // Badge do número de experiência (1° = azul, 2° = roxo)
+        const numColor  = numExp === '2' ? '#7c3aed' : '#1e3a8a';
+        const numBg     = numExp === '2' ? '#ede9fe'  : '#dbeafe';
+        const numLabel  = numExp === '2' ? '2°' : '1°';
 
         const tr = document.createElement('tr');
         tr.className = rowClass;
@@ -200,8 +245,23 @@ function renderTable() {
             <td data-label="Área" style="font-size:0.8rem;">${d.area}</td>
             <td data-label="Cliente">${d.cliente}</td>
             <td data-label="Admissão">${formatBRDate(d.admissao)}</td>
-            <td data-label="1ª EXP (45d)"><span class="date-badge ${diff1 <= 10 && d.status === 'PENDENTE' ? 'highlight' : ''}">${formatBRDate(d.exp1)}</span></td>
-            <td data-label="2ª EXP (90d)"><span class="date-badge">${formatBRDate(d.exp2)}</span></td>
+            <td data-label="EXP">
+                <span class="date-badge ${diff <= 10 && d.status === 'PENDENTE' ? 'highlight' : ''}">
+                    ${formatBRDate(expDateStr)}
+                </span>
+            </td>
+            <td data-label="1°/2°">
+                <span style="
+                    display:inline-block;
+                    padding:3px 10px;
+                    border-radius:20px;
+                    font-size:0.8rem;
+                    font-weight:800;
+                    background:${numBg};
+                    color:${numColor};
+                    letter-spacing:0.03em;
+                ">${numLabel}</span>
+            </td>
             <td data-label="Avaliação">
                 <span class="status-pill status-${d.status.toLowerCase()}">${d.status}</span>
             </td>
@@ -230,21 +290,21 @@ function formatBRDate(isoDate) {
     return `${d}/${m}/${y}`;
 }
 
-// 4. Mudar Status Manualmente
+// ─── 4. Mudar Status Manualmente ───────────────────────────────────────────
 async function toggleStatus(id, currentStatus) {
     let next = 'PENDENTE';
-    if (currentStatus === 'PENDENTE') next = 'SUFICIENTE';
-    else if (currentStatus === 'SUFICIENTE') next = 'INSUFICIENTE';
+    if (currentStatus === 'PENDENTE')     next = 'SUFICIENTE';
+    else if (currentStatus === 'SUFICIENTE')   next = 'INSUFICIENTE';
     else if (currentStatus === 'INSUFICIENTE') next = 'PENDENTE';
 
     try {
         const finalizadoEm = next !== 'PENDENTE' ? new Date().toISOString() : null;
-        await dbExp.collection('experiencia').doc(id).update({ 
+        await dbExp.collection('experiencia').doc(id).update({
             status: next,
             finalizadoEm: finalizadoEm
         });
         const idx = expData.findIndex(d => d.id === id);
-        expData[idx].status = next;
+        expData[idx].status      = next;
         expData[idx].finalizadoEm = finalizadoEm;
         renderTable();
         renderSLACharts();
@@ -253,14 +313,17 @@ async function toggleStatus(id, currentStatus) {
     }
 }
 
-// 5. Enviar E-mail de Desligamento (Template conforme solicitação)
+// ─── 5. Enviar E-mail de Desligamento ──────────────────────────────────────
 function sendTerminationEmail(id) {
     const emp = expData.find(d => d.id === id);
     if (!emp) return;
 
-    const to = "adm.dop.embraps@gmail.com";
+    const expDateStr = getExpDate(emp);
+    const numExp     = getNumExp(emp);
+
+    const to      = "adm.dop.embraps@gmail.com";
     const subject = `TÉRMINO DE CONTRATO DE EXPERIÊNCIA: ${emp.nome.toUpperCase()} RE: ${emp.re}`;
-    
+
     const body = `Bom dia,<br><br>` +
                  `Por gentileza, solicito o envio do telegrama para a colaboradora, a mesma se encontra na falta.<br><br>` +
                  `RE: ${emp.re}<br>` +
@@ -268,36 +331,39 @@ function sendTerminationEmail(id) {
                  `PCD: NÃO<br>` +
                  `POSTO: ${emp.cliente}<br>` +
                  `CARGO: ${emp.cargo}<br>` +
-                 `TÉRMINO DE 1° CONTRATO DE EXPERIÊNCIA: ${formatBRDate(emp.exp1)}<br><br>` +
+                 `TÉRMINO DE ${numExp}° CONTRATO DE EXPERIÊNCIA: ${formatBRDate(expDateStr)}<br><br>` +
                  `Att,<br>Nikolas Cardoso`;
 
-    // Disparar via emailJS em vez de abrir mailto
     enviarEmail(to, subject, body).then(success => {
         if (success) alert("E-mail de desligamento enviado com sucesso!");
         else alert("Falha ao enviar e-mail. Verifique o console ou a configuração do EmailJS.");
     });
 }
 
-// 5.1 Tabela de Desempenho (SLA)
+// ─── 5.1 Tabela de Desempenho (SLA) ────────────────────────────────────────
 function renderSLACharts() {
     const tbodySup = document.getElementById('sup-performance-body');
     if (!tbodySup) return;
 
     const completed = expData.filter(d => d.status !== 'PENDENTE');
-    
+
     const withinDeadline = completed.filter(d => {
         if (!d.finalizadoEm) return false;
         const done = new Date(d.finalizadoEm);
-        const dead = new Date(d.exp1);
+        const dead = new Date(getExpDate(d));
         return done <= dead;
     });
 
     // SLA Geral
-    const slaPerc = completed.length > 0 ? Math.round((withinDeadline.length / completed.length) * 100) : 0;
+    const slaPerc = completed.length > 0
+        ? Math.round((withinDeadline.length / completed.length) * 100)
+        : 0;
     const slaEl = document.getElementById('sla-perc-value');
     if (slaEl) {
         slaEl.textContent = slaPerc + '%';
-        slaEl.style.color = slaPerc >= 90 ? 'var(--exp-ok)' : (slaPerc >= 70 ? 'var(--exp-pending)' : 'var(--exp-fail)');
+        slaEl.style.color = slaPerc >= 90
+            ? 'var(--exp-ok)'
+            : (slaPerc >= 70 ? 'var(--exp-pending)' : 'var(--exp-fail)');
     }
 
     // Tabela por Supervisor
@@ -305,22 +371,24 @@ function renderSLACharts() {
     expData.forEach(d => {
         if (!supMap[d.area]) supMap[d.area] = { total: 0, ok: 0, pending: 0 };
         supMap[d.area].total++;
-        
+
         if (d.status === 'PENDENTE') {
             supMap[d.area].pending++;
         } else {
             const done = new Date(d.finalizadoEm);
-            const dead = new Date(d.exp1);
+            const dead = new Date(getExpDate(d));
             if (done <= dead) supMap[d.area].ok++;
         }
     });
 
     tbodySup.innerHTML = '';
-    const sortedSups = Object.keys(supMap).sort((a,b) => supMap[b].total - supMap[a].total);
-    
+    const sortedSups = Object.keys(supMap).sort((a, b) => supMap[b].total - supMap[a].total);
+
     sortedSups.forEach(sup => {
-        const s = supMap[sup];
-        const perc = s.total - s.pending > 0 ? Math.round((s.ok / (s.total - s.pending)) * 100) : 0;
+        const s    = supMap[sup];
+        const perc = s.total - s.pending > 0
+            ? Math.round((s.ok / (s.total - s.pending)) * 100)
+            : 0;
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight:600;">${sup || 'Não Definido'}</td>
@@ -333,12 +401,11 @@ function renderSLACharts() {
     });
 }
 
-// 6. Filtros e Busca
+// ─── 6. Filtros e Busca ─────────────────────────────────────────────────────
 function populateAreaFilter() {
     const select = document.getElementById('filter-area');
-    const areas = [...new Set(expData.map(d => d.area))].sort();
-    
-    // Guardar valor selecionado
+    const areas  = [...new Set(expData.map(d => d.area))].sort();
+
     const current = select.value;
     select.innerHTML = '<option value="">Todos</option>';
     areas.forEach(a => {
@@ -347,16 +414,16 @@ function populateAreaFilter() {
     select.value = current;
 }
 
-// 7. Limpar Tudo (Arquivar)
+// ─── 7. Limpar Tudo (Arquivar) ──────────────────────────────────────────────
 async function clearAllData() {
     if (!confirm("Isso excluirá TODOS os registros do mês atual. Você já baixou o relatório final?")) return;
 
     try {
         const snapshot = await dbExp.collection('experiencia').get();
-        const batch = dbExp.batch();
+        const batch    = dbExp.batch();
         snapshot.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
-        
+
         expData = [];
         renderTable();
         alert("Sistema limpo com sucesso!");
@@ -365,13 +432,14 @@ async function clearAllData() {
     }
 }
 
-// 8. Imprimir Relatório
+// ─── 8. Imprimir Relatório ──────────────────────────────────────────────────
 function exp_print() {
     const printWindow = window.open('', '_blank');
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
 
     const rows = currentFilteredExp.map(d => {
+        const numExp = getNumExp(d);
         return `
         <tr>
             <td>${d.re} - ${d.nome}</td>
@@ -379,8 +447,8 @@ function exp_print() {
             <td>${d.area}</td>
             <td>${d.cliente}</td>
             <td>${formatBRDate(d.admissao)}</td>
-            <td>${formatBRDate(d.exp1)}</td>
-            <td>${formatBRDate(d.exp2)}</td>
+            <td>${formatBRDate(getExpDate(d))}</td>
+            <td style="text-align:center; font-weight:700;">${numExp}°</td>
             <td>${d.status}</td>
         </tr>
         `;
@@ -410,15 +478,15 @@ function exp_print() {
                         <th>Supervisor / Área</th>
                         <th>Cliente</th>
                         <th>Admissão</th>
-                        <th>1ª EXP (45d)</th>
-                        <th>2ª EXP (90d)</th>
+                        <th>EXP</th>
+                        <th>1°/2°</th>
                         <th>Avaliação</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
             </table>
             <div class="footer">Gerado via Embraps COE Dashboard em ${new Date().toLocaleString('pt-BR')}</div>
-            <script>window.print();</script>
+            <script>window.print();<\/script>
         </body>
         </html>
     `);

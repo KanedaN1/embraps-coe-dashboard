@@ -315,8 +315,8 @@
                             <th>Supervisor / Área</th>
                             <th>Cliente</th>
                             <th>Admissão</th>
-                            <th>1ª EXP (45d)</th>
-                            <th>2ª EXP (90d)</th>
+                            <th>EXP</th>
+                            <th>1°/2°</th>
                             <th>Avaliação</th>
                             <th>Ações</th>
                         </tr>
@@ -333,8 +333,14 @@
     <div id="modal-import" onclick="if(event.target===this) this.style.display='none'">
         <div class="modal-content">
             <h2 style="color: #1e3a8a;">Importar Relatório</h2>
-            <p>Selecione o arquivo XLSX gerado pelo sistema.</p>
-            
+            <p style="color:#64748b; font-size:0.875rem; margin-bottom:0.5rem;">A planilha deve conter as seguintes colunas:</p>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-bottom:1rem; text-align:left; font-size:0.8rem; color:#475569; line-height:1.8;">
+                <span style="font-weight:700; color:#1e3a8a;">EXP</span> — Data da experiência (única)<br>
+                <span style="font-weight:700; color:#7c3aed;">1/2</span> — Número da experiência: <b>1</b> ou <b>2</b><br>
+                <span style="color:#94a3b8;">Outras: Empresa, RE, Funcionário, Cargo, Área, Cliente, Admissão</span>
+            </div>
+
             <div class="drop-zone" id="drop-zone">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
                 <p>Clique aqui ou arraste o arquivo .xlsx</p>
