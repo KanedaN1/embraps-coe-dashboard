@@ -1209,11 +1209,11 @@ function renderResumoAnual(yearlyData, monthLabels) {
 
     yearlyData.forEach(d => {
         if (d.isEmpty) return;
-        totalFaltas += d.faltas || 0;
-        totalDemissoes += d.demissoes || 0;
-        totalCustoExtra += (d.custo99 || 0) + (d.gastosFolgas || 0) + (d.horasExtrasGeral || 0);
-        totalDivOcorridas += d.divergenciaFuncao || 0;
-        totalDivResolvidas += d.divergenciasResolvidas || 0;
+        totalFaltas += Number(d.faltas || 0);
+        totalDemissoes += Number(d.demissoes || 0);
+        totalCustoExtra += Number(d.custo99 || 0) + Number(d.gastosFolgas || 0) + Number(d.horasExtrasGeral || 0);
+        totalDivOcorridas += Number(d.divergenciaFuncao || 0);
+        totalDivResolvidas += Number(d.divergenciasResolvidas || 0);
 
         if (d.demissoesMotivos) {
             motivosAnual.empresa += d.demissoesMotivos.empresa || 0;
@@ -1223,7 +1223,12 @@ function renderResumoAnual(yearlyData, monthLabels) {
         }
         if (d.topClientesFaltas) {
             d.topClientesFaltas.forEach(c => {
-                clientesMap[c.nome] = (clientesMap[c.nome] || 0) + c.faltas;
+                if (!c.nome) return;
+                const nomeKey = c.nome.trim().toUpperCase();
+                if (!clientesMap[nomeKey]) {
+                    clientesMap[nomeKey] = { nome: c.nome.trim(), faltas: 0 };
+                }
+                clientesMap[nomeKey].faltas += Number(c.faltas || 0);
             });
         }
     });
@@ -1356,7 +1361,7 @@ function renderResumoAnual(yearlyData, monthLabels) {
     // Ranking Top Ofensores do Ano
     const tbody = document.getElementById('tbody-top-ofensores');
     if (tbody) {
-        const sorted = Object.entries(clientesMap).map(([nome, faltas]) => ({ nome, faltas })).sort((a, b) => b.faltas - a.faltas).slice(0, 10);
+        const sorted = Object.values(clientesMap).sort((a, b) => b.faltas - a.faltas).slice(0, 10);
         const maxFaltas = sorted.length > 0 ? sorted[0].faltas : 1;
         const grandTotal = sorted.reduce((acc, c) => acc + c.faltas, 0) || 1;
         const medals = ['🥇', '🥈', '🥉'];
