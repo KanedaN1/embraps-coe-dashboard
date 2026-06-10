@@ -1149,3 +1149,149 @@ window.ag_toggleTasks = function(opId, btn) {
         btn.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Ver menos`;
     }
 };
+
+/* ================================================================
+   PRINT REPORT — por Responsável (sem repetição de atividades)
+   ================================================================ */
+function ag_openPrintReport() {
+    const month  = document.getElementById('ag-filter-month')?.value || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year   = document.getElementById('ag-filter-year')?.value  || new Date().getFullYear().toString();
+
+    const MONTH_NAMES = {
+        '01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril',
+        '05':'Maio','06':'Junho','07':'Julho','08':'Agosto',
+        '09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro'
+    };
+
+    const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
+    const STATUS_COLOR = { pendente:'#d97706', atrasada:'#dc2626', concluida:'#15803d' };
+    const STATUS_BG    = { pendente:'#fffbeb', atrasada:'#fff1f2', concluida:'#f0fdf4' };
+    const PRIORITY_ICON= { alta:'🔴', media:'🟡', baixa:'🟢' };
+
+    // Agrupa por operador e deduplica por nome de atividade
+    const byOp = {};
+    AG_TASKS.forEach(t => {
+        const key = t.operadorId || 'outro';
+        if (!byOp[key]) byOp[key] = new Map();
+        // Deduplication: usa o nome como chave. Mantém o de maior prioridade / pior status
+        const existing = byOp[key].get(t.name?.toLowerCase());
+        if (!existing) {
+            byOp[key].set(t.name?.toLowerCase(), t);
+        } else {
+            // Prefere status mais crítico: atrasada > pendente > concluida
+            const ord = { atrasada:0, pendente:1, concluida:2 };
+            if ((ord[t.status] ?? 1) < (ord[existing.status] ?? 1)) {
+                byOp[key].set(t.name?.toLowerCase(), t);
+            }
+        }
+    });
+
+    // Gera HTML do relatório
+    let html = '';
+    const operatorOrder = Object.keys(AG_OPERATORS);
+    const allKeys = [...new Set([...operatorOrder, ...Object.keys(byOp)])];
+
+    allKeys.forEach(opId => {
+        const tasksMap = byOp[opId];
+        if (!tasksMap || tasksMap.size === 0) return;
+
+        const opName  = AG_OPERATORS[opId] || opId;
+        const tasks   = [...tasksMap.values()].sort((a, b) => {
+            const ord = { atrasada:0, pendente:1, concluida:2 };
+            return (ord[a.status] ?? 1) - (ord[b.status] ?? 1);
+        });
+
+        const total      = tasks.length;
+        const concluidas = tasks.filter(t => t.status === 'concluida').length;
+        const atrasadas  = tasks.filter(t => t.status === 'atrasada').length;
+        const pendentes  = tasks.filter(t => t.status === 'pendente').length;
+        const sla        = total > 0 ? Math.round(concluidas / total * 100) : 100;
+        const slaColor   = sla >= 90 ? '#15803d' : sla >= 70 ? '#d97706' : '#dc2626';
+
+        html += `
+        <div class="ag-report-card">
+            <!-- Cabeçalho do operador -->
+            <div class="ag-report-card-header">
+                <div class="ag-report-op-info">
+                    <div class="ag-report-op-avatar">${opName.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div class="ag-report-op-name">${ag_esc(opName)}</div>
+                        <div class="ag-report-op-sub">${total} atividade${total !== 1 ? 's' : ''} atribuída${total !== 1 ? 's' : ''}</div>
+                    </div>
+                </div>
+                <div class="ag-report-op-stats">
+                    <div class="ag-report-stat">
+                        <span class="ag-report-stat-val" style="color:#15803d">${concluidas}</span>
+                        <span class="ag-report-stat-lbl">Concluídas</span>
+                    </div>
+                    <div class="ag-report-stat">
+                        <span class="ag-report-stat-val" style="color:#d97706">${pendentes}</span>
+                        <span class="ag-report-stat-lbl">Pendentes</span>
+                    </div>
+                    <div class="ag-report-stat">
+                        <span class="ag-report-stat-val" style="color:#dc2626">${atrasadas}</span>
+                        <span class="ag-report-stat-lbl">Atrasadas</span>
+                    </div>
+                    <div class="ag-report-stat">
+                        <span class="ag-report-stat-val" style="color:${slaColor}">${sla}%</span>
+                        <span class="ag-report-stat-lbl">SLA</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Barra de progresso -->
+            <div class="ag-report-progress-wrap">
+                <div class="ag-report-progress-bar" style="width:${sla}%;background:${slaColor}"></div>
+            </div>
+            <!-- Lista de atividades -->
+            <table class="ag-report-table">
+                <thead>
+                    <tr>
+                        <th style="width:40%">Atividade</th>
+                        <th style="width:20%">Prazo</th>
+                        <th style="width:13%">Frequência</th>
+                        <th style="width:12%">Prioridade</th>
+                        <th style="width:15%">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tasks.map(t => {
+                        const sc  = STATUS_COLOR[t.status] || '#64748b';
+                        const sb  = STATUS_BG[t.status]   || '#f8fafc';
+                        const sl  = STATUS_LABEL[t.status] || t.status;
+                        const pri = PRIORITY_ICON[t.priority] || '🟡';
+                        const prazo = t.deadline
+                            ? new Date(t.deadline).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+                            : '—';
+                        const freqLabel = {once:'Uma vez', diaria:'Diária', semanal:'Semanal', mensal:'Mensal'}[t.freq] || (t.freq || '—');
+                        return `<tr>
+                            <td>
+                                <strong style="font-size:.88rem">${ag_esc(t.name)}</strong>
+                                ${t.desc ? `<div style="font-size:.75rem;color:#64748b;margin-top:2px">${ag_esc(t.desc)}</div>` : ''}
+                            </td>
+                            <td style="font-size:.82rem;white-space:nowrap">${prazo}</td>
+                            <td style="font-size:.82rem">${freqLabel}</td>
+                            <td style="font-size:.9rem;text-align:center">${pri}</td>
+                            <td><span style="background:${sb};color:${sc};padding:3px 8px;border-radius:12px;font-size:.72rem;font-weight:700;white-space:nowrap">${sl}</span></td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    });
+
+    if (!html) {
+        html = '<div class="ag-empty"><i class="fa-solid fa-inbox"></i> Nenhuma atividade cadastrada para este período.</div>';
+    }
+
+    document.getElementById('ag-print-report-period').textContent =
+        `${MONTH_NAMES[month] || month} / ${year}  ·  Gerado em: ${new Date().toLocaleString('pt-BR')}`;
+    document.getElementById('ag-print-report-body').innerHTML = html;
+    document.getElementById('ag-modal-print').style.display = 'flex';
+    document.body.classList.add('ag-print-open');
+}
+
+function ag_closePrintReport() {
+    document.getElementById('ag-modal-print').style.display = 'none';
+    document.body.classList.remove('ag-print-open');
+}
+

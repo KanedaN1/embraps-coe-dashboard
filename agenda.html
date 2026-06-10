@@ -187,6 +187,11 @@
 
       <!-- TAB: Ranking -->
       <div id="ag-tab-ranking" class="ag-tab-pane">
+        <div class="ag-actions-bar" style="margin-bottom:1rem">
+          <button class="ag-btn ag-btn-primary" id="btn-print-report" onclick="ag_openPrintReport()">
+            <i class="fa-solid fa-print"></i> Relatório por Responsável
+          </button>
+        </div>
         <div class="ag-table-wrap" style="padding: 2rem;" id="ag-ranking-body"></div>
       </div>
 
@@ -315,6 +320,30 @@
 
 <!-- Toast -->
 <div id="ag-toast" class="ag-toast"></div>
+
+<!-- ============================================================
+     MODAL: RELATÓRIO POR RESPONSÁVEL (Impressão)
+     ============================================================ -->
+<div id="ag-modal-print" class="ag-modal-overlay" style="display:none" onclick="if(event.target===this) ag_closePrintReport()">
+  <div class="ag-print-modal">
+    <div class="ag-print-modal-header">
+      <div class="ag-print-modal-title">
+        <i class="fa-solid fa-print"></i>
+        <div>
+          <h3 id="ag-print-report-title">Relatório por Responsável</h3>
+          <p id="ag-print-report-period" style="margin:0;font-size:.85rem;color:#64748b"></p>
+        </div>
+      </div>
+      <div style="display:flex;gap:.7rem;align-items:center">
+        <button class="ag-btn ag-btn-primary" onclick="window.print()">
+          <i class="fa-solid fa-print"></i> Imprimir / Salvar PDF
+        </button>
+        <button class="ag-modal-close" onclick="ag_closePrintReport()">&#215;</button>
+      </div>
+    </div>
+    <div class="ag-print-modal-body" id="ag-print-report-body"></div>
+  </div>
+</div>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>

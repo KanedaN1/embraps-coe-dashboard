@@ -1,4 +1,4 @@
-﻿/* ==========================================================
+/* ==========================================================
    AGENDA COE — CSS
    ========================================================== */
 :root {
@@ -193,4 +193,248 @@
   .ag-actions-bar { flex-direction: column; align-items: stretch; }
   .ag-filters { margin-left: 0; flex-direction: column; }
 }
+
+/* ── Print Report Modal ── */
+.ag-print-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,.3);
+}
+
+.ag-print-modal-header {
+  padding: 1.2rem 1.6rem;
+  border-bottom: 1px solid var(--ag-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  flex-shrink: 0;
+}
+
+.ag-print-modal-title {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+}
+
+.ag-print-modal-title i {
+  font-size: 1.4rem;
+  color: #2563eb;
+}
+
+.ag-print-modal-title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+.ag-print-modal-body {
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: #f1f5f9;
+  flex: 1;
+}
+
+/* ── Report Cards ── */
+.ag-report-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.ag-report-card-header {
+  padding: 1.1rem 1.4rem;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.ag-report-op-info {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+}
+
+.ag-report-op-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ag-report-op-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ag-report-op-sub {
+  font-size: .78rem;
+  color: rgba(255,255,255,.75);
+  margin-top: 2px;
+}
+
+.ag-report-op-stats {
+  display: flex;
+  gap: 1.2rem;
+}
+
+.ag-report-stat {
+  text-align: center;
+  background: rgba(255,255,255,.15);
+  padding: .4rem .8rem;
+  border-radius: 8px;
+}
+
+.ag-report-stat-val {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.ag-report-stat-lbl {
+  display: block;
+  font-size: .65rem;
+  color: rgba(255,255,255,.7);
+  text-transform: uppercase;
+  margin-top: 3px;
+  letter-spacing: .04em;
+}
+
+.ag-report-progress-wrap {
+  height: 5px;
+  background: #e2e8f0;
+}
+
+.ag-report-progress-bar {
+  height: 100%;
+  transition: width .4s ease;
+}
+
+/* ── Report Table ── */
+.ag-report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ag-report-table thead th {
+  background: #f8fafc;
+  padding: .65rem 1rem;
+  font-size: .75rem;
+  font-weight: 700;
+  text-align: left;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ag-report-table tbody td {
+  padding: .75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  font-size: .875rem;
+  color: #334155;
+}
+
+.ag-report-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ag-report-table tbody tr:hover td {
+  background: #fafafa;
+}
+
+/* ================================================================
+   @MEDIA PRINT — Otimizado para A4
+   ================================================================ */
+@media print {
+  /* Oculta tudo que não é o relatório */
+  body > *:not(#ag-modal-print),
+  .ag-header,
+  .ag-toast,
+  #ag-modal-task,
+  #ag-modal-conclude {
+    display: none !important;
+  }
+
+  /* Exibe o modal de impressão em tela cheia */
+  #ag-modal-print {
+    display: block !important;
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .ag-print-modal {
+    max-width: 100% !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .ag-print-modal-header {
+    border-radius: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ag-print-modal-body {
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* Botão de imprimir some ao imprimir */
+  .ag-print-modal-header .ag-btn,
+  .ag-modal-close {
+    display: none !important;
+  }
+
+  /* Forçar cores de background na impressão */
+  .ag-report-card-header {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ag-report-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 1.2rem;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 1.2cm 1.5cm;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 11pt;
+  }
+}
+
 
