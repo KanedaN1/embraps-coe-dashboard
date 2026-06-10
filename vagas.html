@@ -222,6 +222,27 @@
                 </div>
             </div>
 
+            <!-- Painel de Sincronização Google Sheets -->
+            <div style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); border: 1px solid #e2e8f0; border-left: 4px solid #7c3aed; border-radius: 10px; padding: 12px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-rotate" style="color:#7c3aed; font-size:1.1rem;"></i>
+                    <div>
+                        <div style="font-size:0.8rem; font-weight:700; color:#4c1d95;">Sincronização Automática — Planilha de Admissões</div>
+                        <div id="sync-status" style="font-size:0.78rem; color:#64748b; margin-top:2px;"><i class="fa-solid fa-spinner fa-spin"></i> Aguardando...</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+                    <!-- Legenda dos badges -->
+                    <div style="display:flex; gap:12px; font-size:0.75rem; color:#64748b;">
+                        <span><i class="fa-solid fa-robot" style="color:#7c3aed;"></i> Automático</span>
+                        <span><i class="fa-solid fa-pen" style="color:#0369a1;"></i> Manual</span>
+                    </div>
+                    <button id="btn-sync" onclick="sincronizarAdmissoes(true)" style="background:#7c3aed; color:white; border:none; padding:7px 14px; border-radius:7px; font-size:0.8rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background 0.2s;" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
+                        <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Agora
+                    </button>
+                </div>
+            </div>
+
             <!-- Tabela Principal -->
             <div class="form-section" style="overflow-x: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
@@ -263,12 +284,13 @@
                             <th>Tempo Vaga</th>
                             <th>Status</th>
                             <th>Colab. Implantado</th>
+                            <th>Conclusão</th>
                             <th>Coord</th>
                             <th style="text-align: center;">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-vagas">
-                        <tr><td colspan="10" style="text-align:center; padding: 20px;">Carregando vagas...</td></tr>
+                        <tr><td colspan="16" style="text-align:center; padding: 20px;">Carregando vagas...</td></tr>
                     </tbody>
                 </table>
             </div>

@@ -12,6 +12,193 @@ const PINS = {
     'Ricardo Faustino': '5555'
 };
 
+// ==========================================
+// INTEGRAÇÃO GOOGLE SHEETS — ADMISSÕES
+// ==========================================
+// URL da planilha publicada como CSV (primeira aba)
+const SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1KoWxFgi3RyUzB7ezzGvxcJeGYXwbCCChL1nM99MSOCc/export?format=csv';
+
+/**
+ * Parseia o CSV da planilha de admissões.
+ * Estrutura confirmada:
+ *   Col 2  (índice 2)  → RE (matrícula)
+ *   Col 3  (índice 3)  → COLABORADOR (nome)
+ *   Col 20 (índice 20) → Nº VAGA
+ * Retorna array de { colaborador, numVaga }
+ */
+function parseAdmissoesCSV(csvText) {
+    const linhas = csvText.split('\n').map(l => l.trim()).filter(Boolean);
+    const resultado = [];
+
+    // Encontrar a linha de cabeçalho real (contém 'ADMISSÕES' ou 'COLABORADOR')
+    let dataStart = -1;
+    for (let i = 0; i < linhas.length; i++) {
+        if (linhas[i].toUpperCase().includes('ADMISS') || linhas[i].toUpperCase().includes('COLABORADOR')) {
+            dataStart = i + 1; // dados começam na linha seguinte
+            break;
+        }
+    }
+    if (dataStart === -1) return resultado;
+
+    for (let i = dataStart; i < linhas.length; i++) {
+        const cols = parseCSVLine(linhas[i]);
+        if (cols.length < 5) continue;
+
+        const re          = (cols[2] || '').trim();
+        const colaborador = (cols[3] || '').trim();
+        const numVaga     = (cols[20] || '').trim();
+
+        // Validação do número da vaga (evita sincronizar com placeholders genéricos como S/N)
+        const isInvalidNum = !numVaga || 
+                             numVaga.toUpperCase() === 'S/N' || 
+                             numVaga.toUpperCase() === 'SN' || 
+                             numVaga.toUpperCase() === 'SEM NÚMERO' ||
+                             numVaga.toUpperCase() === 'SEM NUMERO';
+
+        if (colaborador && !isInvalidNum) {
+            // Guarda como "RE - Nome" para ficar mais completo na listagem
+            const colaboradorFormatado = re ? `${re} - ${colaborador}` : colaborador;
+            resultado.push({ colaborador: colaboradorFormatado, numVaga });
+        }
+    }
+    return resultado;
+}
+
+/** Parseia uma linha CSV respeitando campos entre aspas */
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+            inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += ch;
+        }
+    }
+    result.push(current);
+    return result;
+}
+
+/**
+ * Sincroniza a planilha de admissões com as vagas pendentes no Firebase.
+ * Para cada linha da planilha que tenha numVaga correspondente a uma vaga
+ * com status != Efetivado, atualiza: implantado, status, dataFechamento, fonteImplantacao.
+ */
+async function sincronizarAdmissoes(exibirResultado = true) {
+    const statusEl = document.getElementById('sync-status');
+    const btnSync  = document.getElementById('btn-sync');
+
+    if (statusEl) {
+        statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando com planilha...';
+        statusEl.style.color = '#64748b';
+    }
+    if (btnSync) btnSync.disabled = true;
+
+    try {
+        const resp = await fetch(SHEETS_CSV_URL);
+        if (!resp.ok) throw new Error('Erro ao buscar planilha');
+        const csvText = await resp.text();
+
+        const admissoes = parseAdmissoesCSV(csvText);
+        if (admissoes.length === 0) {
+            if (statusEl) {
+                statusEl.innerHTML = '<i class="fa-solid fa-circle-info"></i> Nenhum dado encontrado na planilha.';
+                statusEl.style.color = '#f59e0b';
+            }
+            if (exibirResultado) {
+                alert("Nenhum registro de admissão foi encontrado na planilha.");
+            }
+            return;
+        }
+
+        const db = firebase.firestore();
+        const hoje = new Date().toISOString().split('T')[0];
+        let atualizadas = 0;
+
+        // Para cada linha da planilha, verificar se há vaga pendente com esse numVaga
+        const vagasParaAtualizar = [];
+        const matchedVagaIds = new Set();
+        for (const adm of admissoes) {
+            const vagaMatch = currentVagas.find(v =>
+                v.numVaga &&
+                String(v.numVaga).trim() === String(adm.numVaga).trim() &&
+                v.status !== 'Efetivado' &&
+                !matchedVagaIds.has(v.id)
+            );
+            if (vagaMatch && adm.colaborador) {
+                vagasParaAtualizar.push({ vaga: vagaMatch, adm });
+                matchedVagaIds.add(vagaMatch.id);
+            }
+        }
+
+        if (vagasParaAtualizar.length === 0) {
+            if (statusEl) {
+                const agora = new Date().toLocaleTimeString('pt-BR');
+                statusEl.innerHTML = `<i class="fa-solid fa-check"></i> Sincronizado às ${agora} — Nenhuma vaga nova para atualizar.`;
+                statusEl.style.color = '#10b981';
+            }
+            if (btnSync) btnSync.disabled = false;
+            if (exibirResultado) {
+                alert("Sincronização concluída! Nenhuma nova vaga para atualizar.");
+            }
+            return;
+        }
+
+        // Atualizar no Firebase em batch
+        const batch = db.batch();
+        for (const { vaga, adm } of vagasParaAtualizar) {
+            const ref = db.collection('vagas').doc(vaga.id);
+            const updateFields = {
+                implantado:       adm.colaborador,
+                status:           'Efetivado',
+                dataFechamento:   hoje,
+                fonteImplantacao: 'automatico',
+                atualizadoEm:     new Date().toISOString()
+            };
+            batch.update(ref, updateFields);
+
+            // Atualizar localmente para evitar dupla consulta ao Firebase
+            const localVaga = currentVagas.find(v => v.id === vaga.id);
+            if (localVaga) {
+                Object.assign(localVaga, updateFields);
+            }
+            atualizadas++;
+        }
+        await batch.commit();
+
+        const agora = new Date().toLocaleTimeString('pt-BR');
+        if (statusEl) {
+            statusEl.innerHTML = `<i class="fa-solid fa-check-double"></i> Sincronizado às ${agora} — <strong>${atualizadas} vaga(s) efetivada(s) automaticamente!</strong>`;
+            statusEl.style.color = '#10b981';
+        }
+
+        // Atualizar dashboard e tabela localmente para refletir as mudanças sem re-buscar
+        atualizarDashboard();
+        renderizarTabela(currentVagas);
+
+        if (exibirResultado) {
+            alert(`Sincronização concluída! ${atualizadas} vaga(s) foram efetivada(s) com sucesso.`);
+        }
+
+    } catch (err) {
+        console.error('Erro na sincronização:', err);
+        if (statusEl) {
+            statusEl.innerHTML = '<i class="fa-solid fa-xmark"></i> Erro ao sincronizar. Verifique o console.';
+            statusEl.style.color = '#ef4444';
+        }
+        if (exibirResultado) {
+            alert("Erro ao realizar a sincronização. Por favor, verifique a conexão e o console.");
+        }
+    } finally {
+        if (btnSync) btnSync.disabled = false;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     verificarLogin();
 });
@@ -99,9 +286,9 @@ function logoutVagas() {
 // ==========================================
 // OPERAÇÕES FIREBASE (CRUD)
 // ==========================================
-async function carregarVagas(limite = 600) {
+async function carregarVagas(limite = 150) {
     const tbody = document.getElementById('tbody-vagas');
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Carregando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;">Carregando...</td></tr>';
     
     try {
         const db = firebase.firestore();
@@ -124,6 +311,9 @@ async function carregarVagas(limite = 600) {
 
         // Se trouxer o máximo do limite, mostra botão para carregar mais
         mostrarBotaoCarregarMais(limite > 0 && currentVagas.length === limite);
+
+        // Sincronizar automaticamente com Google Sheets (sem alert)
+        sincronizarAdmissoes(false);
 
     } catch (error) {
         console.error('Erro ao buscar vagas:', error);
@@ -287,8 +477,27 @@ function renderizarTabela(lista) {
 
         const tr = document.createElement('tr');
         if (rowClass) tr.className = rowClass;
-        
-        const impHtml = vaga.implantado ? vaga.implantado : `<span style="color:var(--danger);font-size:0.75rem;font-weight:bold;"><i class="fa-solid fa-circle-exclamation"></i> PENDENTE</span>`;
+
+        // Badge de implantado: automático 🤖 ou manual ✏️
+        let impHtml;
+        if (vaga.implantado) {
+            const isAuto = vaga.fonteImplantacao === 'automatico';
+            const badgeIcon  = isAuto
+                ? '<i class="fa-solid fa-robot" title="Preenchido automaticamente via planilha"></i>'
+                : '<i class="fa-solid fa-pen" title="Preenchido manualmente"></i>';
+            const badgeColor = isAuto ? '#7c3aed' : '#0369a1';
+            impHtml = `<span style="display:flex;align-items:center;gap:5px;">
+                <span style="color:${badgeColor};font-size:0.8rem;">${badgeIcon}</span>
+                <span>${vaga.implantado}</span>
+            </span>`;
+        } else {
+            impHtml = `<span style="color:var(--danger);font-size:0.75rem;font-weight:bold;"><i class="fa-solid fa-circle-exclamation"></i> PENDENTE</span>`;
+        }
+
+        // Data de conclusão
+        const conclusaoHtml = vaga.dataFechamento
+            ? `<span style="font-size:0.8rem;color:#64748b;">${formatarDataBR(vaga.dataFechamento)}</span>`
+            : `<span style="color:#cbd5e1;font-size:0.75rem;">—</span>`;
         
         tr.innerHTML = `
             <td data-label="RE Saiu"><strong>${vaga.reSaiu || '-'}</strong></td>
@@ -304,6 +513,7 @@ function renderizarTabela(lista) {
             <td data-label="Tempo Vaga"><strong style="color: ${estaAtrasada ? 'var(--danger)' : 'inherit'}">${dias} dias</strong></td>
             <td data-label="Status"><span class="badge-status ${badgeClass}">${vaga.status}</span></td>
             <td data-label="Implantado">${impHtml}</td>
+            <td data-label="Conclusão">${conclusaoHtml}</td>
             <td data-label="Coord">${vaga.coord}</td>
             <td data-label="Ações" style="text-align: center;">${actionHtml}</td>
         `;
