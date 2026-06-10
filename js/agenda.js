@@ -1149,20 +1149,214 @@ window.ag_toggleTasks = function(opId, btn) {
         btn.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Ver menos`;
     }
 };
+            const snap = await db.collection('agenda_tarefas').where('month', '==', month).where('year', '==', year).get();
+            tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+            tasks = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]').filter(t => t.month === month && t.year === year);
+        }
+    } catch(e) {
+        tasks = JSON.parse(localStorage.getItem(AG_LS_KEY) || '[]').filter(t => t.month === month && t.year === year);
+    }
+
+    ag_renderDashboardMiniList(tasks);
+    ag_renderExecKPIs(tasks);
+    ag_renderExecRanking(tasks);
+    ag_renderExecOperatorSLA(tasks);
+    ag_renderExecGroupedList(tasks);
+}
+
+function ag_renderDashboardMiniList(tasks) {
+    const el = document.getElementById('dashboard-agenda-summary');
+    if (!el) return;
+
+    if (!tasks.length) {
+        el.innerHTML = '<p style="color:#94a3b8; font-size:0.9rem">Nenhuma atividade pendente para este mês.</p>';
+        return;
+    }
+
+    const pending = tasks.filter(t => t.status !== 'concluida').slice(0, 5);
+    el.innerHTML = pending.map(t => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f1f5f9">
+            <span style="font-size:0.85rem; font-weight:600; color:#334155">${t.name}</span>
+            <span style="font-size:0.75rem; color:#64748b">${AG_OPERATORS[t.operadorId] || t.operadorId}</span>
+        </div>
+    `).join('') || '<p style="color:#16a34a; font-size:0.9rem"><i class="fa-solid fa-circle-check"></i> Todas as atividades do mês concluídas!</p>';
+}
+
+function ag_renderExecKPIs(tasks) {
+    const el = document.getElementById('ag-exec-kpis');
+    if (!el) return;
+
+    const total = tasks.length;
+    const done = tasks.filter(t => t.status === 'concluida').length;
+    const late = tasks.filter(t => t.status === 'atrasada').length;
+    const sla = total > 0 ? Math.round(done / total * 100) : 100;
+
+    el.innerHTML = `
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-blue"><i class="fa-solid fa-tasks"></i></div>
+            <div class="kpi-info"><h3>Total Atividades</h3><h2>${total}</h2></div>
+        </div>
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-purple"><i class="fa-solid fa-history"></i></div>
+            <div class="kpi-info"><h3>Em Atraso</h3><h2 style="color:#ef4444">${late}</h2></div>
+        </div>
+        <div class="card kpi-card">
+            <div class="kpi-icon bg-green"><i class="fa-solid fa-tachometer-alt"></i></div>
+            <div class="kpi-info"><h3>SLA Operacional</h3><h2>${sla}%</h2></div>
+        </div>
+    `;
+}
+
+function ag_renderExecRanking(tasks) {
+    const el = document.getElementById('ag-exec-ranking');
+    if (!el) return;
+
+    const stats = {};
+    Object.keys(AG_OPERATORS).forEach(id => stats[id] = { done:0, total:0 });
+    tasks.forEach(t => {
+        if (stats[t.operadorId]) {
+            stats[t.operadorId].total++;
+            if (t.status === 'concluida') stats[t.operadorId].done++;
+        }
+    });
+
+    const sorted = Object.entries(stats)
+        .map(([id, s]) => ({ id, name: AG_OPERATORS[id], ...s }))
+        .sort((a,b) => (b.done / (b.total||1)) - (a.done / (a.total||1)) || b.done - a.done);
+
+    el.innerHTML = sorted.map((op, i) => {
+        const sla = op.total > 0 ? Math.round(op.done / op.total * 100) : 100;
+        const color = sla >= 90 ? '#16a34a' : sla >= 70 ? '#f59e0b' : '#dc2626';
+        return `
+            <div style="margin-bottom:1rem; display:flex; align-items:center; gap:12px;">
+                <span style="font-weight:800; color:#94a3b8; width:20px;">${i+1}°</span>
+                <div style="flex:1">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span style="font-size:0.85rem; font-weight:600">${op.name}</span>
+                        <span style="font-size:0.85rem; font-weight:700; color:${color}">${sla}%</span>
+                    </div>
+                    <div style="height:4px; background:#f1f5f9; border-radius:2px; overflow:hidden">
+                        <div style="width:${sla}%; height:100%; background:${color}"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function ag_renderExecOperatorSLA(tasks) {
+    const el = document.getElementById('ag-exec-operator-sla');
+    if (!el) return;
+    
+    // Simple summary of counts
+    const statusCounts = { pendente: 0, atrasada: 0, concluida: 0 };
+    tasks.forEach(t => { if (statusCounts[t.status] !== undefined) statusCounts[t.status]++; });
+
+    el.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#f8fafc; border-radius:8px;">
+                <span style="font-size:0.9rem; font-weight:600; color:#64748b">Atividades Concluídas</span>
+                <span style="font-size:1.1rem; font-weight:800; color:#16a34a">${statusCounts.concluida}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#f8fafc; border-radius:8px;">
+                <span style="font-size:0.9rem; font-weight:600; color:#64748b">Pendentes</span>
+                <span style="font-size:1.1rem; font-weight:800; color:#f59e0b">${statusCounts.pendente}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#fef2f2; border-radius:8px;">
+                <span style="font-size:0.9rem; font-weight:600; color:#b91c1c">Em Atraso</span>
+                <span style="font-size:1.1rem; font-weight:800; color:#dc2626">${statusCounts.atrasada}</span>
+            </div>
+        </div>
+    `;
+}
+
+function ag_renderExecGroupedList(tasks) {
+    const el = document.getElementById('ag-exec-grouped-list');
+    if (!el) return;
+
+    const byOp = {};
+    tasks.forEach(t => {
+        const key = t.operadorId || 'outro';
+        if (!byOp[key]) byOp[key] = [];
+        byOp[key].push(t);
+    });
+
+    const STATUS_COLOR = { pendente:'#f59e0b', atrasada:'#dc2626', concluida:'#16a34a' };
+    const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
+
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem">';
+    Object.entries(byOp).forEach(([opId, opTasks]) => {
+        const opName = AG_OPERATORS[opId] || opId;
+        const sorted = [...opTasks].sort((a,b) => {
+            const o = { atrasada:0, pendente:1, concluida:2 };
+            return (o[a.status]??1) - (o[b.status]??1);
+        });
+
+        html += `
+        <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
+            <div style="background:#f8fafc;padding:1rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+                <strong style="color:#1e3a8a">${opName}</strong>
+                <span style="font-size:0.75rem;color:#64748b;background:#e2e8f0;padding:2px 8px;border-radius:12px;font-weight:700;">${sorted.length}</span>
+            </div>
+            <div>
+                ${sorted.map((t, idx) => {
+                    const sc = STATUS_COLOR[t.status] || '#64748b';
+                    const sl = STATUS_LABEL[t.status] || t.status;
+                    const prazo = t.deadline ? new Date(t.deadline).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : '';
+                    const isHidden = idx >= 5;
+                    const display = isHidden ? 'none' : 'flex';
+                    const cls = isHidden ? `class="ag-hidden-task-${opId}"` : '';
+                    return `
+                    <div ${cls} style="padding:.8rem 1rem;border-bottom:1px solid #f8fafc;display:${display};justify-content:space-between;align-items:center">
+                        <div style="min-width:0;flex:1">
+                            <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</div>
+                            <div style="font-size:.75rem;color:#94a3b8">${prazo} · ${t.freq || ''}</div>
+                        </div>
+                        <span style="color:${sc};font-weight:700;font-size:.7rem;text-transform:uppercase;margin-left:10px">${sl}</span>
+                    </div>`;
+                }).join('')}
+            </div>
+            ${sorted.length > 5 ? `
+            <div style="padding: 8px; text-align: center; border-top: 1px solid #f1f5f9; background: #f8fafc;">
+                <button style="background: transparent; color: #3b82f6; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 5px 10px; width: 100%;" onclick="ag_toggleTasks('${opId}', this)">
+                    <i class="fa-solid fa-chevron-down"></i> Ver mais ${sorted.length - 5}
+                </button>
+            </div>
+            ` : ''}
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+window.ag_toggleTasks = function(opId, btn) {
+    const hiddenElements = document.querySelectorAll(`.ag-hidden-task-${opId}`);
+    let isShowing = btn.getAttribute('data-showing') === 'true';
+    
+    if (isShowing) {
+        hiddenElements.forEach(el => el.style.display = 'none');
+        btn.setAttribute('data-showing', 'false');
+        btn.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Ver mais ${hiddenElements.length}`;
+    } else {
+        hiddenElements.forEach(el => el.style.display = 'flex');
+        btn.setAttribute('data-showing', 'true');
+        btn.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Ver menos`;
+    }
+};
 
 /* ================================================================
    PRINT REPORT — por Responsável (sem repetição de atividades)
    ================================================================ */
 function ag_openPrintReport() {
-    const month  = document.getElementById('ag-filter-month')?.value || (new Date().getMonth() + 1).toString().padStart(2, '0');
-    const year   = document.getElementById('ag-filter-year')?.value  || new Date().getFullYear().toString();
+    const month = document.getElementById('ag-filter-month')?.value || (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const year  = document.getElementById('ag-filter-year')?.value  || new Date().getFullYear().toString();
 
     const MONTH_NAMES = {
         '01':'Janeiro','02':'Fevereiro','03':'Março','04':'Abril',
         '05':'Maio','06':'Junho','07':'Julho','08':'Agosto',
         '09':'Setembro','10':'Outubro','11':'Novembro','12':'Dezembro'
     };
-
     const STATUS_LABEL = { pendente:'Pendente', atrasada:'Atrasada', concluida:'Concluída' };
     const STATUS_COLOR = { pendente:'#d97706', atrasada:'#dc2626', concluida:'#15803d' };
     const STATUS_BG    = { pendente:'#fffbeb', atrasada:'#fff1f2', concluida:'#f0fdf4' };
@@ -1173,12 +1367,10 @@ function ag_openPrintReport() {
     AG_TASKS.forEach(t => {
         const key = t.operadorId || 'outro';
         if (!byOp[key]) byOp[key] = new Map();
-        // Deduplication: usa o nome como chave. Mantém o de maior prioridade / pior status
         const existing = byOp[key].get(t.name?.toLowerCase());
         if (!existing) {
             byOp[key].set(t.name?.toLowerCase(), t);
         } else {
-            // Prefere status mais crítico: atrasada > pendente > concluida
             const ord = { atrasada:0, pendente:1, concluida:2 };
             if ((ord[t.status] ?? 1) < (ord[existing.status] ?? 1)) {
                 byOp[key].set(t.name?.toLowerCase(), t);
@@ -1186,31 +1378,29 @@ function ag_openPrintReport() {
         }
     });
 
-    // Gera HTML do relatório
+    // Gera HTML dos cards por operador
     let html = '';
-    const operatorOrder = Object.keys(AG_OPERATORS);
-    const allKeys = [...new Set([...operatorOrder, ...Object.keys(byOp)])];
+    const allKeys = [...new Set([...Object.keys(AG_OPERATORS), ...Object.keys(byOp)])];
 
     allKeys.forEach(opId => {
         const tasksMap = byOp[opId];
         if (!tasksMap || tasksMap.size === 0) return;
 
         const opName  = AG_OPERATORS[opId] || opId;
-        const tasks   = [...tasksMap.values()].sort((a, b) => {
+        const opTasks = [...tasksMap.values()].sort((a, b) => {
             const ord = { atrasada:0, pendente:1, concluida:2 };
             return (ord[a.status] ?? 1) - (ord[b.status] ?? 1);
         });
 
-        const total      = tasks.length;
-        const concluidas = tasks.filter(t => t.status === 'concluida').length;
-        const atrasadas  = tasks.filter(t => t.status === 'atrasada').length;
-        const pendentes  = tasks.filter(t => t.status === 'pendente').length;
+        const total      = opTasks.length;
+        const concluidas = opTasks.filter(t => t.status === 'concluida').length;
+        const atrasadas  = opTasks.filter(t => t.status === 'atrasada').length;
+        const pendentes  = opTasks.filter(t => t.status === 'pendente').length;
         const sla        = total > 0 ? Math.round(concluidas / total * 100) : 100;
         const slaColor   = sla >= 90 ? '#15803d' : sla >= 70 ? '#d97706' : '#dc2626';
 
         html += `
         <div class="ag-report-card">
-            <!-- Cabeçalho do operador -->
             <div class="ag-report-card-header">
                 <div class="ag-report-op-info">
                     <div class="ag-report-op-avatar">${opName.charAt(0).toUpperCase()}</div>
@@ -1220,29 +1410,15 @@ function ag_openPrintReport() {
                     </div>
                 </div>
                 <div class="ag-report-op-stats">
-                    <div class="ag-report-stat">
-                        <span class="ag-report-stat-val" style="color:#15803d">${concluidas}</span>
-                        <span class="ag-report-stat-lbl">Concluídas</span>
-                    </div>
-                    <div class="ag-report-stat">
-                        <span class="ag-report-stat-val" style="color:#d97706">${pendentes}</span>
-                        <span class="ag-report-stat-lbl">Pendentes</span>
-                    </div>
-                    <div class="ag-report-stat">
-                        <span class="ag-report-stat-val" style="color:#dc2626">${atrasadas}</span>
-                        <span class="ag-report-stat-lbl">Atrasadas</span>
-                    </div>
-                    <div class="ag-report-stat">
-                        <span class="ag-report-stat-val" style="color:${slaColor}">${sla}%</span>
-                        <span class="ag-report-stat-lbl">SLA</span>
-                    </div>
+                    <div class="ag-report-stat"><span class="ag-report-stat-val" style="color:#15803d">${concluidas}</span><span class="ag-report-stat-lbl">Concluídas</span></div>
+                    <div class="ag-report-stat"><span class="ag-report-stat-val" style="color:#d97706">${pendentes}</span><span class="ag-report-stat-lbl">Pendentes</span></div>
+                    <div class="ag-report-stat"><span class="ag-report-stat-val" style="color:#dc2626">${atrasadas}</span><span class="ag-report-stat-lbl">Atrasadas</span></div>
+                    <div class="ag-report-stat"><span class="ag-report-stat-val" style="color:${slaColor}">${sla}%</span><span class="ag-report-stat-lbl">SLA</span></div>
                 </div>
             </div>
-            <!-- Barra de progresso -->
             <div class="ag-report-progress-wrap">
                 <div class="ag-report-progress-bar" style="width:${sla}%;background:${slaColor}"></div>
             </div>
-            <!-- Lista de atividades -->
             <table class="ag-report-table">
                 <thead>
                     <tr>
@@ -1254,7 +1430,7 @@ function ag_openPrintReport() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${tasks.map(t => {
+                    ${opTasks.map(t => {
                         const sc  = STATUS_COLOR[t.status] || '#64748b';
                         const sb  = STATUS_BG[t.status]   || '#f8fafc';
                         const sl  = STATUS_LABEL[t.status] || t.status;
@@ -1264,10 +1440,7 @@ function ag_openPrintReport() {
                             : '—';
                         const freqLabel = {once:'Uma vez', diaria:'Diária', semanal:'Semanal', mensal:'Mensal'}[t.freq] || (t.freq || '—');
                         return `<tr>
-                            <td>
-                                <strong style="font-size:.88rem">${ag_esc(t.name)}</strong>
-                                ${t.desc ? `<div style="font-size:.75rem;color:#64748b;margin-top:2px">${ag_esc(t.desc)}</div>` : ''}
-                            </td>
+                            <td><strong style="font-size:.88rem">${ag_esc(t.name)}</strong>${t.desc ? `<div style="font-size:.75rem;color:#64748b;margin-top:2px">${ag_esc(t.desc)}</div>` : ''}</td>
                             <td style="font-size:.82rem;white-space:nowrap">${prazo}</td>
                             <td style="font-size:.82rem">${freqLabel}</td>
                             <td style="font-size:.9rem;text-align:center">${pri}</td>
@@ -1280,18 +1453,130 @@ function ag_openPrintReport() {
     });
 
     if (!html) {
-        html = '<div class="ag-empty"><i class="fa-solid fa-inbox"></i> Nenhuma atividade cadastrada para este período.</div>';
+        html = '<div style="text-align:center;padding:3rem;color:#64748b;"><p>Nenhuma atividade cadastrada para este período.</p></div>';
     }
 
-    document.getElementById('ag-print-report-period').textContent =
-        `${MONTH_NAMES[month] || month} / ${year}  ·  Gerado em: ${new Date().toLocaleString('pt-BR')}`;
-    document.getElementById('ag-print-report-body').innerHTML = html;
-    document.getElementById('ag-modal-print').style.display = 'flex';
-    document.body.classList.add('ag-print-open');
+    const period = `${MONTH_NAMES[month] || month} / ${year}  ·  Gerado em: ${new Date().toLocaleString('pt-BR')}`;
+
+    // Atualiza o modal de preview
+    const periodEl = document.getElementById('ag-print-report-period');
+    if (periodEl) periodEl.textContent = period;
+    const bodyEl = document.getElementById('ag-print-report-body');
+    if (bodyEl) bodyEl.innerHTML = html;
+    const modalEl = document.getElementById('ag-modal-print');
+    if (modalEl) modalEl.style.display = 'flex';
+
+    // Guarda para uso no botão imprimir
+    window._ag_print_html   = html;
+    window._ag_print_period = period;
 }
 
 function ag_closePrintReport() {
-    document.getElementById('ag-modal-print').style.display = 'none';
-    document.body.classList.remove('ag-print-open');
+    const modalEl = document.getElementById('ag-modal-print');
+    if (modalEl) modalEl.style.display = 'none';
 }
 
+/**
+ * Abre uma nova janela com todo o CSS inline e aciona window.print().
+ * Muito mais confiável do que @media print em modais.
+ */
+function ag_printReport() {
+    const html   = window._ag_print_html   || document.getElementById('ag-print-report-body')?.innerHTML || '';
+    const period = window._ag_print_period || '';
+
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    if (!printWin) {
+        alert('Permita popups neste site para imprimir o relatório.');
+        return;
+    }
+
+    printWin.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório por Responsável — Agenda COE</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #1e293b; background: #fff;
+      padding: 1.5cm; font-size: 11pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .doc-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 24px;
+    }
+    .doc-header h1 { font-size: 1.2rem; color: #1e3a8a; font-weight: 800; }
+    .doc-header p  { font-size: .78rem; color: #64748b; margin-top: 3px; }
+    .doc-period    { font-size: .82rem; color: #475569; text-align: right; }
+    .ag-report-card {
+      border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+      margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid;
+    }
+    .ag-report-card-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      padding: 12px 16px; display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 10px;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .ag-report-op-info  { display: flex; align-items: center; gap: 10px; }
+    .ag-report-op-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,.25); color: #fff;
+      font-weight: 800; font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ag-report-op-name  { font-size: .95rem; font-weight: 700; color: #fff; }
+    .ag-report-op-sub   { font-size: .72rem; color: rgba(255,255,255,.75); margin-top: 2px; }
+    .ag-report-op-stats { display: flex; gap: 10px; }
+    .ag-report-stat {
+      text-align: center; background: rgba(255,255,255,.15);
+      padding: 4px 10px; border-radius: 7px;
+    }
+    .ag-report-stat-val { display: block; font-size: 1.1rem; font-weight: 800; color: #fff; line-height: 1; }
+    .ag-report-stat-lbl { display: block; font-size: .6rem; color: rgba(255,255,255,.7); text-transform: uppercase; margin-top: 2px; }
+    .ag-report-progress-wrap { height: 4px; background: #e2e8f0; }
+    .ag-report-progress-bar  { height: 100%; }
+    .ag-report-table { width: 100%; border-collapse: collapse; }
+    .ag-report-table thead th {
+      background: #f8fafc; padding: 8px 12px;
+      font-size: .72rem; font-weight: 700; text-align: left;
+      color: #64748b; text-transform: uppercase;
+      border-bottom: 1px solid #e2e8f0;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .ag-report-table tbody td {
+      padding: 8px 12px; border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle; font-size: .83rem; color: #334155;
+    }
+    .ag-report-table tbody tr:last-child td { border-bottom: none; }
+    .ag-report-table tbody tr:nth-child(even) td {
+      background: #fafafa;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .doc-footer {
+      margin-top: 30px; padding-top: 12px; border-top: 1px solid #e2e8f0;
+      text-align: center; font-size: .72rem; color: #94a3b8;
+    }
+    @page { size: A4 portrait; margin: 1.2cm 1.5cm; }
+  </style>
+</head>
+<body>
+  <div class="doc-header">
+    <div>
+      <h1>📋 Relatório por Responsável — Agenda COE</h1>
+      <p>Embraps · Sistema de Controle Operacional</p>
+    </div>
+    <div class="doc-period">${period}</div>
+  </div>
+  ${html}
+  <div class="doc-footer">
+    Gerado automaticamente pelo Embraps COE Dashboard · ${new Date().toLocaleString('pt-BR')}
+  </div>
+  <script>window.onload = function(){ window.print(); };<\/script>
+</body>
+</html>`);
+    printWin.document.close();
+}
