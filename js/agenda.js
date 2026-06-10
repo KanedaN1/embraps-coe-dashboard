@@ -835,16 +835,20 @@ function ag_renderExecutiveDashboard(tasks) {
 
         html += `
         <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
-            <div style="background:#f8fafc;padding:1rem;border-bottom:1px solid #e2e8f0">
+            <div style="background:#f8fafc;padding:1rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
                 <strong style="color:#1e3a8a">${opName}</strong>
+                <span style="font-size:0.75rem;color:#64748b;background:#e2e8f0;padding:2px 8px;border-radius:12px;font-weight:700;">${sorted.length}</span>
             </div>
             <div>
-                ${sorted.map(t => {
+                ${sorted.map((t, idx) => {
                     const sc = STATUS_COLOR[t.status] || '#64748b';
                     const sl = STATUS_LABEL[t.status] || t.status;
                     const prazo = t.deadline ? new Date(t.deadline).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : '';
+                    const isHidden = idx >= 5;
+                    const display = isHidden ? 'none' : 'flex';
+                    const cls = isHidden ? `class="ag-hidden-task-${opId}"` : '';
                     return `
-                    <div style="padding:.8rem 1rem;border-bottom:1px solid #f8fafc;display:flex;justify-content:space-between;align-items:center">
+                    <div ${cls} style="padding:.8rem 1rem;border-bottom:1px solid #f8fafc;display:${display};justify-content:space-between;align-items:center">
                         <div style="min-width:0;flex:1">
                             <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</div>
                             <div style="font-size:.75rem;color:#94a3b8">${prazo} · ${t.freq || ''}</div>
@@ -853,6 +857,13 @@ function ag_renderExecutiveDashboard(tasks) {
                     </div>`;
                 }).join('')}
             </div>
+            ${sorted.length > 5 ? `
+            <div style="padding: 8px; text-align: center; border-top: 1px solid #f1f5f9; background: #f8fafc;">
+                <button style="background: transparent; color: #3b82f6; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 5px 10px; width: 100%;" onclick="ag_toggleTasks('${opId}', this)">
+                    <i class="fa-solid fa-chevron-down"></i> Ver mais ${sorted.length - 5}
+                </button>
+            </div>
+            ` : ''}
         </div>`;
     });
     html += '</div>';
@@ -1089,16 +1100,20 @@ function ag_renderExecGroupedList(tasks) {
 
         html += `
         <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden">
-            <div style="background:#f8fafc;padding:1rem;border-bottom:1px solid #e2e8f0">
+            <div style="background:#f8fafc;padding:1rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
                 <strong style="color:#1e3a8a">${opName}</strong>
+                <span style="font-size:0.75rem;color:#64748b;background:#e2e8f0;padding:2px 8px;border-radius:12px;font-weight:700;">${sorted.length}</span>
             </div>
             <div>
-                ${sorted.map(t => {
+                ${sorted.map((t, idx) => {
                     const sc = STATUS_COLOR[t.status] || '#64748b';
                     const sl = STATUS_LABEL[t.status] || t.status;
                     const prazo = t.deadline ? new Date(t.deadline).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : '';
+                    const isHidden = idx >= 5;
+                    const display = isHidden ? 'none' : 'flex';
+                    const cls = isHidden ? `class="ag-hidden-task-${opId}"` : '';
                     return `
-                    <div style="padding:.8rem 1rem;border-bottom:1px solid #f8fafc;display:flex;justify-content:space-between;align-items:center">
+                    <div ${cls} style="padding:.8rem 1rem;border-bottom:1px solid #f8fafc;display:${display};justify-content:space-between;align-items:center">
                         <div style="min-width:0;flex:1">
                             <div style="font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</div>
                             <div style="font-size:.75rem;color:#94a3b8">${prazo} · ${t.freq || ''}</div>
@@ -1107,8 +1122,30 @@ function ag_renderExecGroupedList(tasks) {
                     </div>`;
                 }).join('')}
             </div>
+            ${sorted.length > 5 ? `
+            <div style="padding: 8px; text-align: center; border-top: 1px solid #f1f5f9; background: #f8fafc;">
+                <button style="background: transparent; color: #3b82f6; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 5px 10px; width: 100%;" onclick="ag_toggleTasks('${opId}', this)">
+                    <i class="fa-solid fa-chevron-down"></i> Ver mais ${sorted.length - 5}
+                </button>
+            </div>
+            ` : ''}
         </div>`;
     });
     html += '</div>';
     el.innerHTML = html;
 }
+
+window.ag_toggleTasks = function(opId, btn) {
+    const hiddenElements = document.querySelectorAll(`.ag-hidden-task-${opId}`);
+    let isShowing = btn.getAttribute('data-showing') === 'true';
+    
+    if (isShowing) {
+        hiddenElements.forEach(el => el.style.display = 'none');
+        btn.setAttribute('data-showing', 'false');
+        btn.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Ver mais ${hiddenElements.length}`;
+    } else {
+        hiddenElements.forEach(el => el.style.display = 'flex');
+        btn.setAttribute('data-showing', 'true');
+        btn.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Ver menos`;
+    }
+};

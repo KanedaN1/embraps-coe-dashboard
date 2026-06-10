@@ -3,6 +3,7 @@ Chart.register(ChartDataLabels);
 
 let charts = {};
 let tvModeInterval = null;
+let tvScrollInterval = null;
 let currentSectionIndex = 0;
 
 const chartColors = {
@@ -190,9 +191,18 @@ function toggleTvMode() {
         // Parar Modo TV
         clearInterval(tvModeInterval);
         tvModeInterval = null;
+        
+        if (tvScrollInterval) {
+            clearInterval(tvScrollInterval);
+            tvScrollInterval = null;
+        }
+
         btn.innerHTML = '<i class="fa-solid fa-tv"></i> Modo TV';
         btn.classList.remove('bg-danger');
         btn.style.backgroundColor = 'var(--accent-color)';
+        
+        // Sair do modo TV (remove classe)
+        document.body.classList.remove('tv-mode');
         
         // Sair de tela cheia
         if (document.fullscreenElement) {
@@ -204,6 +214,9 @@ function toggleTvMode() {
         btn.innerHTML = '<i class="fa-solid fa-stop"></i> Parar TV';
         btn.style.backgroundColor = 'var(--danger)';
         
+        // Entrar no modo TV (adiciona classe)
+        document.body.classList.add('tv-mode');
+        
         // Entrar em tela cheia (opcional mas recomendado para TV)
         const elem = document.documentElement;
         if (elem.requestFullscreen) {
@@ -214,16 +227,46 @@ function toggleTvMode() {
         let currentIndex = navLinks.findIndex(l => l.parentElement.classList.contains('active'));
         if (currentIndex === -1) currentIndex = 0;
         
-        tvModeInterval = setInterval(() => {
-            currentIndex++;
-            if (currentIndex >= navLinks.length) {
+        // Voltar ao topo imediatamente ao iniciar
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        const mainContentStart = document.querySelector('.main-content');
+        if (mainContentStart) {
+            mainContentStart.scrollTo({ top: 0, behavior: 'instant' });
+        }
+        
+        const switchTab = () => {
+            if (navLinks[currentIndex] && navLinks[currentIndex].getAttribute('href') === '#vg-pos-venda') {
                 currentIndex = 0;
+            } else {
+                currentIndex++;
+                if (currentIndex >= navLinks.length) {
+                    currentIndex = 0;
+                }
             }
             
             // Simular click no link
             navLinks[currentIndex].click();
             
-        }, 8000); // 8 segundos por aba
+            // Voltar ao topo imediatamente ao trocar a aba
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.scrollTo({ top: 0, behavior: 'instant' });
+            }
+        };
+
+        // Scroll suave dentro da aba
+        if (tvScrollInterval) clearInterval(tvScrollInterval);
+        tvScrollInterval = setInterval(() => {
+            window.scrollBy(0, 1);
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.scrollBy(0, 1);
+            }
+        }, 15);
+
+        // Troca de aba a cada 50 segundos
+        tvModeInterval = setInterval(switchTab, 50000);
     }
 }
 
@@ -1257,7 +1300,7 @@ function renderResumoAnual(yearlyData, monthLabels) {
         });
     }
 
-    // Gráfico: Termômetro Faltas x Demissões
+    // Gráfico: Termômetro Faltas x Demissões x Admissões
     const ctxFD = document.getElementById('chartAnualFaltasDemissoes');
     if (ctxFD) {
         if (charts['chartAnualFaltasDemissoes']) charts['chartAnualFaltasDemissoes'].destroy();
@@ -1267,7 +1310,8 @@ function renderResumoAnual(yearlyData, monthLabels) {
                 labels: monthLabels,
                 datasets: [
                     { label: 'Faltas', data: yearlyData.map(d => d.isEmpty ? 0 : (d.faltas || 0)), backgroundColor: chartColors.warning, borderRadius: 4 },
-                    { label: 'Demissões', data: yearlyData.map(d => d.isEmpty ? 0 : (d.demissoes || 0)), backgroundColor: chartColors.danger, borderRadius: 4 }
+                    { label: 'Demissões', data: yearlyData.map(d => d.isEmpty ? 0 : (d.demissoes || 0)), backgroundColor: chartColors.danger, borderRadius: 4 },
+                    { label: 'Admissões', data: yearlyData.map(d => d.isEmpty ? 0 : (d.admissoes || 0)), backgroundColor: chartColors.success, borderRadius: 4 }
                 ]
             },
             options: {

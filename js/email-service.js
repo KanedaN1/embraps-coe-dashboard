@@ -61,7 +61,9 @@ async function sendWeeklyReportEmail(data) {
         folga_portaria: data.folgaPortaria || "0,00",
         folga_limpeza: data.folgaLimpeza || "0,00",
         agenda_sla: data.agendaSla || 0,
-        os_resumo: await gerarResumoSemanalOS()
+        os_resumo: await gerarResumoSemanalOS(),
+        experiencias_vencendo: await gerarResumoExperienciasVencendo(),
+        vagas_atrasadas: await gerarResumoVagasAtrasadas()
     };
 
     try {
@@ -131,5 +133,86 @@ async function gerarResumoSemanalOS() {
     } catch (error) {
         console.error('[EmailJS] Erro ao gerar resumo de OS: ', error);
         return '<p>Erro ao carregar Ordens de Serviço.</p>';
+    }
+}
+
+/**
+ * Busca experiências a vencer nos próximos 7 dias e retorna HTML resumo
+ */
+async function gerarResumoExperienciasVencendo() {
+    try {
+        const db = firebase.firestore();
+        const snapshot = await db.collection('experiencia').where('status', '==', 'PENDENTE').get();
+
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const limite = new Date(hoje);
+        limite.setDate(hoje.getDate() + 7);
+
+        let count = 0;
+        snapshot.forEach(doc => {
+            const exp = doc.data();
+            const checkDate = (isoDate) => {
+                if (!isoDate) return false;
+                const d = new Date(isoDate);
+                return d >= hoje && d <= limite;
+            };
+            if (checkDate(exp.exp1) || checkDate(exp.exp2)) {
+                count++;
+            }
+        });
+
+        if (count === 0) {
+            return 'Nenhuma experiência a vencer nos próximos 7 dias.';
+        }
+        return `${count} colaborador(es) com período de experiência a vencer nos próximos 7 dias. Acesse o módulo de Controle de Experiência para detalhes.`;
+    } catch (error) {
+        console.error('[EmailJS] Erro ao gerar resumo de experiências: ', error);
+        return 'Erro ao carregar dados de experiências.';
+    }
+}
+
+/**
+ * Busca vagas abertas há mais de 15 dias e retorna HTML com quantidade e nomes dos coordenadores
+ */
+async function gerarResumoVagasAtrasadas() {
+    try {
+        const db = firebase.firestore();
+        const snapshot = await db.collection('vagas').where('status', '!=', 'Efetivado').get();
+
+        const hoje = new Date();
+        const vagasAtrasadas = [];
+
+        snapshot.forEach(doc => {
+            const vaga = doc.data();
+            if (vaga.dataAbertura) {
+                const [ano, mes, dia] = vaga.dataAbertura.split('-');
+                const dataAbert = new Date(ano, mes - 1, dia);
+                const diffDays = Math.ceil(Math.abs(hoje - dataAbert) / (1000 * 60 * 60 * 24));
+                if (diffDays > 15) {
+                    vagasAtrasadas.push({ ...vaga, diffDays });
+                }
+            }
+        });
+
+        if (vagasAtrasadas.length === 0) {
+            return 'Nenhuma vaga com SLA estourado no momento.';
+        }
+
+        // Agrupar coordenadores únicos
+        const coordsMap = {};
+        vagasAtrasadas.forEach(v => {
+            const coord = v.coord || 'Não informado';
+            coordsMap[coord] = (coordsMap[coord] || 0) + 1;
+        });
+
+        const coordsList = Object.entries(coordsMap)
+            .map(([nome, qtd]) => `${nome} (${qtd} vaga${qtd > 1 ? 's' : ''})`)
+            .join(', ');
+
+        return `${vagasAtrasadas.length} vaga(s) com SLA estourado (abertas há mais de 15 dias). Coordenadores responsáveis: ${coordsList}. Acesse o módulo de Gestão de Vagas para acompanhamento.`;
+    } catch (error) {
+        console.error('[EmailJS] Erro ao gerar resumo de vagas: ', error);
+        return 'Erro ao carregar dados de vagas.';
     }
 }

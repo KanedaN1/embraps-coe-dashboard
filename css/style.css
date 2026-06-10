@@ -216,6 +216,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    transition: margin-left 0.3s ease;
 }
 
 /* Header & Filters */
@@ -570,6 +571,32 @@ body {
 
 .pos-1 .podium-avatar { border-color: #fbbf24; width: 85px; height: 85px; margin-bottom: -20px; }
 
+
+/* TV Mode */
+body.tv-mode .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+}
+
+body.tv-mode .sidebar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -40px;
+    width: 40px;
+    height: 100%;
+    background: transparent;
+    cursor: pointer;
+}
+
+body.tv-mode .sidebar:hover {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+}
+
+body.tv-mode .main-content {
+    margin-left: 0;
+}
 
 /* Responsive */
 @media (max-width: 1024px) {

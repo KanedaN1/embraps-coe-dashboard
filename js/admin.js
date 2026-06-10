@@ -96,7 +96,7 @@ function showAdminPanel() {
 }
 
 const formFields = [
-    'faltas', 'demissoes', 'punicoes', 'divergenciaFuncao', 'divergenciasResolvidas', 'pendenciasPonto',
+    'faltas', 'demissoes', 'admissoes', 'punicoes', 'divergenciaFuncao', 'divergenciasResolvidas', 'pendenciasPonto',
     'gastosFolgas', 'valeTransporte', 'custo99',
     'horasExtrasGeral', 'horasExtrasIntra', 'horasExtras100',
     'visitasContele', 'totalSupervisoresContele', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
