@@ -117,6 +117,7 @@
 
         .row-attention { background-color: #fffbeb; }
         .row-overdue { background-color: #fef2f2; }
+        .row-frozen { background-color: #e0f2fe !important; }
 
         .status-pill {
             padding: 4px 10px;
@@ -129,6 +130,7 @@
         .status-pendente { background: #fef3c7; color: #92400e; }
         .status-suficiente { background: #dcfce7; color: #166534; }
         .status-insuficiente { background: #fee2e2; color: #991b1b; }
+        .status-congelado { background: #e0f2fe; color: #0369a1; }
 
         .date-badge {
             display: inline-block;
@@ -155,6 +157,39 @@
 
         .btn-status-toggle { background: #f1f5f9; color: var(--text-main); border: 1px solid #e2e8f0; }
         .btn-status-toggle:hover { background: #e2e8f0; }
+
+        .sort-icon {
+            margin-left: 6px;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            transition: color 0.2s;
+        }
+        th:hover .sort-icon {
+            color: #64748b;
+        }
+        th.active-sort {
+            color: #1e3a8a !important;
+        }
+        th.active-sort .sort-icon {
+            color: #1e3a8a !important;
+        }
+
+        .btn-freeze {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-freeze.active {
+            background: #e0f2fe !important;
+            color: #0369a1 !important;
+            border: 1px solid #bae6fd !important;
+        }
+        .btn-freeze:hover {
+            background: #e2e8f0;
+        }
+        .btn-freeze.active:hover {
+            background: #bae6fd !important;
+        }
 
         /* Modal Import */
         #modal-import {
@@ -290,6 +325,7 @@
                         <option value="PENDENTE">Pendente</option>
                         <option value="SUFICIENTE">Suficiente (Aprovado)</option>
                         <option value="INSUFICIENTE">Insuficiente (Reprovado)</option>
+                        <option value="CONGELADO">Congelado</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -310,14 +346,14 @@
                 <table class="exp-table">
                     <thead>
                         <tr>
-                            <th>Funcionário</th>
-                            <th>Cargo</th>
-                            <th>Supervisor / Área</th>
-                            <th>Cliente</th>
-                            <th>Admissão</th>
-                            <th>EXP</th>
-                            <th>1°/2°</th>
-                            <th>Avaliação</th>
+                            <th onclick="toggleSort('nome')" style="cursor: pointer; user-select: none;">Funcionário <i id="sort-icon-nome" class="sort-icon fa-solid fa-sort"></i></th>
+                            <th onclick="toggleSort('cargo')" style="cursor: pointer; user-select: none;">Cargo <i id="sort-icon-cargo" class="sort-icon fa-solid fa-sort"></i></th>
+                            <th onclick="toggleSort('area')" style="cursor: pointer; user-select: none;">Supervisor / Área <i id="sort-icon-area" class="sort-icon fa-solid fa-sort"></i></th>
+                            <th onclick="toggleSort('cliente')" style="cursor: pointer; user-select: none;">Cliente <i id="sort-icon-cliente" class="sort-icon fa-solid fa-sort"></i></th>
+                            <th onclick="toggleSort('admissao')" style="cursor: pointer; user-select: none;">Admissão <i id="sort-icon-admissao" class="sort-icon fa-solid fa-sort"></i></th>
+                            <th onclick="toggleSort('exp')" style="cursor: pointer; user-select: none;">EXP <i id="sort-icon-exp" class="sort-icon fa-solid fa-sort"></i></th>
+                            <th onclick="toggleSort('numExp')" style="cursor: pointer; user-select: none;">1°/2° <i id="sort-icon-numExp" class="sort-icon fa-solid fa-sort"></i></th>
+                            <th onclick="toggleSort('status')" style="cursor: pointer; user-select: none;">Avaliação <i id="sort-icon-status" class="sort-icon fa-solid fa-sort"></i></th>
                             <th>Ações</th>
                         </tr>
                     </thead>

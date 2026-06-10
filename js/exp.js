@@ -8,6 +8,10 @@ let expData = [];
 let currentFilteredExp = [];
 const dbExp = db; // Usando o db global do firebase-config.js
 
+// ─── Ordenação da Tabela ───────────────────────────────────────────────────
+let sortColumn = 'exp'; // Coluna padrão de ordenação: data de vencimento da EXP
+let sortAsc = true;
+
 document.addEventListener('DOMContentLoaded', async () => {
     const filterMonth = document.getElementById('filter-month');
     if (filterMonth) {
@@ -19,6 +23,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadExpData();
     setupImport();
 });
+
+function toggleSort(column) {
+    if (sortColumn === column) {
+        sortAsc = !sortAsc;
+    } else {
+        sortColumn = column;
+        sortAsc = true;
+    }
+    renderTable();
+}
+
+function updateSortIcons() {
+    const columns = ['nome', 'cargo', 'area', 'cliente', 'admissao', 'exp', 'numExp', 'status'];
+    columns.forEach(col => {
+        const iconEl = document.getElementById(`sort-icon-${col}`);
+        if (!iconEl) return;
+        
+        // Reset classes
+        iconEl.className = 'sort-icon fa-solid';
+        
+        const parentTh = iconEl.parentElement;
+        if (parentTh) {
+            parentTh.classList.remove('active-sort');
+        }
+
+        if (col === sortColumn) {
+            parentTh.classList.add('active-sort');
+            if (sortAsc) {
+                iconEl.classList.add('fa-sort-up');
+            } else {
+                iconEl.classList.add('fa-sort-down');
+            }
+        } else {
+            iconEl.classList.add('fa-sort');
+        }
+    });
+}
 
 // ─── Helpers de compatibilidade ────────────────────────────────────────────
 // Retorna a data de experiência do registro, seja novo modelo (exp) ou antigo (exp1)
@@ -215,6 +256,35 @@ function renderTable() {
         return matchMonth && matchArea && matchStatus && matchSearch && matchAlert;
     });
 
+    // Ordenação dos dados filtrados
+    currentFilteredExp.sort((a, b) => {
+        let valA = '';
+        let valB = '';
+
+        if (sortColumn === 'exp') {
+            valA = getExpDate(a);
+            valB = getExpDate(b);
+        } else if (sortColumn === 'numExp') {
+            valA = getNumExp(a);
+            valB = getNumExp(b);
+        } else if (sortColumn === 'admissao') {
+            valA = a.admissao || '';
+            valB = b.admissao || '';
+        } else if (sortColumn === 'nome') {
+            valA = (a.nome || '').toLowerCase();
+            valB = (b.nome || '').toLowerCase();
+        } else {
+            valA = (a[sortColumn] || '').toString().toLowerCase();
+            valB = (b[sortColumn] || '').toString().toLowerCase();
+        }
+
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
+    });
+
+    updateSortIcons();
+
     if (currentFilteredExp.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:3rem; color:var(--text-muted);">Nenhum colaborador encontrado.</td></tr>';
         return;
@@ -227,9 +297,10 @@ function renderTable() {
         const numExp     = getNumExp(d);
 
         let rowClass = '';
-        if (d.status === 'PENDENTE') {
-            if (expDate < today)  rowClass = 'row-overdue';
-            else if (diff <= 10)  rowClass = 'row-attention';
+        if (d.status === 'INSUFICIENTE') {
+            rowClass = 'row-overdue';
+        } else if (d.status === 'CONGELADO') {
+            rowClass = 'row-frozen';
         }
 
         // Badge do número de experiência (1° = azul, 2° = roxo)
@@ -271,6 +342,9 @@ function renderTable() {
                         <button class="btn-action btn-status-toggle" onclick="toggleStatus('${d.id}', '${d.status}')" title="Mudar Status">
                             <i class="fa-solid fa-arrows-rotate"></i>
                         </button>
+                        <button class="btn-action btn-freeze ${d.status === 'CONGELADO' ? 'active' : ''}" onclick="toggleFreeze('${d.id}', '${d.status}')" title="${d.status === 'CONGELADO' ? 'Descongelar Contrato' : 'Congelar Contrato'}">
+                            <i class="fa-solid fa-snowflake"></i>
+                        </button>
                         ${d.status === 'INSUFICIENTE' ? `
                             <button class="btn-action btn-email" onclick="sendTerminationEmail('${d.id}')" title="Solicitar Desligamento">
                                 <i class="fa-solid fa-envelope"></i>
@@ -293,9 +367,10 @@ function formatBRDate(isoDate) {
 // ─── 4. Mudar Status Manualmente ───────────────────────────────────────────
 async function toggleStatus(id, currentStatus) {
     let next = 'PENDENTE';
-    if (currentStatus === 'PENDENTE')     next = 'SUFICIENTE';
-    else if (currentStatus === 'SUFICIENTE')   next = 'INSUFICIENTE';
-    else if (currentStatus === 'INSUFICIENTE') next = 'PENDENTE';
+    if (currentStatus === 'PENDENTE')          next = 'SUFICIENTE';
+    else if (currentStatus === 'SUFICIENTE')    next = 'INSUFICIENTE';
+    else if (currentStatus === 'INSUFICIENTE')  next = 'PENDENTE';
+    else if (currentStatus === 'CONGELADO')     next = 'PENDENTE';
 
     try {
         const finalizadoEm = next !== 'PENDENTE' ? new Date().toISOString() : null;
@@ -310,6 +385,25 @@ async function toggleStatus(id, currentStatus) {
         renderSLACharts();
     } catch (err) {
         alert("Erro ao atualizar status");
+    }
+}
+
+// ─── 4.1 Congelar/Descongelar Contrato Manualmente ─────────────────────────
+async function toggleFreeze(id, currentStatus) {
+    const next = currentStatus === 'CONGELADO' ? 'PENDENTE' : 'CONGELADO';
+    try {
+        const finalizadoEm = next !== 'PENDENTE' ? new Date().toISOString() : null;
+        await dbExp.collection('experiencia').doc(id).update({
+            status: next,
+            finalizadoEm: finalizadoEm
+        });
+        const idx = expData.findIndex(d => d.id === id);
+        expData[idx].status      = next;
+        expData[idx].finalizadoEm = finalizadoEm;
+        renderTable();
+        renderSLACharts();
+    } catch (err) {
+        alert("Erro ao alterar o congelamento do contrato");
     }
 }
 
@@ -345,7 +439,7 @@ function renderSLACharts() {
     const tbodySup = document.getElementById('sup-performance-body');
     if (!tbodySup) return;
 
-    const completed = expData.filter(d => d.status !== 'PENDENTE');
+    const completed = expData.filter(d => d.status !== 'PENDENTE' && d.status !== 'CONGELADO');
 
     const withinDeadline = completed.filter(d => {
         if (!d.finalizadoEm) return false;
@@ -372,7 +466,7 @@ function renderSLACharts() {
         if (!supMap[d.area]) supMap[d.area] = { total: 0, ok: 0, pending: 0 };
         supMap[d.area].total++;
 
-        if (d.status === 'PENDENTE') {
+        if (d.status === 'PENDENTE' || d.status === 'CONGELADO') {
             supMap[d.area].pending++;
         } else {
             const done = new Date(d.finalizadoEm);
