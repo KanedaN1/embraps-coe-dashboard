@@ -90,6 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetId === 'vg-pos-venda') {
                 if (typeof pv_loadData === 'function') pv_loadData();
             }
+            if (targetId === 'resumo-anual') {
+                renderPvSlaChart();
+            }
 
             // Fechar sidebar no mobile ao clicar num link
             if (window.innerWidth <= 768) closeSidebar();
@@ -1371,9 +1374,150 @@ function renderResumoAnual(yearlyData, monthLabels) {
                 </tr>`;
             }).join('');
     }
+
+    // Gráfico pizza pós-venda
+    renderPvSlaChart();
 }
 
-// ===================== GRÁFICO ANUAL DE OS =====================
+// ===================== GRÁFICO PIZZA: PÓS VENDA NEGATIVO vs CLIENTES =====================
+/**
+ * Salva o número total de clientes no localStorage e atualiza o gráfico.
+ */
+function pv_salvarTotalClientes(valor) {
+    localStorage.setItem('embraps_total_clientes', valor);
+    renderPvSlaChart();
+}
+
+/**
+ * Renderiza o donut de SLA de satisfação:
+ *  - Azul claro  → clientes SEM pós-venda negativo
+ *  - Vermelho claro → total de pos-vendas negativos registrados
+ *  - Centro      → % de SLA (clientes sem ocorrência)
+ */
+async function renderPvSlaChart() {
+    const canvas = document.getElementById('chartPvSla');
+    if (!canvas) return;
+
+    // --- Carregar input salvo ---
+    const inputEl = document.getElementById('input-total-clientes');
+    const saved = localStorage.getItem('embraps_total_clientes') || '';
+    if (inputEl && !inputEl.value && saved) inputEl.value = saved;
+    const totalClientes = parseInt(inputEl?.value || saved || '0', 10);
+
+    // --- Contar total de pos-vendas negativos do Firestore ou LS ---
+    let totalPv = 0;
+    try {
+        if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
+            const snap = await db.collection('pos_venda_negativo').get();
+            totalPv = snap.size;
+        } else {
+            const localPv = JSON.parse(localStorage.getItem('embraps_pv_offline') || '[]');
+            totalPv = localPv.length;
+        }
+    } catch (e) {
+        const localPv = JSON.parse(localStorage.getItem('embraps_pv_offline') || '[]');
+        totalPv = localPv.length;
+    }
+
+    // --- Calcular SLA ---
+    const clientesSemOcorrencia = Math.max(0, totalClientes - totalPv);
+    const sla = totalClientes > 0
+        ? Math.round((clientesSemOcorrencia / totalClientes) * 100)
+        : (totalPv === 0 ? 100 : 0);
+    const slaColor = sla >= 95 ? '#15803d' : sla >= 85 ? '#d97706' : '#dc2626';
+
+    // --- Atualizar label central ---
+    const pctEl = document.getElementById('pv-sla-pct');
+    if (pctEl) {
+        pctEl.textContent = totalClientes > 0 ? sla + '%' : '—';
+        pctEl.style.color = slaColor;
+    }
+
+    // --- Painel de detalhes lateral ---
+    const detailEl = document.getElementById('pv-sla-detail');
+    if (detailEl) {
+        detailEl.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f0fdf4; border-radius:10px; border-left:4px solid #15803d;">
+                <div>
+                    <div style="font-size:.78rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">Total de Clientes</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#15803d; line-height:1.1;">${totalClientes > 0 ? totalClientes.toLocaleString('pt-BR') : '—'}</div>
+                    <div style="font-size:.72rem; color:#64748b; margin-top:2px;">cadastrados no campo acima</div>
+                </div>
+                <i class="fa-solid fa-users" style="font-size:1.8rem; color:#86efac; opacity:.7;"></i>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#fff1f2; border-radius:10px; border-left:4px solid #dc2626;">
+                <div>
+                    <div style="font-size:.78rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">Pós Vendas Negativos</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#dc2626; line-height:1.1;">${totalPv.toLocaleString('pt-BR')}</div>
+                    <div style="font-size:.72rem; color:#64748b; margin-top:2px;">casos registrados na aba Pós Venda</div>
+                </div>
+                <i class="fa-solid fa-headset" style="font-size:1.8rem; color:#fca5a5; opacity:.7;"></i>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#eff6ff; border-radius:10px; border-left:4px solid #3b82f6;">
+                <div>
+                    <div style="font-size:.78rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">Clientes sem ocorrência</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#1e3a8a; line-height:1.1;">${clientesSemOcorrencia.toLocaleString('pt-BR')}</div>
+                    <div style="font-size:.72rem; color:#64748b; margin-top:2px;">${sla}% da carteira sem negativos</div>
+                </div>
+                <i class="fa-solid fa-circle-check" style="font-size:1.8rem; color:#93c5fd; opacity:.7;"></i>
+            </div>
+
+            ${totalClientes === 0 ? `
+            <div style="padding:10px 14px; background:#fffbeb; border-radius:8px; border:1px solid #fde68a; font-size:.82rem; color:#92400e;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Informe o número total de clientes no campo acima para calcular o SLA.
+            </div>` : ''}
+        `;
+    }
+
+    // --- Dados do gráfico ---
+    const chartData = totalClientes > 0
+        ? [clientesSemOcorrencia, totalPv]
+        : [1, 0]; // placeholder vazio
+
+    if (charts['chartPvSla']) {
+        charts['chartPvSla'].destroy();
+        delete charts['chartPvSla'];
+    }
+
+    charts['chartPvSla'] = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Clientes sem ocorrência', 'Pós Venda Negativo'],
+            datasets: [{
+                data: chartData,
+                backgroundColor: ['#93c5fd', '#fca5a5'],
+                borderColor: ['#60a5fa', '#f87171'],
+                borderWidth: 2,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                datalabels: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const val = ctx.raw;
+                            const pct = totalClientes > 0
+                                ? ' (' + Math.round(val / totalClientes * 100) + '%)'
+                                : '';
+                            return ` ${ctx.label}: ${val.toLocaleString('pt-BR')}${pct}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+
 async function renderResumoAnualOS(year, monthLabels) {
     const ctxOS = document.getElementById('chartAnualOS');
     if (!ctxOS) return;

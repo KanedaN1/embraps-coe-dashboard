@@ -381,7 +381,7 @@
   }
 
   /* Exibe o modal de impressão em tela cheia */
-  #ag-modal-print {
+  body.ag-print-open #ag-modal-print {
     display: block !important;
     position: static !important;
     background: transparent !important;
@@ -393,6 +393,7 @@
     max-height: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    overflow: visible !important;
   }
 
   .ag-print-modal-header {

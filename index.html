@@ -716,6 +716,65 @@
                         </div>
                     </div>
 
+                    <!-- Gráfico SLA Pós Venda Negativo vs Clientes -->
+                    <div class="charts-grid two-cols mb-4" style="grid-template-columns: 360px 1fr;">
+                        <div class="card" style="padding: 24px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                            <h3 style="margin:0 0 4px; font-size:1rem; color:#1e3a8a; text-align:center;">
+                                <i class="fa-solid fa-circle-half-stroke" style="color:#3b82f6"></i>
+                                SLA — Satisfação de Clientes
+                            </h3>
+                            <p style="font-size:0.78rem; color:#64748b; margin:0 0 16px; text-align:center;">
+                                Clientes com pós-venda negativo vs. total da carteira
+                            </p>
+
+                            <!-- Campo de número de clientes (visível sempre) -->
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:18px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 14px;">
+                                <i class="fa-solid fa-users" style="color:#1e3a8a; font-size:.9rem;"></i>
+                                <label for="input-total-clientes" style="font-size:.82rem; font-weight:600; color:#475569; white-space:nowrap;">Total de Clientes:</label>
+                                <input type="number" id="input-total-clientes" min="0" placeholder="Ex: 360"
+                                    style="width:90px; padding:4px 8px; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.9rem; font-weight:700; color:#1e3a8a; outline:none; text-align:center;"
+                                    oninput="pv_salvarTotalClientes(this.value)"
+                                    onfocus="this.style.borderColor='#3b82f6'"
+                                    onblur="this.style.borderColor='#cbd5e1'">
+                            </div>
+
+                            <!-- Canvas do donut -->
+                            <div style="position:relative; width:230px; height:230px;">
+                                <canvas id="chartPvSla"></canvas>
+                                <div id="pv-sla-center-label" style="
+                                    position:absolute; inset:0; display:flex; flex-direction:column;
+                                    align-items:center; justify-content:center; pointer-events:none;
+                                ">
+                                    <span id="pv-sla-pct" style="font-size:2.2rem; font-weight:800; color:#15803d; line-height:1;">—</span>
+                                    <span style="font-size:.7rem; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-top:3px;">SLA</span>
+                                </div>
+                            </div>
+
+                            <!-- Legenda -->
+                            <div style="display:flex; gap:18px; margin-top:16px; font-size:.8rem;">
+                                <span style="display:flex; align-items:center; gap:5px;">
+                                    <span style="width:12px; height:12px; border-radius:50%; background:#93c5fd; display:inline-block;"></span>
+                                    Clientes sem ocorrência
+                                </span>
+                                <span style="display:flex; align-items:center; gap:5px;">
+                                    <span style="width:12px; height:12px; border-radius:50%; background:#fca5a5; display:inline-block;"></span>
+                                    Pós Venda Negativo
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Painel de info lateral -->
+                        <div class="card" style="padding:24px; display:flex; flex-direction:column; justify-content:center; gap:1.2rem;">
+                            <h3 style="margin:0 0 8px; font-size:1rem; color:#1e3a8a;">
+                                <i class="fa-solid fa-headset" style="color:#ef4444;"></i>
+                                Detalhamento de Pós Venda Negativo
+                            </h3>
+                            <div id="pv-sla-detail" style="display:flex; flex-direction:column; gap:.9rem;">
+                                <p style="color:#94a3b8; font-size:.9rem;">Carregando dados...</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Tendencia de Custos -->
                     <div class="card chart-container mb-4" style="height: 380px;">
                         <h3><i class="fa-solid fa-chart-line"></i> Tend&ecirc;ncia de Custos Extras (Ano)</h3>
