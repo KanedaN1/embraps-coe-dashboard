@@ -295,6 +295,7 @@ async function updateDashboard() {
     document.getElementById('alerts-container').innerHTML = '';
     verificarAlertasDeVagas();
     const currentData = yearlyData.find(d => d.month === month);
+    window.currentSelectedData = currentData;
 
     updateKPIs(currentData);
     checkAlerts(currentData, month);
@@ -1080,41 +1081,49 @@ function updateDivergenciaBlocks(currentData) {
 }
 
 function renderContelePodium(currentData) {
-    const container = document.getElementById('contele-podium');
-    container.innerHTML = ''; // Limpar
-    
-    if (!currentData || currentData.isEmpty || !currentData.supervisoresContele) {
-        container.innerHTML = '<p class="text-muted">Sem dados no mês selecionado para montar o pódio.</p>';
+    const containerDia = document.getElementById('contele-podium-diurno');
+    const containerNoite = document.getElementById('contele-podium-noturno');
+    if(containerDia) containerDia.innerHTML = '';
+    if(containerNoite) containerNoite.innerHTML = '';
+
+    if (!currentData || currentData.isEmpty) {
+        if(containerDia) containerDia.innerHTML = '<p class="text-muted">Sem dados no mês selecionado para montar o pódio.</p>';
+        if(containerNoite) containerNoite.innerHTML = '<p class="text-muted">Sem dados no mês selecionado para montar o pódio.</p>';
         return;
     }
 
-    const sorted = [...currentData.supervisoresContele].sort((a,b) => b.visitas - a.visitas).slice(0, 3);
-    
-    if (sorted.length === 0) return;
+    const renderPodio = (arr, container) => {
+        if (!container || !arr || arr.length === 0) return;
+        
+        // Assuming admin entered in order (1, 2, 3), but sorting just in case by visitas if we want
+        const top3 = [...arr].slice(0, 3);
+        const podiumOrder = [];
+        if(top3[1]) podiumOrder.push({ pos: 2, data: top3[1] });
+        if(top3[0]) podiumOrder.push({ pos: 1, data: top3[0] });
+        if(top3[2]) podiumOrder.push({ pos: 3, data: top3[2] });
 
-    // Rearranjar para pódio visual: [2º, 1º, 3º]
-    const podiumOrder = [];
-    if(sorted[1]) podiumOrder.push({ pos: 2, data: sorted[1] });
-    if(sorted[0]) podiumOrder.push({ pos: 1, data: sorted[0] });
-    if(sorted[2]) podiumOrder.push({ pos: 3, data: sorted[2] });
+        podiumOrder.forEach(item => {
+            if (!item.data.nome) return; // Skip empty
+            const imgSrc = item.data.foto && item.data.foto.trim() !== '' 
+                ? `assets/img/supervisores/${item.data.foto}` 
+                : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
 
-    podiumOrder.forEach(item => {
-        const imgSrc = item.data.foto && item.data.foto.trim() !== '' 
-            ? `assets/img/supervisores/${item.data.foto}` 
-            : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-
-        const html = `
-            <div class="podium-item pos-${item.pos}">
-                <img src="${imgSrc}" class="podium-avatar" alt="Supervisor" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'%2394a3b8\\'><path d=\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\'/></svg>'">
-                <div class="podium-base">
-                    <span class="podium-score">${item.data.visitas}</span>
-                    <span style="font-size: 0.7rem; opacity: 0.8;">Visitas</span>
+            const html = `
+                <div class="podium-item pos-${item.pos}">
+                    <img src="${imgSrc}" class="podium-avatar" alt="Supervisor" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'%2394a3b8\\'><path d=\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\'/></svg>'">
+                    <div class="podium-base">
+                        <span class="podium-score">${item.data.visitas || 0}</span>
+                        <span style="font-size: 0.7rem; opacity: 0.8;">Visitas</span>
+                    </div>
+                    <div class="podium-name">${item.data.nome}</div>
                 </div>
-                <div class="podium-name">${item.data.nome}</div>
-            </div>
-        `;
-        container.innerHTML += html;
-    });
+            `;
+            container.innerHTML += html;
+        });
+    };
+
+    if (currentData.podioDiurno) renderPodio(currentData.podioDiurno, containerDia);
+    if (currentData.podioNoturno) renderPodio(currentData.podioNoturno, containerNoite);
 }
 
 function renderCalendar(idPrefix, dataObj, yearStr, monthStr, typeName) {
@@ -1403,11 +1412,14 @@ async function renderPvSlaChart() {
     const canvas = document.getElementById('chartPvSla');
     if (!canvas) return;
 
-    // --- Carregar input salvo ---
-    const inputEl = document.getElementById('input-total-clientes');
-    const saved = localStorage.getItem('embraps_total_clientes') || '';
-    if (inputEl && !inputEl.value && saved) inputEl.value = saved;
-    const totalClientes = parseInt(inputEl?.value || saved || '0', 10);
+    // --- Carregar input salvo do mes atual ---
+    let totalClientes = 0;
+    if (window.currentSelectedData && window.currentSelectedData.totalClientes) {
+        totalClientes = parseInt(window.currentSelectedData.totalClientes, 10);
+    }
+
+    const displayEl = document.getElementById('display-total-clientes');
+    if (displayEl) displayEl.textContent = totalClientes > 0 ? totalClientes : '—';
 
     // --- Contar total de pos-vendas negativos do Firestore ou LS ---
     let totalPv = 0;

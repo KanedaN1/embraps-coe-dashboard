@@ -99,7 +99,7 @@ const formFields = [
     'faltas', 'demissoes', 'admissoes', 'punicoes', 'divergenciaFuncao', 'divergenciasResolvidas', 'pendenciasPonto',
     'gastosFolgas', 'valeTransporte', 'custo99',
     'horasExtrasGeral', 'horasExtrasIntra', 'horasExtras100',
-    'visitasContele', 'totalSupervisoresContele', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
+    'visitasContele', 'totalSupervisoresContele', 'totalClientes', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
     'movTotal',
     'folgasPortaria_1', 'folgasPortaria_2', 'folgasPortaria_3', 'folgasPortaria_4',
     'folgasLimpeza_1', 'folgasLimpeza_2', 'folgasLimpeza_3', 'folgasLimpeza_4',
@@ -108,6 +108,8 @@ const formFields = [
 
 let stateSupervisores99 = [];
 let stateSupervisoresContele = [];
+let statePodioDiurno = [];
+let statePodioNoturno = [];
 let stateMovMotivos = [];
 let stateMovSupervisores = [];
 let stateMovTransportes = [];
@@ -143,6 +145,8 @@ async function loadMonthData() {
 
         stateSupervisores99 = data.supervisores99 ? [...data.supervisores99] : [];
         stateSupervisoresContele = data.supervisoresContele ? [...data.supervisoresContele] : [];
+        statePodioDiurno = data.podioDiurno ? [...data.podioDiurno] : [{nome:'',visitas:0,foto:''},{nome:'',visitas:0,foto:''},{nome:'',visitas:0,foto:''}];
+        statePodioNoturno = data.podioNoturno ? [...data.podioNoturno] : [{nome:'',visitas:0,foto:''},{nome:'',visitas:0,foto:''},{nome:'',visitas:0,foto:''}];
         stateMovMotivos = data.movMotivos ? [...data.movMotivos] : [];
         stateMovSupervisores = data.movSupervisores ? [...data.movSupervisores] : [];
         stateMovTransportes = data.movTransportes ? [...data.movTransportes] : [];
@@ -207,6 +211,8 @@ async function loadMonthData() {
 
         stateSupervisores99 = [];
         stateSupervisoresContele = [];
+        statePodioDiurno = [{nome:'',visitas:0,foto:''},{nome:'',visitas:0,foto:''},{nome:'',visitas:0,foto:''}];
+        statePodioNoturno = [{nome:'',visitas:0,foto:''},{nome:'',visitas:0,foto:''},{nome:'',visitas:0,foto:''}];
         stateMovMotivos = [];
         stateMovSupervisores = [];
         stateMovTransportes = [];
@@ -243,6 +249,7 @@ async function loadMonthData() {
 
     renderSupervisores99();
     renderSupervisoresContele();
+    renderPodioConteleInputs();
     renderMovMotivos();
     renderMovSupervisores();
     renderMovTransportes();
@@ -333,6 +340,39 @@ function renderSupervisoresContele() {
         `;
         container.appendChild(div);
     });
+}
+
+function renderPodioConteleInputs() {
+    const c = document.getElementById('container-podios-contele');
+    if (!c) return;
+    let html = '<h4 style="color:var(--primary-color); margin-bottom:10px;">Top 3 Diurno</h4>';
+    statePodioDiurno.forEach((item, i) => {
+        const imgSrc = item.foto ? `assets/img/supervisores/${item.foto}` : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+        html += `<div class="dynamic-item">
+            <span style="font-weight:bold; color:var(--primary-color); width:20px; display:flex; align-items:center; justify-content:center;">${i+1}º</span>
+            <img src="${imgSrc}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'%2394a3b8\\'><path d=\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\'/></svg>'">
+            <div style="display: flex; flex-direction: column; gap: 5px; flex: 1;">
+                <input type="text" placeholder="Arquivo (ex: joao.png)" value="${item.foto}" onchange="statePodioDiurno[${i}].foto = this.value; renderPodioConteleInputs();" style="font-size: 0.85rem;">
+            </div>
+            <input type="text" placeholder="Nome" value="${item.nome}" onchange="statePodioDiurno[${i}].nome = this.value" style="flex:2;">
+            <input type="number" placeholder="Visitas" value="${item.visitas}" onchange="statePodioDiurno[${i}].visitas = parseInt(this.value)||0" style="flex:1;">
+        </div>`;
+    });
+
+    html += '<h4 style="color:var(--primary-color); margin-bottom:10px; margin-top:20px;">Top 3 Noturno</h4>';
+    statePodioNoturno.forEach((item, i) => {
+        const imgSrc = item.foto ? `assets/img/supervisores/${item.foto}` : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+        html += `<div class="dynamic-item">
+            <span style="font-weight:bold; color:var(--primary-color); width:20px; display:flex; align-items:center; justify-content:center;">${i+1}º</span>
+            <img src="${imgSrc}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'%2394a3b8\\'><path d=\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\'/></svg>'">
+            <div style="display: flex; flex-direction: column; gap: 5px; flex: 1;">
+                <input type="text" placeholder="Arquivo (ex: joao.png)" value="${item.foto}" onchange="statePodioNoturno[${i}].foto = this.value; renderPodioConteleInputs();" style="font-size: 0.85rem;">
+            </div>
+            <input type="text" placeholder="Nome" value="${item.nome}" onchange="statePodioNoturno[${i}].nome = this.value" style="flex:2;">
+            <input type="number" placeholder="Visitas" value="${item.visitas}" onchange="statePodioNoturno[${i}].visitas = parseInt(this.value)||0" style="flex:1;">
+        </div>`;
+    });
+    c.innerHTML = html;
 }
 
 // ---- Movimentação Operacional ----
@@ -698,6 +738,8 @@ async function saveMonthData(e) {
 
     payload.supervisores99 = [...stateSupervisores99];
     payload.supervisoresContele = [...stateSupervisoresContele];
+    payload.podioDiurno = [...statePodioDiurno];
+    payload.podioNoturno = [...statePodioNoturno];
     payload.movMotivos = [...stateMovMotivos];
     payload.movSupervisores = [...stateMovSupervisores];
     payload.movTransportes = [...stateMovTransportes];

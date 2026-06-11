@@ -534,9 +534,20 @@
 
                         <!-- Podium Top 3 Contele -->
                         <div class="card mt-4 podium-container text-center">
-                            <h3>Pódio: Top 3 Supervisores com Mais Visitas (Mês Selecionado)</h3>
-                            <div class="podium" id="contele-podium">
-                                <!-- Preenchido via JS -->
+                            <h3>Pódios: Top 3 Supervisores com Mais Visitas (Mês Selecionado)</h3>
+                            <div style="display: flex; gap: 20px; justify-content: space-around; flex-wrap: wrap; margin-top: 20px;">
+                                <div style="flex: 1; min-width: 300px;">
+                                    <h4 style="color: var(--primary-color); margin-bottom: 15px;"><i class="fa-solid fa-sun"></i> Turno Diurno</h4>
+                                    <div class="podium" id="contele-podium-diurno">
+                                        <!-- Preenchido via JS -->
+                                    </div>
+                                </div>
+                                <div style="flex: 1; min-width: 300px;">
+                                    <h4 style="color: #475569; margin-bottom: 15px;"><i class="fa-solid fa-moon"></i> Turno Noturno</h4>
+                                    <div class="podium" id="contele-podium-noturno">
+                                        <!-- Preenchido via JS -->
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -730,12 +741,8 @@
                             <!-- Campo de número de clientes (visível sempre) -->
                             <div style="display:flex; align-items:center; gap:8px; margin-bottom:18px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 14px;">
                                 <i class="fa-solid fa-users" style="color:#1e3a8a; font-size:.9rem;"></i>
-                                <label for="input-total-clientes" style="font-size:.82rem; font-weight:600; color:#475569; white-space:nowrap;">Total de Clientes:</label>
-                                <input type="number" id="input-total-clientes" min="0" placeholder="Ex: 360"
-                                    style="width:90px; padding:4px 8px; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.9rem; font-weight:700; color:#1e3a8a; outline:none; text-align:center;"
-                                    oninput="pv_salvarTotalClientes(this.value)"
-                                    onfocus="this.style.borderColor='#3b82f6'"
-                                    onblur="this.style.borderColor='#cbd5e1'">
+                                <label style="font-size:.82rem; font-weight:600; color:#475569; white-space:nowrap;">Total de Clientes:</label>
+                                <span id="display-total-clientes" style="width:90px; padding:4px 8px; font-size:1.1rem; font-weight:800; color:#1e3a8a; text-align:center;">—</span>
                             </div>
 
                             <!-- Canvas do donut -->
