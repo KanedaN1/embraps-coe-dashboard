@@ -1,7 +1,6 @@
 // js/gemini-assistant.js
 
-const GEMINI_API_KEY = "AQ.Ab8RN6IggMfPCYUs7nWZxYZCfT_W7R4qMLk2WSW_2q5YTtUnKA";
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const VERCEL_API_URL = "/api/chat";
 
 let chatHistory = [];
 let currentSectionContext = "";
@@ -110,7 +109,7 @@ async function sendGeminiMessage() {
     });
 
     try {
-        const response = await fetch(GEMINI_API_URL, {
+        const response = await fetch(VERCEL_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
