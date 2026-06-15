@@ -951,5 +951,28 @@
             </div>
         </div>
     </div>
+    <!-- Gemini AI Chat Modal -->
+    <div id="gemini-chat-modal" class="gemini-chat-modal" style="display: none;">
+        <div class="gemini-chat-header">
+            <div class="gemini-chat-title">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Analista Operacional de Dados
+            </div>
+            <button class="gemini-chat-close" onclick="closeGeminiChat()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="gemini-chat-messages" class="gemini-chat-messages">
+            <!-- Messages go here -->
+        </div>
+        <div class="gemini-chat-input-area">
+            <input type="text" id="gemini-chat-input" placeholder="Pergunte sobre os dados desta aba..." onkeypress="if(event.key === 'Enter') sendGeminiMessage()">
+            <button class="gemini-chat-send" onclick="sendGeminiMessage()">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="js/gemini-assistant.js"></script>
 </body>
 </html>

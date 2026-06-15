@@ -117,16 +117,32 @@ document.addEventListener('DOMContentLoaded', () => {
         padding: 4
     };
 
-    // Adicionar botão de imprimir nas seções
+    // Adicionar botão de imprimir e IA nas seções
     document.querySelectorAll('.section-title').forEach(title => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-primary print-btn';
-        btn.style.marginLeft = 'auto';
-        btn.style.fontSize = '0.9rem';
-        btn.style.padding = '8px 16px';
-        btn.innerHTML = '<i class="fa-solid fa-print"></i> Imprimir A4';
-        btn.onclick = () => window.print();
-        title.appendChild(btn);
+        const btnContainer = document.createElement('div');
+        btnContainer.className = 'section-title-actions';
+        btnContainer.style.marginLeft = 'auto';
+        btnContainer.style.display = 'flex';
+        btnContainer.style.gap = '10px';
+        btnContainer.style.alignItems = 'center';
+
+        const aiBtn = document.createElement('button');
+        aiBtn.className = 'btn-ai-assistant';
+        aiBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i>';
+        aiBtn.title = "Analisar com IA Gemini";
+        const sectionId = title.closest('section')?.id || 'geral';
+        aiBtn.onclick = () => openGeminiChat(sectionId);
+
+        const printBtn = document.createElement('button');
+        printBtn.className = 'btn-primary print-btn';
+        printBtn.style.fontSize = '0.9rem';
+        printBtn.style.padding = '8px 16px';
+        printBtn.innerHTML = '<i class="fa-solid fa-print"></i> Imprimir A4';
+        printBtn.onclick = () => window.print();
+
+        btnContainer.appendChild(aiBtn);
+        btnContainer.appendChild(printBtn);
+        title.appendChild(btnContainer);
     });
 
     // Update functions
