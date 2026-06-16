@@ -1442,14 +1442,17 @@ async function renderPvSlaChart() {
     try {
         if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
             const snap = await db.collection('pos_venda_negativo').get();
-            totalPv = snap.size;
+            totalPv = snap.docs.filter(doc => {
+                const d = doc.data();
+                return d.status !== 'concluido' && d.status !== 'concluida';
+            }).length;
         } else {
             const localPv = JSON.parse(localStorage.getItem('embraps_pv_offline') || '[]');
-            totalPv = localPv.length;
+            totalPv = localPv.filter(d => d.status !== 'concluido' && d.status !== 'concluida').length;
         }
     } catch (e) {
         const localPv = JSON.parse(localStorage.getItem('embraps_pv_offline') || '[]');
-        totalPv = localPv.length;
+        totalPv = localPv.filter(d => d.status !== 'concluido' && d.status !== 'concluida').length;
     }
 
     // --- Calcular SLA ---
