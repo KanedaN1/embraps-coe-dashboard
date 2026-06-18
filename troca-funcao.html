@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Troca de Função — Embraps</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css?v=2.0">
+  <link rel="stylesheet" href="css/troca-funcao.css?v=1.0">
+</head>
+<body class="tf-body">
+
+<!-- TELA DE LOGIN -->
+<div id="tf-login">
+  <div class="tf-login-box">
+    <div class="tf-login-logo">
+      <img src="assets/img/Logo.png" alt="Embraps" onerror="this.style.display='none'">
+      <h1>Troca de <span>Função</span></h1>
+      <p>Gestão de Promoções e Alterações de Cargo</p>
+    </div>
+
+    <div class="tf-form-group">
+      <label>Coordenador</label>
+      <select id="tf-op-select">
+        <option value="">— Selecione —</option>
+        <option value="admin">Admin</option>
+        <option value="Carlos Leme">Carlos Leme</option>
+        <option value="Isaias Belchior">Isaias Belchior</option>
+        <option value="Rejiane Teles">Rejiane Teles</option>
+        <option value="Renato Augusto">Renato Augusto</option>
+        <option value="Ricardo Faustino">Ricardo Faustino</option>
+      </select>
+    </div>
+    <div class="tf-form-group">
+      <label>Senha de Acesso</label>
+      <input type="password" id="tf-pw" placeholder="Digite sua senha..." onkeydown="if(event.key==='Enter') tf_login()">
+    </div>
+    <button class="tf-btn tf-btn-primary" style="width: 100%; justify-content: center;" onclick="tf_login()">
+      <i class="fa-solid fa-arrow-right-to-bracket"></i> Acessar
+    </button>
+
+    <p id="tf-login-err" class="tf-error" style="display:none">
+      <i class="fa-solid fa-triangle-exclamation"></i> Senha incorreta ou usuário não selecionado.
+    </p>
+    <a href="index.html" class="tf-back-link">
+      <i class="fa-solid fa-arrow-left"></i> Voltar ao Dashboard
+    </a>
+  </div>
+</div>
+
+<!-- APLICATIVO PRINCIPAL -->
+<div id="tf-app" style="display:none">
+
+  <!-- Header -->
+  <header class="tf-header">
+    <a href="index.html" class="tf-header-logo">
+      <img src="assets/img/Logo.png" alt="Embraps" onerror="this.style.display='none'">
+      <span>Troca de <strong>Função</strong></span>
+    </a>
+    <div class="tf-header-right">
+      <span id="tf-user-name" class="tf-user-badge"></span>
+      <button class="tf-btn tf-btn-ghost" onclick="tf_logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sair
+      </button>
+    </div>
+  </header>
+
+  <div class="tf-wrap">
+    
+    <!-- Cards de Resumo -->
+    <div class="tf-kpi-grid">
+      <div class="tf-kpi-card">
+        <div class="tf-kpi-icon" style="background:#f1f5f9; color:#3b82f6;"><i class="fa-solid fa-users"></i></div>
+        <div class="tf-kpi-info">
+          <h3>Total de Processos</h3>
+          <h2 id="kpi-total">0</h2>
+        </div>
+      </div>
+      <div class="tf-kpi-card">
+        <div class="tf-kpi-icon" style="background:#fef9c3; color:#ca8a04;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="tf-kpi-info">
+          <h3>Avaliações Críticas (≤ 15 dias)</h3>
+          <h2 id="kpi-criticas">0</h2>
+        </div>
+      </div>
+      <div class="tf-kpi-card">
+        <div class="tf-kpi-icon" style="background:#fee2e2; color:#dc2626;"><i class="fa-solid fa-clock"></i></div>
+        <div class="tf-kpi-info">
+          <h3>Avaliações Atrasadas</h3>
+          <h2 id="kpi-atrasadas">0</h2>
+        </div>
+      </div>
+      <div class="tf-kpi-card">
+        <div class="tf-kpi-icon" style="background:#f3e8ff; color:#9333ea;"><i class="fa-solid fa-user-tie"></i></div>
+        <div class="tf-kpi-info">
+          <h3>Processos (Meu Time)</h3>
+          <h2 id="kpi-meu-time">0</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Ações -->
+    <div class="tf-actions-bar">
+      <button class="tf-btn tf-btn-primary" onclick="tf_openModalRegistro()">
+        <i class="fa-solid fa-plus"></i> Registrar Promoção
+      </button>
+      <div class="tf-filters">
+        <select id="tf-filter-coord" onchange="tf_renderTable()">
+          <option value="">Todos os Coordenadores</option>
+          <option value="Carlos Leme">Carlos Leme</option>
+          <option value="Isaias Belchior">Isaias Belchior</option>
+          <option value="Rejiane Teles">Rejiane Teles</option>
+          <option value="Renato Augusto">Renato Augusto</option>
+          <option value="Ricardo Faustino">Ricardo Faustino</option>
+        </select>
+        <select id="tf-filter-status" onchange="tf_renderTable()">
+          <option value="">Todos os Status</option>
+          <option value="no-prazo">No Prazo</option>
+          <option value="atencao">A Vencer (Atenção)</option>
+          <option value="atrasado">Vencido (Atrasado)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="tf-table-wrap">
+      <table class="tf-table">
+        <thead>
+          <tr>
+            <th>RE / Colaborador</th>
+            <th>Datas</th>
+            <th>Situação / Prazo</th>
+            <th>Cargo (Atual / Promoção)</th>
+            <th>Observação</th>
+            <th>Coordenador</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tf-tbody">
+          <tr><td colspan="7" style="text-align:center;color:#64748b;">Carregando dados...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: REGISTRO DE PROMOÇÃO
+     ============================================================ -->
+<div id="tf-modal-registro" class="tf-modal-overlay" style="display:none" onclick="if(event.target===this) tf_closeModalRegistro()">
+  <div class="tf-modal">
+    <div class="tf-modal-header">
+      <h3 id="tf-modal-title"><i class="fa-solid fa-plus"></i> Registrar Promoção</h3>
+      <button class="tf-modal-close" onclick="tf_closeModalRegistro()">&#215;</button>
+    </div>
+    <div class="tf-modal-body">
+      <input type="hidden" id="tf-id">
+      
+      <div class="tf-form-row">
+        <div class="tf-form-group">
+          <label>RE *</label>
+          <input type="number" id="tf-re" placeholder="Ex: 1234">
+        </div>
+        <div class="tf-form-group">
+          <label>Nome do Colaborador *</label>
+          <input type="text" id="tf-nome" placeholder="Ex: João da Silva">
+        </div>
+      </div>
+
+      <div class="tf-form-row">
+        <div class="tf-form-group">
+          <label>Cargo Atual *</label>
+          <input type="text" id="tf-cargo-atual" placeholder="Ex: Porteiro">
+        </div>
+        <div class="tf-form-group">
+          <label>Cargo de Promoção *</label>
+          <input type="text" id="tf-cargo-promo" placeholder="Ex: Líder de Portaria">
+        </div>
+      </div>
+
+      <div class="tf-form-row">
+        <div class="tf-form-group">
+          <label>Data Inicial *</label>
+          <input type="date" id="tf-data-inicial">
+        </div>
+        <div class="tf-form-group">
+          <label>Coordenador *</label>
+          <select id="tf-coordenador">
+            <option value="">— Selecione —</option>
+            <option value="Carlos Leme">Carlos Leme</option>
+            <option value="Isaias Belchior">Isaias Belchior</option>
+            <option value="Rejiane Teles">Rejiane Teles</option>
+            <option value="Renato Augusto">Renato Augusto</option>
+            <option value="Ricardo Faustino">Ricardo Faustino</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tf-form-group">
+        <label>Observação</label>
+        <textarea id="tf-obs" rows="2" placeholder="Opcional..."></textarea>
+      </div>
+
+      <p style="font-size: 0.85rem; color: #64748b; margin: 0;">
+        <i class="fa-solid fa-circle-info"></i> A data final será calculada automaticamente (+90 dias da data inicial).
+      </p>
+
+    </div>
+    <div class="tf-modal-footer">
+      <button class="tf-btn tf-btn-ghost" onclick="tf_closeModalRegistro()">Cancelar</button>
+      <button class="tf-btn tf-btn-primary" onclick="tf_salvarRegistro()">
+        <i class="fa-solid fa-floppy-disk"></i> Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: POSTERGAR PRAZO
+     ============================================================ -->
+<div id="tf-modal-postergar" class="tf-modal-overlay" style="display:none" onclick="if(event.target===this) tf_closeModalPostergar()">
+  <div class="tf-modal">
+    <div class="tf-modal-header">
+      <h3><i class="fa-solid fa-calendar-plus"></i> Postergar Prazo</h3>
+      <button class="tf-modal-close" onclick="tf_closeModalPostergar()">&#215;</button>
+    </div>
+    <div class="tf-modal-body">
+      <input type="hidden" id="tf-postergar-id">
+      <p id="tf-postergar-info" style="font-weight: 500; margin-bottom: 1rem;"></p>
+      
+      <div class="tf-form-group">
+        <label>Nova Data Final *</label>
+        <input type="date" id="tf-nova-data">
+      </div>
+      <div class="tf-form-group">
+        <label>Motivo do adiamento *</label>
+        <textarea id="tf-motivo" rows="2" placeholder="Descreva o porquê está postergando o processo..."></textarea>
+      </div>
+    </div>
+    <div class="tf-modal-footer">
+      <button class="tf-btn tf-btn-ghost" onclick="tf_closeModalPostergar()">Cancelar</button>
+      <button class="tf-btn tf-btn-primary" onclick="tf_salvarPostergar()">
+        <i class="fa-solid fa-check"></i> Confirmar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- Scripts -->
+<script src="js/firebase-config.js?v=2.0"></script>
+<script src="js/troca-funcao.js?v=1.0"></script>
+</body>
+</html>
