@@ -337,8 +337,11 @@ function renderTable() {
                 <span class="status-pill status-${d.status.toLowerCase()}">${d.status}</span>
             </td>
             <td data-label="Ações">
-                ${isAdmin ? `
-                    <div style="display:flex; gap:5px;">
+                <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdTxCukUla6UUkTYhyBSrG-V6mGl6_eXLy81PHHUCwNvN5dcw/viewform?usp=sharing&ouid=114100093949072657962" target="_blank" style="padding:4px 8px; background:#3b82f6; border:none; border-radius:6px; color:white; font-size:0.7rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px;" title="Fazer avaliação">
+                        <i class="fa-solid fa-clipboard-list"></i> Fazer avaliação
+                    </a>
+                    ${isAdmin ? `
                         <button class="btn-action btn-status-toggle" onclick="toggleStatus('${d.id}', '${d.status}')" title="Mudar Status">
                             <i class="fa-solid fa-arrows-rotate"></i>
                         </button>
@@ -350,8 +353,8 @@ function renderTable() {
                                 <i class="fa-solid fa-envelope"></i>
                             </button>
                         ` : ''}
-                    </div>
-                ` : '<span style="color:#cbd5e1; font-size:0.75rem;">Sem permissão</span>'}
+                    ` : '<span style="color:#cbd5e1; font-size:0.7rem; margin-left:4px;">Somente admin</span>'}
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
