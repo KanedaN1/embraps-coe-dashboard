@@ -84,7 +84,11 @@ function tf_loadData() {
 // =============================================
 // RENDERIZAÇÃO
 // =============================================
-function tf_calcularStatus(dataFinalStr) {
+function tf_calcularStatus(item) {
+    if (item.concluido) {
+        return { class: 'concluido', text: 'Concluído', dias: '-' };
+    }
+    const dataFinalStr = item.dataFinal;
     if (!dataFinalStr) return { class: '', text: 'Sem Data', dias: 0 };
     
     // Convert to Date
@@ -120,7 +124,7 @@ function tf_renderTable() {
     // Filtros
     let list = TF_DATA.filter(item => {
         let matchCoord = coordFilter === '' || item.coordenador === coordFilter;
-        let st = tf_calcularStatus(item.dataFinal).class;
+        let st = tf_calcularStatus(item).class;
         let matchStatus = statusFilter === '' || st === statusFilter;
         return matchCoord && matchStatus;
     });
@@ -134,9 +138,12 @@ function tf_renderTable() {
     }
 
     list.forEach(item => {
-        const st = tf_calcularStatus(item.dataFinal);
+        const st = tf_calcularStatus(item);
         
         let actions = `
+            <button class="tf-btn tf-btn-ghost" title="Concluído" onclick="tf_concluirRegistro('${item.id}')" style="padding: 0.3rem 0.5rem; font-size:0.8rem; color:#16a34a;">
+                <i class="fa-solid fa-check"></i>
+            </button>
             <button class="tf-btn tf-btn-ghost" title="Editar" onclick="tf_editarRegistro('${item.id}')" style="padding: 0.3rem 0.5rem; font-size:0.8rem;">
                 <i class="fa-solid fa-pen"></i>
             </button>
@@ -184,7 +191,7 @@ function tf_updateKPIs() {
     let meuTime = 0;
 
     TF_DATA.forEach(item => {
-        const st = tf_calcularStatus(item.dataFinal);
+        const st = tf_calcularStatus(item);
         if (st.class === 'atencao') criticas++;
         if (st.class === 'atrasado') atrasadas++;
         if (item.coordenador === TF_USER) meuTime++;
@@ -337,4 +344,12 @@ function tf_salvarPostergar() {
     }).then(() => {
         tf_closeModalPostergar();
     }).catch(err => console.error(err));
+}
+
+function tf_concluirRegistro(id) {
+    if (confirm("Tem certeza que deseja marcar este processo como concluído? Ele não contabilizará mais como atrasado.")) {
+        db.collection('troca_funcao').doc(id).update({
+            concluido: true
+        }).catch(err => console.error(err));
+    }
 }

@@ -225,6 +225,11 @@ body.tf-body {
   color: #991b1b;
 }
 
+.tf-status.concluido {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 /* Modal */
 .tf-modal-overlay {
   position: fixed;
