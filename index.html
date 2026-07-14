@@ -60,6 +60,7 @@
                     <li><a href="#vg-demissoes" class="nav-link"><i class="fa-solid fa-user-minus"></i> Demissões</a></li>
                     <li><a href="#vg-movimentacao" class="nav-link"><i class="fa-solid fa-people-arrows"></i> Movimentação Operacional</a></li>
                     <li><a href="#vg-coringas" class="nav-link"><i class="fa-solid fa-mask"></i> Coringas</a></li>
+                    <li><a href="#vg-embraps-geo" class="nav-link skip-tv"><i class="fa-solid fa-satellite-dish"></i> Embraps G.E.O</a></li>
                     <li class="nav-group-title mt-4">Agenda</li>
                     <li><a href="#vg-agenda-sla" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Indicadores Agenda</a></li>
                     <li><a href="#vg-pos-venda" class="nav-link"><i class="fa-solid fa-headset"></i> Pós Venda Negativo</a></li>
@@ -682,6 +683,23 @@
                             <div class="card chart-container">
                                 <h3>Quantidade de Usuários em Treinamento (Mês Selecionado)</h3>
                                 <canvas id="chartCoringasUsuarios"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Embraps G.E.O -->
+                    <section id="vg-embraps-geo" class="dashboard-section mt-5">
+                        <h2 class="section-title"><i class="fa-solid fa-satellite-dish"></i> Embraps G.E.O</h2>
+                        <div class="card d-flex align-items-center justify-content-center text-center" style="min-height: 400px; background: linear-gradient(135deg, rgba(30, 32, 37, 0.9) 0%, rgba(44, 47, 54, 0.9) 100%); border: 1px solid var(--accent-color); position: relative; overflow: hidden;">
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; background: var(--accent-color); filter: blur(100px); opacity: 0.15; border-radius: 50%; pointer-events: none;"></div>
+                            
+                            <div style="position: relative; z-index: 1;">
+                                <i class="fa-solid fa-satellite-dish fa-fade mb-4" style="font-size: 5rem; color: var(--accent-color);"></i>
+                                <h3 style="font-size: 2.2rem; font-weight: 700; color: var(--text-color); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">Projeto em andamento</h3>
+                                <p style="font-size: 1.2rem; color: #a0a5b1; max-width: 600px; margin: 0 auto;">
+                                    Estamos preparando algo incrível para você.<br>
+                                    <span style="color: var(--accent-color); font-weight: 600;">Atualizações em breve!</span>
+                                </p>
                             </div>
                         </div>
                     </section>

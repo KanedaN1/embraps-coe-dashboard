@@ -242,7 +242,7 @@ function toggleTvMode() {
             elem.requestFullscreen().catch(err => console.log(err));
         }
         
-        const navLinks = Array.from(document.querySelectorAll('.nav-link'));
+        const navLinks = Array.from(document.querySelectorAll('.nav-link:not(.skip-tv)'));
         let currentIndex = navLinks.findIndex(l => l.parentElement.classList.contains('active'));
         if (currentIndex === -1) currentIndex = 0;
         
