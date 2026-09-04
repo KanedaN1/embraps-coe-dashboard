@@ -19,7 +19,8 @@ const AG_OPERATORS = {
     'victor':  'Victor Dourado',
     'walmir':  'Walmir da Luz',
     'rodrigo': 'Rodrigo Vilanova',
-    'nikolas': 'Nikolas Cardoso'
+    'nikolas': 'Nikolas Cardoso',
+    'thiago':  'Thiago Cavalcanti'
 };
 
 const AG_PASSWORDS = {
@@ -29,7 +30,8 @@ const AG_PASSWORDS = {
     victor:   'victor123',
     walmir:   'walmir123',
     rodrigo:  'rodrigo123',
-    nikolas:  'nikolas123'
+    nikolas:  'nikolas123',
+    thiago:   'thiago123'
 };
 
 /* ================================================================
@@ -688,10 +690,7 @@ function ag_renderDashboardSummary(tasks) {
         return;
     }
 
-    const OPERATORS = {
-        'iris': 'Iris Souza', 'hallan': 'Hallan de Barros', 'victor': 'Victor Dourado',
-        'walmir': 'Walmir da Luz', 'rodrigo': 'Rodrigo Vilanova', 'nikolas': 'Nikolas Cardoso'
-    };
+    const OPERATORS = AG_OPERATORS;
 
     const byOp = {};
     tasks.forEach(t => {
@@ -770,10 +769,7 @@ function ag_renderExecutiveDashboard(tasks) {
     `;
 
     // 2. Ranking & SLA List
-    const OPERATORS = {
-        'iris': 'Iris Souza', 'hallan': 'Hallan de Barros', 'victor': 'Victor Dourado',
-        'walmir': 'Walmir da Luz', 'rodrigo': 'Rodrigo Vilanova', 'nikolas': 'Nikolas Cardoso'
-    };
+    const OPERATORS = AG_OPERATORS;
 
     const results = Object.entries(OPERATORS).map(([id, name]) => {
         const mine = tasks.filter(t => t.operadorId === id);
