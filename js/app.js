@@ -414,6 +414,12 @@ async function updateDashboard() {
     renderResumoAnual(yearlyData, monthLabels);
     renderResumoAnualOS(year, monthLabels);
     renderResumoVagasAnual();
+    
+    // Renderizar Aba Resumo Semestral Executivo (Jan a Jun)
+    const semData = yearlyData.slice(0, 6);
+    const semLabels = monthLabels.slice(0, 6);
+    renderResumoSemestral(semData, semLabels);
+
     updateAgendaSummary();
 }
 
@@ -1807,4 +1813,312 @@ async function verificarAlertasDeVagas() {
     } catch (error) {
         console.error("Erro ao verificar vagas atrasadas para alertas", error);
     }
+}
+
+/* ============================================================
+   FUNÇÕES: ABA RESUMO SEMESTRAL EXECUTIVO (1º SEMESTRE JAN-JUN)
+   ============================================================ */
+
+function renderResumoSemestral(semesterData, semMonthLabels) {
+    let totalFaltas = 0;
+    let totalDemissoes = 0;
+    let totalCusto99 = 0;
+    let totalContele = 0;
+    let totalAdmissoes = 0;
+    let totalReservaDiurna = 0;
+    let totalReservaNoturna = 0;
+    let totalReservaLimpeza = 0;
+    let totalGastosFolgas = 0;
+    let totalHeGeral = 0;
+    let totalHe100 = 0;
+    let totalHeIntra = 0;
+
+    let demissoesMotivosTotal = {
+        empresa: 0,
+        pedido: 0,
+        experiencia: 0,
+        justa_causa: 0
+    };
+
+    let diasSemanaFaltas = [0, 0, 0, 0, 0, 0, 0];
+
+    semesterData.forEach(d => {
+        if (!d.isEmpty) {
+            totalFaltas += parseInt(d.faltas) || 0;
+            totalDemissoes += parseInt(d.demissoes) || 0;
+            totalCusto99 += parseFloat(d.custo99) || 0;
+            totalContele += parseInt(d.visitasContele) || 0;
+            totalAdmissoes += parseInt(d.admissoes) || 0;
+            totalReservaDiurna += parseInt(d.reservasDiurna) || 0;
+            totalReservaNoturna += parseInt(d.reservasNoturna) || 0;
+            totalReservaLimpeza += parseInt(d.reservasLimpeza) || 0;
+            totalGastosFolgas += parseFloat(d.gastosFolgas) || 0;
+            totalHeGeral += parseFloat(d.horasExtrasGeral) || 0;
+            totalHe100 += parseFloat(d.horasExtras100) || 0;
+            totalHeIntra += parseFloat(d.horasExtrasIntra) || 0;
+
+            if (d.demissoesMotivos) {
+                demissoesMotivosTotal.empresa += parseInt(d.demissoesMotivos.empresa) || 0;
+                demissoesMotivosTotal.pedido += parseInt(d.demissoesMotivos.pedido) || 0;
+                demissoesMotivosTotal.experiencia += parseInt(d.demissoesMotivos.experiencia) || 0;
+                demissoesMotivosTotal.justa_causa += parseInt(d.demissoesMotivos.justa_causa) || 0;
+            }
+
+            ['faltasDiurna', 'faltasNoturna', 'faltasLimpeza'].forEach(tipo => {
+                if (d[tipo]) {
+                    Object.keys(d[tipo]).forEach(diaNum => {
+                        const val = parseInt(d[tipo][diaNum]) || 0;
+                        if (val > 0) {
+                            const year = document.getElementById('filter-year').value || '2026';
+                            const dateObj = new Date(`${year}-${d.month}-${diaNum.padStart(2, '0')}T00:00:00`);
+                            if (!isNaN(dateObj.getTime())) {
+                                const dayOfWeek = dateObj.getDay();
+                                diasSemanaFaltas[dayOfWeek] += val;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+    const elFaltas = document.getElementById('sem-kpi-faltas');
+    if (elFaltas) elFaltas.textContent = totalFaltas;
+    const elDem = document.getElementById('sem-kpi-demissoes');
+    if (elDem) elDem.textContent = totalDemissoes;
+    const elCusto99 = document.getElementById('sem-kpi-custo99');
+    if (elCusto99) elCusto99.textContent = formatCurrency(totalCusto99);
+    const elContele = document.getElementById('sem-kpi-contele');
+    if (elContele) elContele.textContent = totalContele;
+
+    let healthScore = 100;
+    if (totalFaltas > 350) healthScore -= 15;
+    if (totalFaltas > 500) healthScore -= 20;
+    if (totalDemissoes > 150) healthScore -= 15;
+    if (totalCusto99 > 100000) healthScore -= 15;
+    healthScore = Math.max(35, Math.min(100, healthScore));
+
+    const healthValEl = document.getElementById('health-score-value');
+    if (healthValEl) healthValEl.textContent = `${healthScore}%`;
+    
+    const badgeEl = document.getElementById('health-status-badge');
+    if (badgeEl) {
+        if (healthScore >= 80) {
+            badgeEl.style.background = 'rgba(16, 185, 129, 0.1)';
+            badgeEl.style.color = '#10b981';
+            badgeEl.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+            badgeEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Saúde Operacional Excelente';
+        } else if (healthScore >= 60) {
+            badgeEl.style.background = 'rgba(245, 158, 11, 0.1)';
+            badgeEl.style.color = '#f59e0b';
+            badgeEl.style.borderColor = 'rgba(245, 158, 11, 0.2)';
+            badgeEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Atenção Moderada';
+        } else {
+            badgeEl.style.background = 'rgba(239, 68, 68, 0.1)';
+            badgeEl.style.color = '#ef4444';
+            badgeEl.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+            badgeEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Atenção Operacional Requerida';
+        }
+    }
+
+    if (document.getElementById('chartHealthGauge')) {
+        renderHealthGauge('chartHealthGauge', healthScore);
+    }
+
+    const totalRescisoes = demissoesMotivosTotal.empresa + demissoesMotivosTotal.pedido + demissoesMotivosTotal.experiencia + demissoesMotivosTotal.justa_causa;
+    const raioXTotalEl = document.getElementById('raio-x-total');
+    if (raioXTotalEl) raioXTotalEl.textContent = `Total: ${totalRescisoes || totalDemissoes} desligamentos`;
+
+    const calcPerc = (val) => totalRescisoes > 0 ? Math.round((val / totalRescisoes) * 100) : 0;
+    const percPedido = calcPerc(demissoesMotivosTotal.pedido);
+    const percEmpresa = calcPerc(demissoesMotivosTotal.empresa);
+    const percExp = calcPerc(demissoesMotivosTotal.experiencia);
+    const percJc = calcPerc(demissoesMotivosTotal.justa_causa);
+
+    if (document.getElementById('raio-x-pedido')) document.getElementById('raio-x-pedido').textContent = `${demissoesMotivosTotal.pedido} (${percPedido}%)`;
+    if (document.getElementById('raio-x-empresa')) document.getElementById('raio-x-empresa').textContent = `${demissoesMotivosTotal.empresa} (${percEmpresa}%)`;
+    if (document.getElementById('raio-x-exp')) document.getElementById('raio-x-exp').textContent = `${demissoesMotivosTotal.experiencia} (${percExp}%)`;
+    if (document.getElementById('raio-x-jc')) document.getElementById('raio-x-jc').textContent = `${demissoesMotivosTotal.justa_causa} (${percJc}%)`;
+
+    const multiBar = document.getElementById('raio-x-multibar');
+    if (multiBar) {
+        multiBar.innerHTML = `
+            <div style="width: ${percPedido}%; background: #3b82f6;" title="Pedido: ${percPedido}%"></div>
+            <div style="width: ${percEmpresa}%; background: #10b981;" title="Iniciativa Empresa: ${percEmpresa}%"></div>
+            <div style="width: ${percExp}%; background: #f59e0b;" title="Término Experiência: ${percExp}%"></div>
+            <div style="width: ${percJc}%; background: #ef4444;" title="Justa Causa: ${percJc}%"></div>
+        `;
+    }
+
+    const nomesDias = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+    const maxFaltasDia = Math.max(...diasSemanaFaltas, 1);
+    const gridDiasEl = document.getElementById('grid-dias-semana');
+    if (gridDiasEl) {
+        gridDiasEl.innerHTML = nomesDias.map((d, idx) => {
+            const val = diasSemanaFaltas[idx];
+            const isHighest = val === maxFaltasDia && val > 0;
+            return `
+                <div class="dia-semana-box ${isHighest ? 'highlight' : ''}">
+                    <span class="dia-semana-title">${d}</span>
+                    <span class="dia-semana-val">${val}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    const dataFaltas = getValues(semesterData, 'faltas');
+    const dataDemissoes = getValues(semesterData, 'demissoes');
+    const dataFTsK = getValues(semesterData, 'gastosFolgas').map(v => Math.round(v / 1000));
+
+    if (document.getElementById('chartEvolucaoSemestral')) {
+        renderBarChart('chartEvolucaoSemestral', semMonthLabels, [
+            { label: 'Faltas', data: dataFaltas, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.4 },
+            { label: 'Demissões', data: dataDemissoes, borderColor: '#f59e0b', backgroundColor: 'transparent', tension: 0.4 },
+            { label: 'Folgas Trabalhadas (k R$)', data: dataFTsK, borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.4 }
+        ], { type: 'line' });
+    }
+
+    const dataAdmissoes = getValues(semesterData, 'admissoes');
+    if (document.getElementById('chartAdmissoesDemissoes')) {
+        renderBarChart('chartAdmissoesDemissoes', semMonthLabels, [
+            { label: 'Admissões', data: dataAdmissoes, backgroundColor: '#10b981', borderRadius: 4 },
+            { label: 'Demissões', data: dataDemissoes, backgroundColor: '#ef4444', borderRadius: 4 }
+        ]);
+    }
+
+    const dataReservaTotal = semesterData.map(d => (parseInt(d.reservasDiurna)||0) + (parseInt(d.reservasNoturna)||0) + (parseInt(d.reservasLimpeza)||0));
+    if (document.getElementById('chartReservaVsFaltas')) {
+        renderBarChart('chartReservaVsFaltas', semMonthLabels, [
+            { label: 'Reserva Disponível', data: dataReservaTotal, backgroundColor: '#3b82f6', borderRadius: 4 },
+            { label: 'Total Faltas', data: dataFaltas, backgroundColor: '#ef4444', borderRadius: 4 }
+        ]);
+    }
+
+    const dataFTs = getValues(semesterData, 'gastosFolgas');
+    if (document.getElementById('chartFtMotivosSemestral')) {
+        renderBarChart('chartFtMotivosSemestral', semMonthLabels, [
+            { label: 'FTs (R$)', data: dataFTs, backgroundColor: '#10b981', borderRadius: 4 }
+        ], { isCurrency: true });
+    }
+
+    const dataHEGeral = getValues(semesterData, 'horasExtrasGeral');
+    const dataHE100 = getValues(semesterData, 'horasExtras100');
+    const dataHEIntra = getValues(semesterData, 'horasExtrasIntra');
+    if (document.getElementById('chartHeSemestral')) {
+        renderBarChart('chartHeSemestral', semMonthLabels, [
+            { label: 'HE Geral (R$)', data: dataHEGeral, backgroundColor: '#f59e0b', borderRadius: 4 },
+            { label: 'HE 100% (R$)', data: dataHE100, backgroundColor: '#8b5cf6', borderRadius: 4 },
+            { label: 'HE Intra (R$)', data: dataHEIntra, backgroundColor: '#38bdf8', borderRadius: 4 }
+        ], { isCurrency: true, stacked: true });
+    }
+
+    const dataCusto99 = getValues(semesterData, 'custo99');
+    const dataGasolina = semesterData.map(d => parseFloat(d.custoGasolina) || 0);
+    if (document.getElementById('chartMobilidade99vsGasolina')) {
+        renderBarChart('chartMobilidade99vsGasolina', semMonthLabels, [
+            { label: 'App 99 (R$)', data: dataCusto99, backgroundColor: '#eab308', borderRadius: 4 },
+            { label: 'Combustível / Gasolina (R$)', data: dataGasolina, backgroundColor: '#ec4899', borderRadius: 4 }
+        ], { isCurrency: true });
+    }
+
+    renderTabelaSupervisoresSemestral(semesterData);
+    renderTabelaTop10FaltasSemestral();
+}
+
+function renderHealthGauge(canvasId, score) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    if (charts[canvasId]) charts[canvasId].destroy();
+
+    charts[canvasId] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [score, 100 - score],
+                backgroundColor: [
+                    score >= 80 ? '#10b981' : (score >= 60 ? '#f59e0b' : '#ef4444'),
+                    document.body.classList.contains('dark-mode') ? '#334155' : '#e2e8f0'
+                ],
+                borderWidth: 0,
+                circumference: 180,
+                rotation: 270
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '80%',
+            plugins: {
+                tooltip: { enabled: false },
+                datalabels: { display: false }
+            }
+        }
+    });
+}
+
+function renderTabelaSupervisoresSemestral(semesterData) {
+    const tbody = document.getElementById('tbody-supervisores-semestral');
+    if (!tbody) return;
+
+    let supMap = {};
+
+    semesterData.forEach(d => {
+        if (d.supervisores99) {
+            d.supervisores99.forEach(s => {
+                if (!supMap[s.nome]) supMap[s.nome] = { gasto99: 0, visitas: 0 };
+                supMap[s.nome].gasto99 += parseFloat(s.gasto) || 0;
+            });
+        }
+        if (d.supervisoresContele) {
+            d.supervisoresContele.forEach(s => {
+                if (!supMap[s.nome]) supMap[s.nome] = { gasto99: 0, visitas: 0 };
+                supMap[s.nome].visitas += parseInt(s.qtd) || 0;
+            });
+        }
+    });
+
+    const supList = Object.keys(supMap).map(k => ({
+        nome: k,
+        gasto99: supMap[k].gasto99,
+        visitas: supMap[k].visitas
+    })).sort((a, b) => b.gasto99 - a.gasto99);
+
+    if (supList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum supervisor cadastrado no semestre.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = supList.map(s => `
+        <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 12px; font-weight: 700; color: var(--text-main);">${s.nome}</td>
+            <td style="padding: 12px; text-align: right; font-weight: 700; color: #f59e0b;">${formatCurrency(s.gasto99)}</td>
+            <td style="padding: 12px; text-align: right; font-weight: 700; color: #10b981;">${s.visitas}</td>
+        </tr>
+    `).join('');
+}
+
+async function renderTabelaTop10FaltasSemestral() {
+    const tbody = document.getElementById('tbody-top10-faltas-semestral');
+    if (!tbody) return;
+
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const doc = await db.collection('configuracoes').doc('top10_faltas_semestral').get();
+            if (doc.exists && doc.data().lista && doc.data().lista.length > 0) {
+                const lista = doc.data().lista;
+                tbody.innerHTML = lista.map((item, idx) => `
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 10px; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+                        <td style="padding: 10px; font-weight: 700; color: var(--text-main);">${item.nome || '-'}</td>
+                        <td style="padding: 10px; text-align: center; font-weight: 800; color: #ef4444;">${item.faltas || 0}</td>
+                        <td style="padding: 10px; color: var(--text-muted); font-size: 0.82rem;">${item.acao || 'Em acompanhamento'}</td>
+                    </tr>
+                `).join('');
+                return;
+            }
+        } catch (err) {
+            console.log("Erro ao carregar top 10 faltas semestral:", err);
+        }
+    }
+
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum colaborador cadastrado. Adicione via Modo Admin.</td></tr>';
 }

@@ -41,6 +41,7 @@
                     <li class="nav-group-title">Principal</li>
                     <li class="active"><a href="#resumo-geral" class="nav-link"><i class="fa-solid fa-house"></i> Dashboard - Resumo</a></li>
                     <li><a href="#resumo-anual" class="nav-link"><i class="fa-solid fa-star"></i> Resumo Anual &amp; KPIs</a></li>
+                    <li><a href="#resumo-semestral" class="nav-link"><i class="fa-solid fa-chart-line"></i> Resumo Semestral</a></li>
                     
                     <li class="nav-group-title mt-4">Calendários Diários</li>
                     <li><a href="#cal-faltas" class="nav-link"><i class="fa-regular fa-calendar-xmark"></i> Calendário de Faltas</a></li>
@@ -717,6 +718,258 @@
                     </section>
 
                 </div> <!-- End Visao Geral -->
+
+                <!-- SECTION: Resumo Semestral Executivo -->
+                <section id="resumo-semestral" class="dashboard-section">
+                    <div class="section-header-custom mb-4" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h2 class="section-title" style="border-bottom: none; margin-bottom: 0;">
+                                <i class="fa-solid fa-chart-line" style="color: #3b82f6;"></i> Resumo Semestral Executivo (1º Semestre)
+                            </h2>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Análise consolidada de desempenho, ocorrências e custos (Janeiro a Junho)</p>
+                        </div>
+                        <div>
+                            <button class="btn-primary print-btn" onclick="window.print()" style="font-size: 0.9rem; padding: 10px 20px;">
+                                <i class="fa-solid fa-print"></i> Imprimir A4 Encadernável
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 1. CARDS KPI SEMESTRAIS & ÍNDICE DE SAÚDE OPERACIONAL (PRINT 4) -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;" class="semestral-hero-grid">
+                        <!-- Esquerda: 4 KPI Scorecards -->
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                            <div class="card kpi-semestral-card" style="padding: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Faltas Semestrais</span>
+                                        <h2 id="sem-kpi-faltas" style="font-size: 2.2rem; font-weight: 800; margin: 8px 0 4px; color: var(--text-main);">0</h2>
+                                        <span class="badge-semestral badge-down" id="sem-kpi-faltas-trend"><i class="fa-solid fa-arrow-down"></i> vs Semestre Anterior</span>
+                                    </div>
+                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                                        <i class="fa-solid fa-user-xmark"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card kpi-semestral-card" style="padding: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Demissões Semestrais</span>
+                                        <h2 id="sem-kpi-demissoes" style="font-size: 2.2rem; font-weight: 800; margin: 8px 0 4px; color: var(--text-main);">0</h2>
+                                        <span class="badge-semestral badge-up" id="sem-kpi-demissoes-trend"><i class="fa-solid fa-arrow-up"></i> vs Semestre Anterior</span>
+                                    </div>
+                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                                        <i class="fa-solid fa-user-minus"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card kpi-semestral-card" style="padding: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Custo Mobilidade (99)</span>
+                                        <h2 id="sem-kpi-custo99" style="font-size: 2.2rem; font-weight: 800; margin: 8px 0 4px; color: var(--text-main);">R$ 0</h2>
+                                        <span class="badge-semestral badge-down" id="sem-kpi-custo99-trend"><i class="fa-solid fa-arrow-down"></i> vs Semestre Anterior</span>
+                                    </div>
+                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(234, 179, 8, 0.1); color: #eab308; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                                        <i class="fa-solid fa-car"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card kpi-semestral-card" style="padding: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Fiscalizações Contele</span>
+                                        <h2 id="sem-kpi-contele" style="font-size: 2.2rem; font-weight: 800; margin: 8px 0 4px; color: var(--text-main);">0</h2>
+                                        <span class="badge-semestral badge-up" id="sem-kpi-contele-trend"><i class="fa-solid fa-arrow-up"></i> vs Semestre Anterior</span>
+                                    </div>
+                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                                        <i class="fa-solid fa-map-location-dot"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Direita: Índice de Saúde Operacional (Gauge / Performance Meter - Print 4) -->
+                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <i class="fa-solid fa-bullseye" style="color: #10b981; font-size: 1.1rem;"></i>
+                                <h3 style="font-size: 1.05rem; margin: 0; color: var(--text-main);">Índice de Saúde Operacional</h3>
+                            </div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Atingimento global ponderado das metas semestrais</p>
+
+                            <div style="position: relative; width: 220px; height: 110px; margin-bottom: 10px;">
+                                <canvas id="chartHealthGauge"></canvas>
+                                <div style="position: absolute; bottom: 0; left: 0; right: 0; text-align: center;">
+                                    <span id="health-score-value" style="font-size: 2rem; font-weight: 900; color: var(--text-main);">85%</span>
+                                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); letter-spacing: 1px;">PERFORMANCE</div>
+                                </div>
+                            </div>
+
+                            <div id="health-status-badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 20px; padding: 6px 16px; font-size: 0.8rem; font-weight: 700; margin-top: 10px;">
+                                <i class="fa-solid fa-circle-exclamation"></i> Atenção Operacional Requerida
+                            </div>
+                            <div style="display: flex; gap: 15px; margin-top: 12px; font-size: 0.75rem; color: var(--text-muted);">
+                                <span><i class="fa-solid fa-circle" style="color: #10b981;"></i> Faltas Controladas</span>
+                                <span><i class="fa-solid fa-circle" style="color: #3b82f6;"></i> Economia 99</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. EVOLUÇÃO SEMESTRAL DE OCORRÊNCIAS & RAIO-X DE DESLIGAMENTOS (PRINTS 2 E 4) -->
+                    <div class="charts-grid two-cols mb-4">
+                        <div class="card chart-container">
+                            <h3><i class="fa-solid fa-chart-line" style="color: #3b82f6;"></i> Evolução Semestral de Ocorrências e Custos (Jan a Jun)</h3>
+                            <canvas id="chartEvolucaoSemestral"></canvas>
+                        </div>
+
+                        <!-- Raio-X de Desligamentos (PRINT 2) -->
+                        <div class="card" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-chart-pie" style="color: #f59e0b;"></i> Raio-X de Desligamentos do Semestre
+                                    </h3>
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);" id="raio-x-total">Total: 0 desligamentos</span>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Distribuição proporcional por tipologia de rescisão no período (Jan a Jun)</p>
+
+                                <!-- Barra Multi-segmento -->
+                                <div class="raio-x-bar-container" style="height: 12px; border-radius: 6px; overflow: hidden; display: flex; background: #334155; margin-bottom: 20px;" id="raio-x-multibar">
+                                    <div style="width: 32%; background: #3b82f6;" title="Pedido de Demissão"></div>
+                                    <div style="width: 34%; background: #10b981;" title="Iniciativa Empresa"></div>
+                                    <div style="width: 23%; background: #f59e0b;" title="Término Experiência"></div>
+                                    <div style="width: 11%; background: #ef4444;" title="Justa Causa"></div>
+                                </div>
+
+                                <!-- Grid de Cards de Tipologias (PRINT 2) -->
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;" id="raio-x-cards-grid">
+                                    <div style="padding: 12px 16px; border-radius: 10px; border-left: 4px solid #3b82f6; background: rgba(59, 130, 246, 0.05);">
+                                        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">■ Pedido de Demissão</span>
+                                        <h4 style="margin: 4px 0 0 0; font-size: 1.2rem; color: var(--text-main);" id="raio-x-pedido">0 (0%)</h4>
+                                    </div>
+                                    <div style="padding: 12px 16px; border-radius: 10px; border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05);">
+                                        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">■ Iniciativa Empresa</span>
+                                        <h4 style="margin: 4px 0 0 0; font-size: 1.2rem; color: var(--text-main);" id="raio-x-empresa">0 (0%)</h4>
+                                    </div>
+                                    <div style="padding: 12px 16px; border-radius: 10px; border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05);">
+                                        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">■ Término Experiência</span>
+                                        <h4 style="margin: 4px 0 0 0; font-size: 1.2rem; color: var(--text-main);" id="raio-x-exp">0 (0%)</h4>
+                                    </div>
+                                    <div style="padding: 12px 16px; border-radius: 10px; border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
+                                        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">■ Demissão Justa Causa</span>
+                                        <h4 style="margin: 4px 0 0 0; font-size: 1.2rem; color: var(--text-main);" id="raio-x-jc">0 (0%)</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. INCIDÊNCIA DE FALTAS POR DIA DA SEMANA (PRINT 2) & ADMISSÕES VS DEMISSÕES -->
+                    <div class="charts-grid two-cols mb-4">
+                        <!-- Incidência por Dia da Semana (Dom a Sáb - PRINT 2) -->
+                        <div class="card" style="padding: 24px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <i class="fa-regular fa-calendar-days" style="color: #ef4444; font-size: 1.1rem;"></i>
+                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Incidência de Faltas por Dia da Semana</h3>
+                            </div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Concentração de ausências no semestre de Domingo a Sábado</p>
+
+                            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;" id="grid-dias-semana">
+                                <!-- Renderizado no JS com os 7 dias (DOM, SEG, TER, QUA, QUI, SEX, SÁB) -->
+                            </div>
+                        </div>
+
+                        <!-- Admissões vs Demissões (ITEM 1) -->
+                        <div class="card chart-container">
+                            <h3><i class="fa-solid fa-people-line" style="color: #10b981;"></i> Admissões vs Demissões (Jan a Jun)</h3>
+                            <canvas id="chartAdmissoesDemissoes"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 4. RESERVA DISPONÍVEL VS FALTAS & TOP 10 FALTAS COM AÇÕES TOMADAS -->
+                    <div class="charts-grid two-cols mb-4">
+                        <!-- Reserva vs Faltas (ITEM 3) -->
+                        <div class="card chart-container">
+                            <h3><i class="fa-solid fa-users-gear" style="color: #3b82f6;"></i> Reserva Operacional Disponível vs Faltas</h3>
+                            <canvas id="chartReservaVsFaltas"></canvas>
+                        </div>
+
+                        <!-- Tabela Top 10 Colaboradores com Mais Faltas & Ações Tomadas (ITEM 2) -->
+                        <div class="card" style="padding: 24px; overflow-x: auto;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-list-ol" style="color: #ef4444;"></i> Top 10 Colaboradores com Faltas (Semestre)
+                                </h3>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Ações Disciplinares / Operacionais</span>
+                            </div>
+                            <table class="pv-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 10px; text-align: left;">#</th>
+                                        <th style="padding: 10px; text-align: left;">Colaborador</th>
+                                        <th style="padding: 10px; text-align: center;">Qtd Faltas</th>
+                                        <th style="padding: 10px; text-align: left;">Ação Tomada</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-top10-faltas-semestral">
+                                    <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum colaborador cadastrado. Adicione via Modo Admin.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 5. FTs MENSAIS + MOTIVOS & HORAS EXTRAS SEMESTRAIS (ITEMS 4 E 5) -->
+                    <div class="charts-grid two-cols mb-4">
+                        <!-- FTs e Motivos em R$ -->
+                        <div class="card chart-container">
+                            <h3><i class="fa-solid fa-calendar-check" style="color: #10b981;"></i> Folgas Trabalhadas (FTs) - Evolução & Motivos em R$</h3>
+                            <canvas id="chartFtMotivosSemestral"></canvas>
+                        </div>
+
+                        <!-- Horas Extras Mensais e Consolidado Semestral -->
+                        <div class="card chart-container">
+                            <h3><i class="fa-solid fa-stopwatch" style="color: #f59e0b;"></i> Horas Extras Mensais e Consolidado em R$</h3>
+                            <canvas id="chartHeSemestral"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 6. MOBILIDADE: 99 VS GASOLINA & SUPERVISORES (99 VS CONTELE - PRINT 3 - ITEMS 6 E 8) -->
+                    <div class="charts-grid two-cols mb-4">
+                        <!-- Custo Aplicativo 99 vs Gasolina (ITEM 6) -->
+                        <div class="card chart-container">
+                            <h3><i class="fa-solid fa-gas-pump" style="color: #eab308;"></i> Custo Mobilidade: App 99 vs Combustível / Gasolina</h3>
+                            <canvas id="chartMobilidade99vsGasolina"></canvas>
+                        </div>
+
+                        <!-- Tabela Supervisores: Deslocamento (99) vs Fiscalizações (Contele) (PRINT 3 - ITEM 8) -->
+                        <div class="card" style="padding: 24px; overflow-x: auto;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-trophy" style="color: #f59e0b;"></i> Supervisores: Deslocamento (99) vs Fiscalizações (Contele)
+                                    </h3>
+                                    <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Comparativo semestral de investimentos em transporte e volume de visitas em campo</p>
+                                </div>
+                            </div>
+                            <table class="pv-table" style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 12px; text-align: left;">Supervisor</th>
+                                        <th style="padding: 12px; text-align: right;">Gasto 99</th>
+                                        <th style="padding: 12px; text-align: right;">Visitas Contele</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-supervisores-semestral">
+                                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Carregando dados dos supervisores...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </section>
 
                 <!-- SECTION: Resumo Anual & KPIs -->
                 <section id="resumo-anual" class="dashboard-section">

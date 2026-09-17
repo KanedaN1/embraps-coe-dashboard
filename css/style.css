@@ -1809,3 +1809,99 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
     background: #475569;
 }
 
+/* ==========================================
+   ESTILOS: ABA RESUMO SEMESTRAL EXECUTIVO
+   ========================================== */
+
+.badge-semestral {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+.badge-semestral.badge-down {
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+}
+.badge-semestral.badge-up {
+    background-color: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+.dia-semana-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 8px;
+    border-radius: 10px;
+    background-color: var(--bg-body);
+    border: 1px solid var(--border-color);
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+.dia-semana-box:hover {
+    transform: translateY(-2px);
+}
+.dia-semana-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+.dia-semana-val {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--text-main);
+}
+.dia-semana-box.highlight {
+    border-color: rgba(239, 68, 68, 0.4);
+    background-color: rgba(239, 68, 68, 0.05);
+}
+.dia-semana-box.highlight .dia-semana-title,
+.dia-semana-box.highlight .dia-semana-val {
+    color: #ef4444 !important;
+}
+
+body.dark-mode .dia-semana-box {
+    background-color: #0b101d !important;
+    border-color: #1e293b !important;
+}
+body.dark-mode .dia-semana-box.highlight {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    border-color: rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Otimização para Impressão A4 Encadernável */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 1.2cm;
+    }
+    .sidebar, .mobile-topbar, .global-filters, .btn-theme-toggle, .print-btn, .btn-ai-assistant {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        break-inside: avoid;
+    }
+    .charts-grid {
+        gap: 16px !important;
+    }
+    #resumo-semestral {
+        display: block !important;
+    }
+}
+
+

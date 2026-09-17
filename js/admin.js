@@ -97,7 +97,7 @@ function showAdminPanel() {
 
 const formFields = [
     'faltas', 'demissoes', 'admissoes', 'punicoes', 'divergenciaFuncao', 'divergenciasResolvidas', 'pendenciasPonto',
-    'gastosFolgas', 'valeTransporte', 'custo99',
+    'gastosFolgas', 'valeTransporte', 'custo99', 'custoGasolina',
     'horasExtrasGeral', 'horasExtrasIntra', 'horasExtras100',
     'visitasContele', 'totalSupervisoresContele', 'totalClientes', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
     'movTotal',
@@ -266,6 +266,7 @@ async function loadMonthData() {
     renderTopClientesFaltasPerc();
     renderTopClientesDemissoes();
     renderTopClientesDemissoesPerc();
+    loadTop10FaltasSemestral();
 }
 
 // ---- Supervisores 99 ----
@@ -759,6 +760,7 @@ async function saveMonthData(e) {
 
     try {
         await saveData(year, month, payload);
+        await saveTop10FaltasSemestral();
         showAdminAlert(`Dados de ${month}/${year} salvos com sucesso! A Dashboard foi atualizada.`, 'success');
     } catch (err) {
         showAdminAlert(`Erro ao salvar dados: ${err.message}`, 'warning');
@@ -878,3 +880,65 @@ function showAdminAlert(message, type = 'info') {
         }
     }, 5000);
 }
+
+// ---- Top 10 Faltas Semestral ----
+let stateTop10FaltasSemestral = [];
+
+async function loadTop10FaltasSemestral() {
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const doc = await db.collection('configuracoes').doc('top10_faltas_semestral').get();
+            if (doc.exists && doc.data().lista) {
+                stateTop10FaltasSemestral = doc.data().lista;
+            }
+        } catch (e) {
+            console.log("Erro ao carregar top 10 faltas semestral:", e);
+        }
+    }
+    renderTop10FaltasSemestral();
+}
+
+function addTop10FaltaSemestral() {
+    stateTop10FaltasSemestral.push({ nome: '', faltas: 0, acao: '' });
+    renderTop10FaltasSemestral();
+}
+
+function removeTop10FaltaSemestral(i) {
+    stateTop10FaltasSemestral.splice(i, 1);
+    renderTop10FaltasSemestral();
+}
+
+function renderTop10FaltasSemestral() {
+    const c = document.getElementById('list-top10FaltasSemestral');
+    if (!c) return;
+    c.innerHTML = '';
+    if (stateTop10FaltasSemestral.length === 0) {
+        c.innerHTML = '<p class="text-muted" style="font-size: 0.85rem">Nenhum colaborador adicionado ao Top 10 Semestral.</p>';
+        return;
+    }
+    stateTop10FaltasSemestral.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="Nome do Colaborador" value="${item.nome || ''}" onchange="stateTop10FaltasSemestral[${index}].nome = this.value" style="flex: 2;">
+            <input type="number" placeholder="Qtd Faltas" value="${item.faltas || 0}" onchange="stateTop10FaltasSemestral[${index}].faltas = parseInt(this.value) || 0" style="flex: 1;">
+            <input type="text" placeholder="Ação Tomada (ex: Advertência Escrita)" value="${item.acao || ''}" onchange="stateTop10FaltasSemestral[${index}].acao = this.value" style="flex: 2;">
+            <button type="button" class="btn-icon" onclick="removeTop10FaltaSemestral(${index})" title="Remover"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        c.appendChild(div);
+    });
+}
+
+async function saveTop10FaltasSemestral() {
+    if (typeof db !== 'undefined' && db) {
+        try {
+            await db.collection('configuracoes').doc('top10_faltas_semestral').set({
+                lista: stateTop10FaltasSemestral,
+                updatedAt: new Date()
+            });
+        } catch (e) {
+            console.error("Erro ao salvar Top 10 faltas semestral:", e);
+        }
+    }
+}
+

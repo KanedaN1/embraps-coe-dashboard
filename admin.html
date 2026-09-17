@@ -238,6 +238,10 @@
                             <label>Custo Global App 99 (R$)</label>
                             <input type="number" id="custo99" min="0" step="0.01">
                         </div>
+                        <div class="form-group">
+                            <label>Custo Gasolina / Combustível (R$)</label>
+                            <input type="number" id="custoGasolina" min="0" step="0.01">
+                        </div>
                     </div>
 
                     <h4 style="margin-bottom: 10px; margin-top: 20px; color: var(--primary-color);">Folgas Trabalhadas Semanais (Portaria)</h4>
@@ -425,6 +429,17 @@
                     <h4 style="margin-bottom: 10px; color: var(--primary-color);">Usuários em Treinamento</h4>
                     <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addCoringaUsuario()">+ Adicionar Usuário</button>
                     <div id="list-coringasUsuarios" class="dynamic-list-container"></div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fa-solid fa-list-ol"></i> Top 10 Colaboradores com Faltas & Ações (Resumo Semestral)</h3>
+                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 10px;">
+                        Cadastre os colaboradores com maior número de faltas no semestre e as respectivas ações disciplinares/operacionais tomadas.
+                    </p>
+                    <button type="button" class="btn-admin mb-2" style="background-color: var(--accent-color)" onclick="addTop10FaltaSemestral()">+ Adicionar Colaborador</button>
+                    <div id="list-top10FaltasSemestral" class="dynamic-list-container">
+                        <!-- Itens renderizados no JS -->
+                    </div>
                 </div>
 
                 <div class="admin-actions">
