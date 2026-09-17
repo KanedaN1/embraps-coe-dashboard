@@ -12,7 +12,7 @@
     <meta property="og:type" content="website">
     
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Styles -->
@@ -87,7 +87,7 @@
                     <h1>Indicadores Operacionais</h1>
                     <p>Visão estratégica e análise de dados mensais</p>
                 </div>
-                <div class="global-filters">
+                <div class="global-filters" style="align-items: flex-end;">
                     <div class="filter-group">
                         <label for="filter-year">Ano</label>
                         <select id="filter-year">
@@ -111,6 +111,11 @@
                             <option value="11">Novembro</option>
                             <option value="12">Dezembro</option>
                         </select>
+                    </div>
+                    <div class="filter-group">
+                        <button id="btn-theme-toggle" class="btn-theme-toggle" type="button" aria-label="Alternar tema">
+                            <i class="fa-solid fa-sun" style="color: #f59e0b;"></i> <span>Modo Claro</span>
+                        </button>
                     </div>
                 </div>
             </header>

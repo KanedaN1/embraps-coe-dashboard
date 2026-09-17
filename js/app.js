@@ -17,7 +17,61 @@ const chartColors = {
     app99: '#facc15'
 };
 
+// ---- Gerenciamento de Tema (Modo Escuro / Claro) ----
+function applyTheme(theme) {
+    const themeBtn = document.getElementById('btn-theme-toggle');
+    if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+        if (themeBtn) {
+            themeBtn.innerHTML = '<i class="fa-solid fa-sun" style="color: #f59e0b;"></i> <span>Modo Claro</span>';
+        }
+        if (window.Chart) {
+            Chart.defaults.color = '#94a3b8';
+            if (Chart.defaults.plugins && Chart.defaults.plugins.datalabels) {
+                Chart.defaults.plugins.datalabels.color = '#f8fafc';
+            }
+        }
+    } else {
+        document.body.classList.remove('dark-mode');
+        if (themeBtn) {
+            themeBtn.innerHTML = '<i class="fa-solid fa-moon" style="color: #3b82f6;"></i> <span>Modo Escuro</span>';
+        }
+        if (window.Chart) {
+            Chart.defaults.color = '#64748b';
+            if (Chart.defaults.plugins && Chart.defaults.plugins.datalabels) {
+                Chart.defaults.plugins.datalabels.color = '#0f172a';
+            }
+        }
+    }
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark'; // Padrão dark conforme print
+    applyTheme(savedTheme);
+
+    const themeBtn = document.getElementById('btn-theme-toggle');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            const isDark = document.body.classList.contains('dark-mode');
+            const newTheme = isDark ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+            if (typeof updateDashboard === 'function') {
+                updateDashboard();
+            }
+        });
+    }
+}
+
+// Aplicar tema imediatamente para evitar FOUC
+const initialTheme = localStorage.getItem('theme') || 'dark';
+if (initialTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+
     // Definir data atual
     const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
     document.getElementById('filter-year').value = "2026";
@@ -100,8 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Config global Chart.js
-    Chart.defaults.font.family = "'Inter', sans-serif";
-    Chart.defaults.color = '#64748b';
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+    Chart.defaults.color = document.body.classList.contains('dark-mode') ? '#94a3b8' : '#64748b';
     Chart.defaults.plugins.tooltip.backgroundColor = '#0f172a';
     Chart.defaults.plugins.tooltip.padding = 10;
     Chart.defaults.maintainAspectRatio = false;
@@ -539,16 +593,21 @@ function renderBarChart(canvasId, labels, datasets, options = {}) {
     const isStacked = options.stacked || false;
     delete options.stacked;
 
+    const isDarkMode = document.body.classList.contains('dark-mode');
+
     const defaultOptions = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: datasets.length > 1,
-                position: 'bottom'
+                position: 'bottom',
+                labels: {
+                    color: isDarkMode ? '#cbd5e1' : '#475569'
+                }
             },
             datalabels: {
-                color: '#0f172a',
+                color: isDarkMode ? '#ffffff' : '#0f172a',
                 font: {
                     weight: 'bold',
                     size: 10
@@ -589,13 +648,19 @@ function renderBarChart(canvasId, labels, datasets, options = {}) {
             }
         },
         scales: chartType === 'pie' || chartType === 'doughnut' ? {} : {
-            y: { beginAtZero: true, stacked: isStacked },
+            y: { 
+                beginAtZero: true, 
+                stacked: isStacked,
+                ticks: { color: isDarkMode ? '#cbd5e1' : '#475569' },
+                grid: { color: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
+            },
             x: {
                 stacked: isStacked,
                 ticks: {
-                    color: '#475569',
+                    color: isDarkMode ? '#cbd5e1' : '#475569',
                     font: { weight: '600' }
-                }
+                },
+                grid: { color: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }
             }
         }
     };
