@@ -799,8 +799,10 @@ function renderCharts(yearlyData, monthLabels, currentData) {
     let app99Data = [];
     if (currentData && !currentData.isEmpty && currentData.supervisores99) {
         currentData.supervisores99.forEach(s => {
-            app99Labels.push(s.nome);
-            app99Data.push(s.gasto);
+            if (parseFloat(s.gasto) > 0) {
+                app99Labels.push(s.nome);
+                app99Data.push(s.gasto);
+            }
         });
     }
     renderBarChart('chartVgApp99Supervisor', app99Labels, [{
@@ -2080,10 +2082,10 @@ function renderTabelaSupervisoresSemestral(semesterData) {
         nome: k,
         gasto99: supMap[k].gasto99,
         visitas: supMap[k].visitas
-    })).sort((a, b) => b.gasto99 - a.gasto99);
+    })).filter(s => s.gasto99 > 0).sort((a, b) => b.gasto99 - a.gasto99);
 
     if (supList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum supervisor cadastrado no semestre.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum supervisor com gasto no 99 no semestre.</td></tr>';
         return;
     }
 
