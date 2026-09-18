@@ -424,7 +424,7 @@ async function renderChartSlide(container, slide, currentData, prevData) {
     if (chartType !== 'pie' && chartType !== 'doughnut') {
         config.data.datasets.forEach(ds => {
             if (chartType === 'bar' && !isHorizontal) {
-                if (slide.chartId.toLowerCase().includes('limpeza')) {
+                if (slide.chartId.toLowerCase().includes('limpeza') || slide.chartId.toLowerCase().includes('folgasportaria')) {
                     ds.backgroundColor = '#10b981';
                     ds.borderColor = '#10b981';
                 } else {

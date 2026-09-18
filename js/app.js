@@ -725,12 +725,12 @@ function renderCharts(yearlyData, monthLabels, currentData) {
     renderBarChart('chartVgFolgasPortaria', semanas, [{
         label: 'Portaria (R$)',
         data: gastosPortaria,
-        backgroundColor: 'rgba(56, 189, 248, 0.2)',
-        borderColor: chartColors.primary,
+        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+        borderColor: chartColors.success,
         borderWidth: 2,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: chartColors.primary
+        pointBackgroundColor: chartColors.success
     }], { isCurrency: true, type: 'line' });
 
     renderBarChart('chartVgFolgasLimpeza', semanas, [{
