@@ -1890,42 +1890,6 @@ function renderResumoSemestral(semesterData, semMonthLabels) {
     if (elDem) elDem.textContent = totalDemissoes;
     const elCusto99 = document.getElementById('sem-kpi-custo99');
     if (elCusto99) elCusto99.textContent = formatCurrency(totalCusto99);
-    const elContele = document.getElementById('sem-kpi-contele');
-    if (elContele) elContele.textContent = totalContele;
-
-    let healthScore = 100;
-    if (totalFaltas > 350) healthScore -= 15;
-    if (totalFaltas > 500) healthScore -= 20;
-    if (totalDemissoes > 150) healthScore -= 15;
-    if (totalCusto99 > 100000) healthScore -= 15;
-    healthScore = Math.max(35, Math.min(100, healthScore));
-
-    const healthValEl = document.getElementById('health-score-value');
-    if (healthValEl) healthValEl.textContent = `${healthScore}%`;
-    
-    const badgeEl = document.getElementById('health-status-badge');
-    if (badgeEl) {
-        if (healthScore >= 80) {
-            badgeEl.style.background = 'rgba(16, 185, 129, 0.1)';
-            badgeEl.style.color = '#10b981';
-            badgeEl.style.borderColor = 'rgba(16, 185, 129, 0.2)';
-            badgeEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Saúde Operacional Excelente';
-        } else if (healthScore >= 60) {
-            badgeEl.style.background = 'rgba(245, 158, 11, 0.1)';
-            badgeEl.style.color = '#f59e0b';
-            badgeEl.style.borderColor = 'rgba(245, 158, 11, 0.2)';
-            badgeEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Atenção Moderada';
-        } else {
-            badgeEl.style.background = 'rgba(239, 68, 68, 0.1)';
-            badgeEl.style.color = '#ef4444';
-            badgeEl.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-            badgeEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Atenção Operacional Requerida';
-        }
-    }
-
-    if (document.getElementById('chartHealthGauge')) {
-        renderHealthGauge('chartHealthGauge', healthScore);
-    }
 
     const totalRescisoes = demissoesMotivosTotal.empresa + demissoesMotivosTotal.pedido + demissoesMotivosTotal.experiencia + demissoesMotivosTotal.justa_causa;
     const raioXTotalEl = document.getElementById('raio-x-total');
@@ -1988,14 +1952,6 @@ function renderResumoSemestral(semesterData, semMonthLabels) {
         ]);
     }
 
-    const dataReservaTotal = semesterData.map(d => (parseInt(d.reservasDiurna)||0) + (parseInt(d.reservasNoturna)||0) + (parseInt(d.reservasLimpeza)||0));
-    if (document.getElementById('chartReservaVsFaltas')) {
-        renderBarChart('chartReservaVsFaltas', semMonthLabels, [
-            { label: 'Reserva Disponível', data: dataReservaTotal, backgroundColor: '#3b82f6', borderRadius: 4 },
-            { label: 'Total Faltas', data: dataFaltas, backgroundColor: '#ef4444', borderRadius: 4 }
-        ]);
-    }
-
     const dataFTs = getValues(semesterData, 'gastosFolgas');
     if (document.getElementById('chartFtMotivosSemestral')) {
         renderBarChart('chartFtMotivosSemestral', semMonthLabels, [
@@ -2014,47 +1970,8 @@ function renderResumoSemestral(semesterData, semMonthLabels) {
         ], { isCurrency: true, stacked: true });
     }
 
-    const dataCusto99 = getValues(semesterData, 'custo99');
-    const dataGasolina = semesterData.map(d => parseFloat(d.custoGasolina) || 0);
-    if (document.getElementById('chartMobilidade99vsGasolina')) {
-        renderBarChart('chartMobilidade99vsGasolina', semMonthLabels, [
-            { label: 'App 99 (R$)', data: dataCusto99, backgroundColor: '#eab308', borderRadius: 4 },
-            { label: 'Combustível / Gasolina (R$)', data: dataGasolina, backgroundColor: '#ec4899', borderRadius: 4 }
-        ], { isCurrency: true });
-    }
-
     renderTabelaSupervisoresSemestral(semesterData);
     renderTabelaTop10FaltasSemestral();
-}
-
-function renderHealthGauge(canvasId, score) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    if (charts[canvasId]) charts[canvasId].destroy();
-
-    charts[canvasId] = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [score, 100 - score],
-                backgroundColor: [
-                    score >= 80 ? '#10b981' : (score >= 60 ? '#f59e0b' : '#ef4444'),
-                    document.body.classList.contains('dark-mode') ? '#334155' : '#e2e8f0'
-                ],
-                borderWidth: 0,
-                circumference: 180,
-                rotation: 270
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '80%',
-            plugins: {
-                tooltip: { enabled: false },
-                datalabels: { display: false }
-            }
-        }
-    });
 }
 
 function renderTabelaSupervisoresSemestral(semesterData) {
