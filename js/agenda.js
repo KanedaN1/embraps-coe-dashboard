@@ -19,7 +19,7 @@ const AG_OPERATORS = {
     'victor':  'Victor Dourado',
     'walmir':  'Walmir da Luz',
     'rodrigo': 'Rodrigo Vilanova',
-    'nikolas': 'Nikolas Cardoso',
+    'matheus': 'Matheus Araujo',
     'thiago':  'Thiago Cavalcanti'
 };
 
@@ -30,7 +30,7 @@ const AG_PASSWORDS = {
     victor:   'victor123',
     walmir:   'walmir123',
     rodrigo:  'rodrigo123',
-    nikolas:  'nikolas123',
+    matheus:  'Matheus123',
     thiago:   'thiago123'
 };
 
@@ -491,21 +491,18 @@ async function ag_saveTask() {
     // Se for nova tarefa, verifica recorrência
     else {
         if (freq === 'semanal') {
-            // Cria para todas as semanas restantes do mês
-            const [_dp] = deadline.split('T');
-            const [_yr, _mo, _dy] = _dp.split('-').map(Number);
-            const startDay = _dy;
-            const lastDay = new Date(_yr, _mo, 0).getDate(); // último dia do mês
+            // Cria para todas as semanas restantes do ano
+            let newD = new Date(deadline);
+            const targetYear = newD.getFullYear();
+            let iter = 0;
             
-            for (let day = startDay; day <= lastDay; day += 7) {
-                const newD = new Date(deadline);
-                newD.setDate(day);
-                // Formatar no padrão local sem converter para UTC
+            while (newD.getFullYear() === targetYear) {
                 const mm = String(newD.getMonth() + 1).padStart(2, '0');
                 const dd = String(newD.getDate()).padStart(2, '0');
                 const hhmm = deadline.includes('T') ? deadline.split('T')[1] : '00:00';
                 const newDeadline = `${newD.getFullYear()}-${mm}-${dd}T${hhmm}`;
-                const finalId = (typeof db !== 'undefined' && db) ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now() + day;
+                
+                const finalId = (typeof db !== 'undefined' && db) ? db.collection('agenda_tarefas').doc().id : 'local_' + Date.now() + iter;
                 const payload = { 
                     ...baseData, 
                     id: finalId,
@@ -514,6 +511,9 @@ async function ag_saveTask() {
                     year: newD.getFullYear().toString()
                 };
                 await ag_persistTask(payload, finalId);
+                
+                newD.setDate(newD.getDate() + 7);
+                iter++;
             }
         } else if (freq === 'mensal') {
             // Cria para todos os meses restantes do ano
