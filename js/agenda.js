@@ -20,7 +20,9 @@ const AG_OPERATORS = {
     'walmir':  'Walmir da Luz',
     'rodrigo': 'Rodrigo Vilanova',
     'matheus': 'Matheus Araujo',
-    'thiago':  'Thiago Cavalcanti'
+    'thiago':  'Thiago Cavalcanti',
+    'isabela': 'Isabela de Oliveira',
+    'julia':   'Julia França'
 };
 
 const AG_PASSWORDS = {
@@ -31,7 +33,9 @@ const AG_PASSWORDS = {
     walmir:   'walmir123',
     rodrigo:  'rodrigo123',
     matheus:  'Matheus123',
-    thiago:   'thiago123'
+    thiago:   'thiago123',
+    isabela:  'isabela123',
+    julia:    'julia123'
 };
 
 /* ================================================================
