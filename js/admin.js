@@ -99,7 +99,7 @@ const formFields = [
     'faltas', 'demissoes', 'admissoes', 'punicoes', 'divergenciaFuncao', 'divergenciasResolvidas', 'pendenciasPonto',
     'gastosFolgas', 'valeTransporte', 'custo99', 'custoGasolina',
     'horasExtrasGeral', 'horasExtrasIntra', 'horasExtras100',
-    'visitasContele', 'totalSupervisoresContele', 'totalClientes', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
+    'visitasContele', 'totalSupervisoresContele', 'totalClientes', 'numeroPosVenda', 'reservasDiurna', 'reservasNoturna', 'reservasLimpeza',
     'movTotal',
     'folgasPortaria_1', 'folgasPortaria_2', 'folgasPortaria_3', 'folgasPortaria_4',
     'folgasLimpeza_1', 'folgasLimpeza_2', 'folgasLimpeza_3', 'folgasLimpeza_4',

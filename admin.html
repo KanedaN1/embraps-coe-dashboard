@@ -53,7 +53,7 @@
                 <ul>
                     <li><a href="index.html" class="nav-link"><i class="fa-solid fa-house"></i> Dashboard</a></li>
                     <li class="active"><a href="#" class="nav-link"><i class="fa-solid fa-database"></i> Gerenciar Dados</a></li>
-                    <li><a href="pos-venda.html" class="nav-link"><i class="fa-solid fa-headset"></i> Pós Venda Negativo</a></li>
+                    <li style="display: none;"><a href="pos-venda.html" class="nav-link"><i class="fa-solid fa-headset"></i> Pós Venda Negativo</a></li>
                     <li><a href="agenda.html" class="nav-link"><i class="fa-solid fa-calendar-check"></i> Agenda COE</a></li>
                     <li><a href="os.html" class="nav-link"><i class="fa-solid fa-file-contract"></i> Ordens de Serviço</a></li>
                     <li><a href="exp.html" class="nav-link"><i class="fa-solid fa-user-clock"></i> Controle de Experiência</a></li>
@@ -293,6 +293,10 @@
                         <div class="form-group">
                             <label>Total de Clientes (Mês)</label>
                             <input type="number" id="totalClientes" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Número de Pós Venda</label>
+                            <input type="number" id="numeroPosVenda" min="0">
                         </div>
                         <div class="form-group">
                             <label>Reservas Diurna</label>

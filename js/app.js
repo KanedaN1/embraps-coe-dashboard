@@ -1510,22 +1510,10 @@ async function renderPvSlaChart() {
     const displayEl = document.getElementById('display-total-clientes');
     if (displayEl) displayEl.textContent = totalClientes > 0 ? totalClientes : '—';
 
-    // --- Contar total de pos-vendas negativos do Firestore ou LS ---
+    // --- Contar total de pos-vendas negativos informado no Modo Admin ---
     let totalPv = 0;
-    try {
-        if (typeof useFirebase !== 'undefined' && useFirebase && typeof db !== 'undefined' && db) {
-            const snap = await db.collection('pos_venda_negativo').get();
-            totalPv = snap.docs.filter(doc => {
-                const d = doc.data();
-                return d.status !== 'concluido' && d.status !== 'concluida';
-            }).length;
-        } else {
-            const localPv = JSON.parse(localStorage.getItem('embraps_pv_offline') || '[]');
-            totalPv = localPv.filter(d => d.status !== 'concluido' && d.status !== 'concluida').length;
-        }
-    } catch (e) {
-        const localPv = JSON.parse(localStorage.getItem('embraps_pv_offline') || '[]');
-        totalPv = localPv.filter(d => d.status !== 'concluido' && d.status !== 'concluida').length;
+    if (window.currentSelectedData && window.currentSelectedData.numeroPosVenda !== undefined) {
+        totalPv = parseInt(window.currentSelectedData.numeroPosVenda, 10) || 0;
     }
 
     // --- Calcular SLA ---
@@ -1559,7 +1547,7 @@ async function renderPvSlaChart() {
                 <div>
                     <div style="font-size:.78rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:.04em;">Pós Vendas Negativos</div>
                     <div style="font-size:1.6rem; font-weight:800; color:#dc2626; line-height:1.1;">${totalPv.toLocaleString('pt-BR')}</div>
-                    <div style="font-size:.72rem; color:#64748b; margin-top:2px;">casos registrados na aba Pós Venda</div>
+                    <div style="font-size:.72rem; color:#64748b; margin-top:2px;">cadastrados no Modo Admin</div>
                 </div>
                 <i class="fa-solid fa-headset" style="font-size:1.8rem; color:#fca5a5; opacity:.7;"></i>
             </div>
