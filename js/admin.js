@@ -197,9 +197,9 @@ async function loadMonthData() {
             }
         }
 
-        renderDailyGrid('faltas-diurna', data.faltasDiurna || {});
-        renderDailyGrid('faltas-noturna', data.faltasNoturna || {});
-        renderDailyGrid('faltas-limpeza', data.faltasLimpeza || {});
+        renderDailyGrid('faltas-diurna', data.faltasDiurna || {}, data.faltasDiurnaDetalhes || {});
+        renderDailyGrid('faltas-noturna', data.faltasNoturna || {}, data.faltasNoturnaDetalhes || {});
+        renderDailyGrid('faltas-limpeza', data.faltasLimpeza || {}, data.faltasLimpezaDetalhes || {});
         renderDemissoesGridTabela(data.demissoesMotivosDiarios || {});
 
         showAdminAlert(`Dados carregados: ${month}/${year}`, 'success');
@@ -239,9 +239,9 @@ async function loadMonthData() {
             if (i) i.value = 0;
         });
 
-        renderDailyGrid('faltas-diurna', {});
-        renderDailyGrid('faltas-noturna', {});
-        renderDailyGrid('faltas-limpeza', {});
+        renderDailyGrid('faltas-diurna', {}, {});
+        renderDailyGrid('faltas-noturna', {}, {});
+        renderDailyGrid('faltas-limpeza', {}, {});
         renderDemissoesGridTabela({});
 
         showAdminAlert(`Nenhum dado encontrado para ${month}/${year}. Preencha para criar.`, 'warning');
@@ -595,17 +595,39 @@ function renderCoringasUsuarios() {
         c.appendChild(div);
     });
 }
-function renderDailyGrid(type, dataObj) {
+function renderDailyGrid(type, dataObj = {}, detalhesObj = {}) {
     const container = document.getElementById(`grid-${type}`);
     container.innerHTML = '';
 
     for (let i = 1; i <= 31; i++) {
-        const val = dataObj[i] || 0;
+        let valPostos = 0;
+        let valReserva = 0;
+
+        if (detalhesObj && detalhesObj[i] && typeof detalhesObj[i] === 'object') {
+            valPostos = parseInt(detalhesObj[i].postos, 10) || 0;
+            valReserva = parseInt(detalhesObj[i].reserva, 10) || 0;
+        } else if (dataObj && typeof dataObj[i] === 'object' && dataObj[i] !== null) {
+            valPostos = parseInt(dataObj[i].postos, 10) || 0;
+            valReserva = parseInt(dataObj[i].reserva, 10) || 0;
+        } else {
+            valPostos = parseInt(dataObj[i], 10) || 0;
+            valReserva = 0;
+        }
+
         const div = document.createElement('div');
-        div.className = 'daily-grid-item';
+        div.className = 'daily-grid-item daily-grid-item-dual';
         div.innerHTML = `
-            <label>Dia ${i}</label>
-            <input type="number" min="0" class="input-${type}" data-day="${i}" value="${val}" onchange="recalcTotals()">
+            <label class="daily-grid-day-title">Dia ${i}</label>
+            <div class="daily-dual-inputs">
+                <div class="daily-sub-input">
+                    <span>Postos</span>
+                    <input type="number" min="0" class="input-${type} input-${type}-postos" data-day="${i}" value="${valPostos}" onchange="recalcTotals()" title="Dia ${i} - Faltas em Postos">
+                </div>
+                <div class="daily-sub-input">
+                    <span>Reserva</span>
+                    <input type="number" min="0" class="input-${type} input-${type}-reserva" data-day="${i}" value="${valReserva}" onchange="recalcTotals()" title="Dia ${i} - Faltas na Reserva">
+                </div>
+            </div>
         `;
         container.appendChild(div);
     }
@@ -675,15 +697,28 @@ async function saveMonthData(e) {
     });
 
     const getFaltasGrid = (type) => {
-        const obj = {};
-        document.querySelectorAll(`.input-${type}`).forEach(input => {
-            obj[input.dataset.day] = parseInt(input.value) || 0;
-        });
-        return obj;
+        const totals = {};
+        const detalhes = {};
+        for (let i = 1; i <= 31; i++) {
+            const pEl = document.querySelector(`.input-${type}-postos[data-day="${i}"]`);
+            const rEl = document.querySelector(`.input-${type}-reserva[data-day="${i}"]`);
+            const postos = pEl ? (parseInt(pEl.value, 10) || 0) : 0;
+            const reserva = rEl ? (parseInt(rEl.value, 10) || 0) : 0;
+            totals[i] = postos + reserva;
+            detalhes[i] = { postos, reserva };
+        }
+        return { totals, detalhes };
     };
-    payload.faltasDiurna = getFaltasGrid('faltas-diurna');
-    payload.faltasNoturna = getFaltasGrid('faltas-noturna');
-    payload.faltasLimpeza = getFaltasGrid('faltas-limpeza');
+    const diurnaData = getFaltasGrid('faltas-diurna');
+    const noturnaData = getFaltasGrid('faltas-noturna');
+    const limpezaData = getFaltasGrid('faltas-limpeza');
+
+    payload.faltasDiurna = diurnaData.totals;
+    payload.faltasDiurnaDetalhes = diurnaData.detalhes;
+    payload.faltasNoturna = noturnaData.totals;
+    payload.faltasNoturnaDetalhes = noturnaData.detalhes;
+    payload.faltasLimpeza = limpezaData.totals;
+    payload.faltasLimpezaDetalhes = limpezaData.detalhes;
 
     const demissoesMotivosDiarios = {};
     const demissoesDiarias = {};

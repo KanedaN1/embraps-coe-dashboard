@@ -286,6 +286,21 @@
 
                 <!-- CALENDARS SECTIONS -->
                 <section id="cal-faltas" class="dashboard-section mt-5">
+                    <div class="cal-faltas-filter-bar mb-4">
+                        <span class="cal-filter-label"><i class="fa-solid fa-filter"></i> Filtrar visualização dos calendários:</span>
+                        <div class="cal-filter-buttons">
+                            <button type="button" class="cal-filter-btn active" data-filter="todos" onclick="setFaltasCalendarFilter('todos')">
+                                <i class="fa-solid fa-layer-group"></i> Todas (Total)
+                            </button>
+                            <button type="button" class="cal-filter-btn" data-filter="postos" onclick="setFaltasCalendarFilter('postos')">
+                                <i class="fa-solid fa-building-shield"></i> Faltas em Postos
+                            </button>
+                            <button type="button" class="cal-filter-btn" data-filter="reserva" onclick="setFaltasCalendarFilter('reserva')">
+                                <i class="fa-solid fa-user-clock"></i> Faltas na Reserva
+                            </button>
+                        </div>
+                    </div>
+
                     <h2 class="section-title"><i class="fa-regular fa-calendar-xmark"></i> Calendário Mensal de Faltas (Portaria Diurna)</h2>
                     <div class="kpi-cards mb-4">
                         <div class="card kpi-card">
@@ -306,7 +321,14 @@
                         <div id="cal-faltas-diurna-semanas" style="display: flex; gap: 15px; flex-wrap: wrap;"></div>
                     </div>
                     <div class="card chart-container" style="height: auto;">
-                        <h3 style="margin-bottom: 20px;">Visão do Mês</h3>
+                        <div class="cal-month-header">
+                            <h3 style="margin: 0;">Visão do Mês</h3>
+                            <div class="cal-filter-buttons">
+                                <button type="button" class="cal-filter-btn active" data-filter="todos" onclick="setFaltasCalendarFilter('todos')">Todas</button>
+                                <button type="button" class="cal-filter-btn" data-filter="postos" onclick="setFaltasCalendarFilter('postos')">Faltas em Postos</button>
+                                <button type="button" class="cal-filter-btn" data-filter="reserva" onclick="setFaltasCalendarFilter('reserva')">Faltas na Reserva</button>
+                            </div>
+                        </div>
                         <div id="cal-faltas-diurna-grid" class="cal-grid-month"></div>
                     </div>
 
@@ -331,7 +353,14 @@
                         <div id="cal-faltas-noturna-semanas" style="display: flex; gap: 15px; flex-wrap: wrap;"></div>
                     </div>
                     <div class="card chart-container" style="height: auto;">
-                        <h3 style="margin-bottom: 20px;">Visão do Mês</h3>
+                        <div class="cal-month-header">
+                            <h3 style="margin: 0;">Visão do Mês</h3>
+                            <div class="cal-filter-buttons">
+                                <button type="button" class="cal-filter-btn active" data-filter="todos" onclick="setFaltasCalendarFilter('todos')">Todas</button>
+                                <button type="button" class="cal-filter-btn" data-filter="postos" onclick="setFaltasCalendarFilter('postos')">Faltas em Postos</button>
+                                <button type="button" class="cal-filter-btn" data-filter="reserva" onclick="setFaltasCalendarFilter('reserva')">Faltas na Reserva</button>
+                            </div>
+                        </div>
                         <div id="cal-faltas-noturna-grid" class="cal-grid-month"></div>
                     </div>
                 </div>
@@ -357,7 +386,14 @@
                         <div id="cal-faltas-limpeza-semanas" style="display: flex; gap: 15px; flex-wrap: wrap;"></div>
                     </div>
                     <div class="card chart-container" style="height: auto;">
-                        <h3 style="margin-bottom: 20px;">Visão do Mês</h3>
+                        <div class="cal-month-header">
+                            <h3 style="margin: 0;">Visão do Mês</h3>
+                            <div class="cal-filter-buttons">
+                                <button type="button" class="cal-filter-btn active" data-filter="todos" onclick="setFaltasCalendarFilter('todos')">Todas</button>
+                                <button type="button" class="cal-filter-btn" data-filter="postos" onclick="setFaltasCalendarFilter('postos')">Faltas em Postos</button>
+                                <button type="button" class="cal-filter-btn" data-filter="reserva" onclick="setFaltasCalendarFilter('reserva')">Faltas na Reserva</button>
+                            </div>
+                        </div>
                         <div id="cal-faltas-limpeza-grid" class="cal-grid-month"></div>
                     </div>
                 </div>

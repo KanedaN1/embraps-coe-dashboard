@@ -376,14 +376,8 @@ async function updateDashboard() {
     renderReservaOperacional(currentData);
 
     // Render Calendars
-    const faltasDiurna = (currentData && currentData.faltasDiurna) ? currentData.faltasDiurna : {};
-    const faltasNoturna = (currentData && currentData.faltasNoturna) ? currentData.faltasNoturna : {};
-    const faltasLimpeza = (currentData && currentData.faltasLimpeza) ? currentData.faltasLimpeza : {};
+    renderAllFaltasCalendars(currentData, year, month);
     const demissoesDiarias = (currentData && currentData.demissoesDiarias) ? currentData.demissoesDiarias : {};
-
-    renderCalendar('cal-faltas-diurna', faltasDiurna, year, month, 'Faltas');
-    renderCalendar('cal-faltas-noturna', faltasNoturna, year, month, 'Faltas');
-    renderCalendar('cal-faltas-limpeza', faltasLimpeza, year, month, 'Faltas');
     renderCalendar('cal-demissoes', demissoesDiarias, year, month, 'Demissões');
 
     // Visão Geral - Coringas
@@ -1215,9 +1209,70 @@ function renderContelePodium(currentData) {
     if (currentData.podioNoturno) renderPodio(currentData.podioNoturno, containerNoite);
 }
 
-function renderCalendar(idPrefix, dataObj, yearStr, monthStr, typeName) {
+let currentFaltasCalFilter = 'todos'; // 'todos' | 'postos' | 'reserva'
+
+window.setFaltasCalendarFilter = function(filterType) {
+    // Se clicar novamente no mesmo filtro ativo (postos/reserva), volta para 'todos'
+    if (currentFaltasCalFilter === filterType && filterType !== 'todos') {
+        currentFaltasCalFilter = 'todos';
+    } else {
+        currentFaltasCalFilter = filterType;
+    }
+
+    document.querySelectorAll('.cal-filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-filter') === currentFaltasCalFilter) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    const year = document.getElementById('filter-year')?.value || '2026';
+    const month = document.getElementById('filter-month')?.value || '01';
+    renderAllFaltasCalendars(window.currentSelectedData || {}, year, month);
+};
+
+function renderAllFaltasCalendars(currentData, year, month) {
+    const faltasDiurna = (currentData && currentData.faltasDiurna) ? currentData.faltasDiurna : {};
+    const faltasNoturna = (currentData && currentData.faltasNoturna) ? currentData.faltasNoturna : {};
+    const faltasLimpeza = (currentData && currentData.faltasLimpeza) ? currentData.faltasLimpeza : {};
+
+    const detDiurna = (currentData && currentData.faltasDiurnaDetalhes) ? currentData.faltasDiurnaDetalhes : {};
+    const detNoturna = (currentData && currentData.faltasNoturnaDetalhes) ? currentData.faltasNoturnaDetalhes : {};
+    const detLimpeza = (currentData && currentData.faltasLimpezaDetalhes) ? currentData.faltasLimpezaDetalhes : {};
+
+    renderCalendar('cal-faltas-diurna', faltasDiurna, year, month, 'Faltas', detDiurna);
+    renderCalendar('cal-faltas-noturna', faltasNoturna, year, month, 'Faltas', detNoturna);
+    renderCalendar('cal-faltas-limpeza', faltasLimpeza, year, month, 'Faltas', detLimpeza);
+}
+
+function getFaltasDayBreakdown(dataObj, detalhesObj, day) {
+    let postos = 0;
+    let reserva = 0;
+
+    if (detalhesObj && detalhesObj[day] && typeof detalhesObj[day] === 'object') {
+        postos = parseInt(detalhesObj[day].postos, 10) || 0;
+        reserva = parseInt(detalhesObj[day].reserva, 10) || 0;
+    } else if (dataObj && typeof dataObj[day] === 'object' && dataObj[day] !== null) {
+        postos = parseInt(dataObj[day].postos, 10) || 0;
+        reserva = parseInt(dataObj[day].reserva, 10) || 0;
+    } else {
+        postos = parseInt(dataObj[day], 10) || 0;
+        reserva = 0;
+    }
+
+    const total = postos + reserva;
+    let displayVal = total;
+    if (currentFaltasCalFilter === 'postos') displayVal = postos;
+    else if (currentFaltasCalFilter === 'reserva') displayVal = reserva;
+
+    return { postos, reserva, total, displayVal };
+}
+
+function renderCalendar(idPrefix, dataObj, yearStr, monthStr, typeName, detalhesObj = null) {
     const year = parseInt(yearStr);
     const month = parseInt(monthStr) - 1; // 0-11
+    const isFaltas = (typeName === 'Faltas');
     
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayIndex = new Date(year, month, 1).getDay(); // 0 (Dom) a 6 (Sab)
@@ -1228,7 +1283,9 @@ function renderCalendar(idPrefix, dataObj, yearStr, monthStr, typeName) {
     // Calcular totais e heat threshold
     let maxDayVal = 1;
     for(let i = 1; i <= daysInMonth; i++) {
-        const val = dataObj[i] || 0;
+        const val = isFaltas
+            ? getFaltasDayBreakdown(dataObj, detalhesObj, i).displayVal
+            : (parseInt(dataObj[i], 10) || 0);
         total += val;
         if(val > maxDayVal) maxDayVal = val;
         
@@ -1278,7 +1335,28 @@ function renderCalendar(idPrefix, dataObj, yearStr, monthStr, typeName) {
     
     // Dias reais
     for(let i = 1; i <= daysInMonth; i++) {
-        const val = dataObj[i] || 0;
+        let val = 0;
+        let tooltipHtml = '';
+
+        if (isFaltas) {
+            const breakdown = getFaltasDayBreakdown(dataObj, detalhesObj, i);
+            val = breakdown.displayVal;
+            tooltipHtml = `
+                <div class="cal-day-tooltip">
+                    <div class="cal-tooltip-header">Dia ${i} — Total: ${breakdown.total}</div>
+                    <div class="cal-tooltip-row">
+                        <span><i class="fa-solid fa-building-shield" style="color:#60a5fa;"></i> Faltas em Postos:</span>
+                        <strong>${breakdown.postos}</strong>
+                    </div>
+                    <div class="cal-tooltip-row">
+                        <span><i class="fa-solid fa-user-clock" style="color:#fbbf24;"></i> Faltas na Reserva:</span>
+                        <strong>${breakdown.reserva}</strong>
+                    </div>
+                </div>
+            `;
+        } else {
+            val = parseInt(dataObj[i], 10) || 0;
+        }
         
         // Calcular classe de calor (0 a 5)
         let heatClass = 'heat-0';
@@ -1293,6 +1371,7 @@ function renderCalendar(idPrefix, dataObj, yearStr, monthStr, typeName) {
             <div class="cal-day-cell ${heatClass}">
                 <span class="cal-day-num">${i}</span>
                 <span class="cal-day-val">${val}</span>
+                ${tooltipHtml}
             </div>
         `;
     }

@@ -807,7 +807,114 @@ body.tv-mode .main-content {
     font-size: 0.85rem;
 }
 
+.daily-grid-item-dual {
+    padding: 8px 6px;
+}
+
+.daily-grid-day-title {
+    font-size: 0.75rem !important;
+    font-weight: 700;
+    color: var(--primary-color) !important;
+    margin-bottom: 5px !important;
+}
+
+.daily-dual-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    width: 100%;
+}
+
+.daily-sub-input {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.daily-sub-input span {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+
 /* Visual Calendar (Dashboard) */
+.cal-faltas-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: var(--bg-card, #ffffff);
+    padding: 14px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cal-filter-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cal-month-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.cal-filter-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cal-filter-btn {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.cal-filter-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.cal-filter-btn.active {
+    background: #1e3a8a;
+    color: #ffffff;
+    border-color: #1e3a8a;
+    box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25);
+}
+
+body.dark-mode .cal-filter-btn {
+    background: #1e293b;
+    color: #cbd5e1;
+    border-color: #334155;
+}
+
+body.dark-mode .cal-filter-btn.active {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #3b82f6;
+}
 .cal-grid-month {
     display: grid; 
     grid-template-columns: repeat(7, 1fr); 
@@ -835,6 +942,7 @@ body.tv-mode .main-content {
 }
 
 .cal-day-cell {
+    position: relative;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 10px;
@@ -845,13 +953,74 @@ body.tv-mode .main-content {
     transition: transform 0.2s;
 }
 
+.cal-day-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 10px 12px;
+    border-radius: 8px;
+    min-width: 175px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 100;
+    text-align: left;
+    font-size: 0.78rem;
+}
+
+.cal-day-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #0f172a transparent transparent transparent;
+}
+
+.cal-day-cell:hover .cal-day-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.cal-tooltip-header {
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: #93c5fd;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 5px;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.cal-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.cal-tooltip-row strong {
+    font-weight: 800;
+    color: #ffffff;
+}
+
 /* Print Styles */
 @media print {
     body {
         background-color: white;
         color: black;
     }
-    .sidebar, .mobile-topbar, .top-header, .btn-primary.print-btn, .action-btn, #pv-modal, #modal-os {
+    .sidebar, .mobile-topbar, .top-header, .btn-primary.print-btn, .action-btn, #pv-modal, #modal-os, .cal-day-tooltip, .cal-faltas-filter-bar, .cal-filter-buttons {
         display: none !important;
     }
     .main-content {
