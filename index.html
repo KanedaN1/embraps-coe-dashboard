@@ -851,29 +851,6 @@
                         </div>
                     </div>
 
-                    <!-- 4. TOP 10 FALTAS COM AÇÕES TOMADAS -->
-                    <div class="card mb-4" style="padding: 24px; overflow-x: auto;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-list-ol" style="color: #ef4444;"></i> Top 10 Colaboradores com Faltas (Semestre)
-                            </h3>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);">Ações Disciplinares / Operacionais</span>
-                        </div>
-                        <table class="pv-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-                            <thead>
-                                <tr>
-                                    <th style="padding: 10px; text-align: left;">#</th>
-                                    <th style="padding: 10px; text-align: left;">Colaborador</th>
-                                    <th style="padding: 10px; text-align: center;">Qtd Faltas</th>
-                                    <th style="padding: 10px; text-align: left;">Ação Tomada</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-top10-faltas-semestral">
-                                <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum colaborador cadastrado. Adicione via Modo Admin.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                     <!-- 5. FTs MENSAIS + MOTIVOS & HORAS EXTRAS SEMESTRAIS (ITEMS 4 E 5) -->
                     <div class="charts-grid two-cols mb-4">
                         <!-- FTs e Motivos em R$ -->
@@ -1044,18 +1021,6 @@
                     <div class="card chart-container mb-4" style="height: 320px;">
                         <h3><i class="fa-solid fa-file-contract"></i> Ordens de Servi&ccedil;o por M&ecirc;s (Ano)</h3>
                         <canvas id="chartAnualOS"></canvas>
-                    </div>
-
-                    <!-- Gestão de Vagas Anual -->
-                    <div class="charts-grid two-cols mb-4">
-                        <div class="card chart-container" style="height: 320px;">
-                            <h3><i class="fa-solid fa-users"></i> Top Coordenadores (Movimentações)</h3>
-                            <canvas id="chartVagasCoord"></canvas>
-                        </div>
-                        <div class="card chart-container" style="height: 320px;">
-                            <h3><i class="fa-solid fa-user-tie"></i> Top Supervisores (Movimentações)</h3>
-                            <canvas id="chartVagasSuper"></canvas>
-                        </div>
                     </div>
 
                     <!-- Ranking Top Ofensores -->
