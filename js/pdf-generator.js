@@ -241,8 +241,10 @@ async function generateMonthlyPDF() {
             { title: "Visitas por Supervisor (Mês)", type: "chart", chartId: "chartVgConteleSupervisor" },
             { title: "Divergências de Função", type: "composite", contentId: "vg-divergencia-pdf" },
             { title: "Faltas Mensais (Anual)", type: "composite", contentId: "vg-faltas-pdf" },
-            { title: "Top 10 Clientes com Mais Faltas (Quantitativo)", type: "chart", chartId: "chartVgTopClientes" },
-            { title: "Top 10 Clientes com Mais Faltas (Percentual)", type: "chart", chartId: "chartVgTopClientesPerc" },
+            ...(!hideFtsSemanais ? [
+                { title: "Top 10 Clientes com Mais Faltas (Quantitativo)", type: "chart", chartId: "chartVgTopClientes" },
+                { title: "Top 10 Clientes com Mais Faltas (Percentual)", type: "chart", chartId: "chartVgTopClientesPerc" }
+            ] : []),
             { title: "Reserva Operacional - Visão Geral", type: "reserva_geral" },
             { title: "Motivos das Movimentações", type: "chart", chartId: "chartMovMotivos", showMovBadge: true },
             { title: "Reservas Movimentadas por Supervisor", type: "chart", chartId: "chartMovSupervisores", showMovBadge: true },

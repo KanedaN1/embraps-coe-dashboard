@@ -925,34 +925,41 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         borderRadius: 4
     }]);
 
-    // Top Clientes
-    let topClientesLabels = [];
-    let topClientesData = [];
-    if (currentData && !currentData.isEmpty && currentData.topClientesFaltas) {
-        const sorted = currentData.topClientesFaltas.sort((a,b) => b.faltas - a.faltas);
-        topClientesLabels = sorted.map(c => c.nome);
-        topClientesData = sorted.map(c => c.faltas);
+    // Top Clientes (ocultar a partir de outubro)
+    const topFaltasContainer = document.getElementById('container-top-faltas');
+    if (topFaltasContainer) {
+        topFaltasContainer.style.display = hideFtsSemanais ? 'none' : '';
     }
-    renderBarChart('chartVgTopClientes', topClientesLabels, [{
-        label: 'Faltas',
-        data: topClientesData,
-        backgroundColor: chartColors.secondary,
-        borderRadius: 4
-    }], { indexAxis: 'y' });
 
-    let topFaltasPercLabels = [];
-    let topFaltasPercData = [];
-    if (currentData && !currentData.isEmpty && currentData.topClientesFaltasPerc) {
-        const sorted = currentData.topClientesFaltasPerc.sort((a,b) => b.percentual - a.percentual);
-        topFaltasPercLabels = sorted.map(c => c.nome);
-        topFaltasPercData = sorted.map(c => c.percentual);
+    if (!hideFtsSemanais) {
+        let topClientesLabels = [];
+        let topClientesData = [];
+        if (currentData && !currentData.isEmpty && currentData.topClientesFaltas) {
+            const sorted = currentData.topClientesFaltas.sort((a,b) => b.faltas - a.faltas);
+            topClientesLabels = sorted.map(c => c.nome);
+            topClientesData = sorted.map(c => c.faltas);
+        }
+        renderBarChart('chartVgTopClientes', topClientesLabels, [{
+            label: 'Faltas',
+            data: topClientesData,
+            backgroundColor: chartColors.secondary,
+            borderRadius: 4
+        }], { indexAxis: 'y' });
+
+        let topFaltasPercLabels = [];
+        let topFaltasPercData = [];
+        if (currentData && !currentData.isEmpty && currentData.topClientesFaltasPerc) {
+            const sorted = currentData.topClientesFaltasPerc.sort((a,b) => b.percentual - a.percentual);
+            topFaltasPercLabels = sorted.map(c => c.nome);
+            topFaltasPercData = sorted.map(c => c.percentual);
+        }
+        renderBarChart('chartVgTopClientesPerc', topFaltasPercLabels, [{
+            label: 'Faltas (%)',
+            data: topFaltasPercData,
+            backgroundColor: chartColors.info,
+            borderRadius: 4
+        }], { indexAxis: 'y', isPercentage: true });
     }
-    renderBarChart('chartVgTopClientesPerc', topFaltasPercLabels, [{
-        label: 'Faltas (%)',
-        data: topFaltasPercData,
-        backgroundColor: chartColors.info,
-        borderRadius: 4
-    }], { indexAxis: 'y', isPercentage: true });
 
     // Demissões
     renderBarChart('chartVgDemissoes', monthLabels, [{
@@ -1004,35 +1011,42 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         backgroundColor: [chartColors.primary, chartColors.info, chartColors.warning, chartColors.danger]
     }], { type: 'doughnut', plugins: { legend: { display: true, position: window.innerWidth < 768 ? 'bottom' : 'right' } } });
 
-    // Top Demissoes (Qtd)
-    let topDemissoesLabels = [];
-    let topDemissoesData = [];
-    if (currentData && !currentData.isEmpty && currentData.topClientesDemissoes) {
-        const sorted = currentData.topClientesDemissoes.sort((a,b) => b.demissoes - a.demissoes);
-        topDemissoesLabels = sorted.map(c => c.nome);
-        topDemissoesData = sorted.map(c => c.demissoes);
-    }
-    renderBarChart('chartVgTopDemissoes', topDemissoesLabels, [{
-        label: 'Demissões',
-        data: topDemissoesData,
-        backgroundColor: chartColors.danger,
-        borderRadius: 4
-    }], { indexAxis: 'y' });
+    // Top Demissoes (Qtd e %) — ocultar a partir de outubro
+    const cardTopDemQtd = document.getElementById('card-top-demissoes-qtd');
+    const containerTopDemPerc = document.getElementById('container-top-demissoes-perc');
+    if (cardTopDemQtd) cardTopDemQtd.style.display = hideFtsSemanais ? 'none' : '';
+    if (containerTopDemPerc) containerTopDemPerc.style.display = hideFtsSemanais ? 'none' : '';
 
-    // Top Demissoes (%)
-    let topDemissoesPercLabels = [];
-    let topDemissoesPercData = [];
-    if (currentData && !currentData.isEmpty && currentData.topClientesDemissoesPerc) {
-        const sorted = currentData.topClientesDemissoesPerc.sort((a,b) => b.percentual - a.percentual);
-        topDemissoesPercLabels = sorted.map(c => c.nome);
-        topDemissoesPercData = sorted.map(c => c.percentual);
+    if (!hideFtsSemanais) {
+        let topDemissoesLabels = [];
+        let topDemissoesData = [];
+        if (currentData && !currentData.isEmpty && currentData.topClientesDemissoes) {
+            const sorted = currentData.topClientesDemissoes.sort((a,b) => b.demissoes - a.demissoes);
+            topDemissoesLabels = sorted.map(c => c.nome);
+            topDemissoesData = sorted.map(c => c.demissoes);
+        }
+        renderBarChart('chartVgTopDemissoes', topDemissoesLabels, [{
+            label: 'Demissões',
+            data: topDemissoesData,
+            backgroundColor: chartColors.danger,
+            borderRadius: 4
+        }], { indexAxis: 'y' });
+
+        // Top Demissoes (%)
+        let topDemissoesPercLabels = [];
+        let topDemissoesPercData = [];
+        if (currentData && !currentData.isEmpty && currentData.topClientesDemissoesPerc) {
+            const sorted = currentData.topClientesDemissoesPerc.sort((a,b) => b.percentual - a.percentual);
+            topDemissoesPercLabels = sorted.map(c => c.nome);
+            topDemissoesPercData = sorted.map(c => c.percentual);
+        }
+        renderBarChart('chartVgTopDemissoesPerc', topDemissoesPercLabels, [{
+            label: 'Demissões (%)',
+            data: topDemissoesPercData,
+            backgroundColor: chartColors.warning,
+            borderRadius: 4
+        }], { indexAxis: 'y', isPercentage: true });
     }
-    renderBarChart('chartVgTopDemissoesPerc', topDemissoesPercLabels, [{
-        label: 'Demissões (%)',
-        data: topDemissoesPercData,
-        backgroundColor: chartColors.warning,
-        borderRadius: 4
-    }], { indexAxis: 'y', isPercentage: true });
 
     // Movimentação Operacional
     if (currentData && !currentData.isEmpty) {

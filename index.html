@@ -66,7 +66,7 @@
                     <li><a href="#vg-agenda-sla" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Indicadores Agenda</a></li>
                     <li style="display: none;"><a href="#vg-pos-venda" class="nav-link skip-tv"><i class="fa-solid fa-headset"></i> Pós Venda Negativo</a></li>
                     <li><a href="agenda.html" class="nav-link skip-tv"><i class="fa-solid fa-calendar-check"></i> Agenda COE</a></li>
-                    <li><a href="troca-funcao.html" class="nav-link skip-tv"><i class="fa-solid fa-people-arrows"></i> Troca de Função</a></li>
+                    <li style="display: none;"><a href="troca-funcao.html" class="nav-link skip-tv"><i class="fa-solid fa-people-arrows"></i> Troca de Função</a></li>
                     <li><a href="os.html" class="nav-link skip-tv"><i class="fa-solid fa-file-contract"></i> Ordens de Serviço</a></li>
                     <li><a href="exp.html" class="nav-link skip-tv"><i class="fa-solid fa-user-clock"></i> Controle de Experiência</a></li>
                     <li><a href="vagas.html" class="nav-link skip-tv"><i class="fa-solid fa-briefcase"></i> Gestão de Vagas</a></li>
@@ -634,7 +634,7 @@
                                 <h3>Faltas Mensais (Anual)</h3>
                                 <canvas id="chartVgFaltas"></canvas>
                             </div>
-                        <div class="charts-grid two-cols mt-4">
+                        <div id="container-top-faltas" class="charts-grid two-cols mt-4">
                             <div class="card chart-container">
                                 <h3>Top 10 Clientes com Mais Faltas (Quantitativo)</h3>
                                 <canvas id="chartVgTopClientes"></canvas>
@@ -664,13 +664,13 @@
                                 <h3>Motivos de Demissão (Mês Selecionado)</h3>
                                 <canvas id="chartVgDemissoesMotivos"></canvas>
                             </div>
-                            <div class="card chart-container">
+                            <div id="card-top-demissoes-qtd" class="card chart-container">
                                 <h3>Top 10 Clientes com Mais Demissões (Quantitativo)</h3>
                                 <canvas id="chartVgTopDemissoes"></canvas>
                             </div>
                         </div>
 
-                        <div class="charts-grid two-cols mt-4">
+                        <div id="container-top-demissoes-perc" class="charts-grid two-cols mt-4">
                             <div class="card chart-container">
                                 <h3>Top 10 Clientes com Mais Demissões (Percentual)</h3>
                                 <canvas id="chartVgTopDemissoesPerc"></canvas>
@@ -681,6 +681,10 @@
                     <!-- Movimentação Operacional -->
                     <section id="vg-movimentacao" class="dashboard-section mt-5">
                         <h2 class="section-title"><i class="fa-solid fa-people-arrows"></i> Movimentação Operacional</h2>
+                        <div style="display: inline-flex; align-items: center; gap: 8px; background: #fffbeb; color: #b45309; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 10px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; margin-bottom: 20px;">
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                            <span>Aba em processo de desenvolvimento</span>
+                        </div>
                         
                         <div class="kpi-cards mb-4">
                             <div class="card kpi-card" style="margin: 0 auto; max-width: 400px; display: flex; justify-content: center; text-align: center;">
