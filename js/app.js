@@ -697,6 +697,14 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         borderRadius: 4
     }], { isCurrency: true });
 
+    const selYear = parseInt(document.getElementById('filter-year')?.value || '2026', 10);
+    const selMonth = parseInt(document.getElementById('filter-month')?.value || '01', 10);
+    const hideFtsSemanais = (selYear > 2026) || (selYear === 2026 && selMonth >= 10);
+    const ftsSemanaisEl = document.getElementById('container-fts-semanais');
+    if (ftsSemanaisEl) {
+        ftsSemanaisEl.style.display = hideFtsSemanais ? 'none' : '';
+    }
+
     const semanas = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
     let gastosPortaria = [0, 0, 0, 0];
     let gastosLimpeza = [0, 0, 0, 0];
@@ -716,27 +724,29 @@ function renderCharts(yearlyData, monthLabels, currentData) {
         ];
     }
     
-    renderBarChart('chartVgFolgasPortaria', semanas, [{
-        label: 'Portaria (R$)',
-        data: gastosPortaria,
-        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-        borderColor: chartColors.success,
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: chartColors.success
-    }], { isCurrency: true, type: 'line' });
+    if (!hideFtsSemanais) {
+        renderBarChart('chartVgFolgasPortaria', semanas, [{
+            label: 'Portaria (R$)',
+            data: gastosPortaria,
+            backgroundColor: 'rgba(34, 197, 94, 0.2)',
+            borderColor: chartColors.success,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: chartColors.success
+        }], { isCurrency: true, type: 'line' });
 
-    renderBarChart('chartVgFolgasLimpeza', semanas, [{
-        label: 'Limpeza (R$)',
-        data: gastosLimpeza,
-        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-        borderColor: chartColors.success,
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: chartColors.success
-    }], { isCurrency: true, type: 'line' });
+        renderBarChart('chartVgFolgasLimpeza', semanas, [{
+            label: 'Limpeza (R$)',
+            data: gastosLimpeza,
+            backgroundColor: 'rgba(34, 197, 94, 0.2)',
+            borderColor: chartColors.success,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: chartColors.success
+        }], { isCurrency: true, type: 'line' });
+    }
 
     if (currentData && currentData.folgasMotivos) {
         const labels = currentData.folgasMotivos.map(i => i.nome);

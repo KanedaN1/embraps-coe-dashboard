@@ -215,11 +215,14 @@ async function generateMonthlyPDF() {
         const bgImage = await loadImage('assets/img/background_slide.png');
 
         // 4. Definir Slides Consolidados
+        const hideFtsSemanais = (parseInt(year, 10) > 2026) || (parseInt(year, 10) === 2026 && parseInt(month, 10) >= 10);
         const slides = [
             { title: "Gastos com Folgas Trabalhadas (Anual)", type: "chart", chartId: "chartVgFolgas", isCurrency: true, dataKey: "gastosFolgas" },
             { title: "Motivos das Folgas Trabalhadas (Mês)", type: "chart", chartId: "chartVgFolgasMotivos", isCurrency: true },
-            { title: "Folgas Trabalhadas - Portaria (Semanal)", type: "chart", chartId: "chartVgFolgasPortaria", isCurrency: true },
-            { title: "Folgas Trabalhadas - Limpeza (Semanal)", type: "chart", chartId: "chartVgFolgasLimpeza", isCurrency: true },
+            ...(!hideFtsSemanais ? [
+                { title: "Folgas Trabalhadas - Portaria (Semanal)", type: "chart", chartId: "chartVgFolgasPortaria", isCurrency: true },
+                { title: "Folgas Trabalhadas - Limpeza (Semanal)", type: "chart", chartId: "chartVgFolgasLimpeza", isCurrency: true }
+            ] : []),
             { title: "Quantidade de Punições Aplicadas (Anual)", type: "chart", chartId: "chartVgPunicoes", dataKey: "punicoes" },
             { title: "Motivos das Punições (Mês)", type: "chart", chartId: "chartVgPunicoesMotivos" },
             { title: "Tipos de Punições Aplicadas (Mês)", type: "chart", chartId: "chartVgPunicoesTipos" },
