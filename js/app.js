@@ -296,7 +296,7 @@ function toggleTvMode() {
             elem.requestFullscreen().catch(err => console.log(err));
         }
         
-        const navLinks = Array.from(document.querySelectorAll('.nav-link:not(.skip-tv)'));
+        const navLinks = Array.from(document.querySelectorAll('.nav-link[href^="#"]:not(.skip-tv)'));
         let currentIndex = navLinks.findIndex(l => l.parentElement.classList.contains('active'));
         if (currentIndex === -1) currentIndex = 0;
         
@@ -308,7 +308,7 @@ function toggleTvMode() {
         }
         
         const switchTab = () => {
-            if (navLinks[currentIndex] && navLinks[currentIndex].getAttribute('href') === '#vg-pos-venda') {
+            if (navLinks[currentIndex] && navLinks[currentIndex].getAttribute('href') === '#vg-agenda-sla') {
                 currentIndex = 0;
             } else {
                 currentIndex++;
