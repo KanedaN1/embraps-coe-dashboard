@@ -1113,7 +1113,18 @@ function renderReservaOperacional(currentData) {
         return;
     }
 
-    const { limpeza, portariaDia, portariaNoite } = currentData.reservas;
+    let { limpeza, portariaDia, portariaNoite } = currentData.reservas;
+    if (!limpeza || limpeza.length !== 6) {
+        const old = limpeza || [];
+        limpeza = [
+            { escala: 'Auxiliar de limpeza 5x1 das 07x15h20', atual: old[0]?.atual || 0, ideal: old[0]?.ideal || 0 },
+            { escala: 'Auxiliar de limpeza 12x36 das 06x18', atual: old[3]?.atual || 0, ideal: old[3]?.ideal || 0 },
+            { escala: 'Auxiliar de limpeza 12x36 das 07x19', atual: 0, ideal: 0 },
+            { escala: 'Auxiliar de limpeza 12x36 das 10x22', atual: 0, ideal: 0 },
+            { escala: 'Auxiliar de limpeza 12x36 das 11x23', atual: 0, ideal: 0 },
+            { escala: 'Auxiliar de limpeza Coringas', atual: old[4]?.atual || 0, ideal: old[4]?.ideal || 0 }
+        ];
+    }
     
     container.innerHTML = '';
     

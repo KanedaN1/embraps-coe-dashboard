@@ -176,11 +176,27 @@ async function loadMonthData() {
                 }
             };
             if (data.reservas.limpeza) {
-                mapRes('res_limp_diurno', 0, data.reservas.limpeza);
-                mapRes('res_limp_vesp', 1, data.reservas.limpeza);
-                mapRes('res_limp_5x2', 2, data.reservas.limpeza);
-                mapRes('res_limp_12x36', 3, data.reservas.limpeza);
-                mapRes('res_limp_coringa', 4, data.reservas.limpeza);
+                const limpIds = ['res_limp_5x1_07', 'res_limp_12x36_06', 'res_limp_12x36_07', 'res_limp_12x36_10', 'res_limp_12x36_11', 'res_limp_coringa'];
+                limpIds.forEach(id => {
+                    const a = document.getElementById(id + '_atual');
+                    const i = document.getElementById(id + '_ideal');
+                    if (a) a.value = 0;
+                    if (i) i.value = 0;
+                });
+
+                if (data.reservas.limpeza.length === 6) {
+                    mapRes('res_limp_5x1_07', 0, data.reservas.limpeza);
+                    mapRes('res_limp_12x36_06', 1, data.reservas.limpeza);
+                    mapRes('res_limp_12x36_07', 2, data.reservas.limpeza);
+                    mapRes('res_limp_12x36_10', 3, data.reservas.limpeza);
+                    mapRes('res_limp_12x36_11', 4, data.reservas.limpeza);
+                    mapRes('res_limp_coringa', 5, data.reservas.limpeza);
+                } else {
+                    // Compatibilidade com formato antigo de 5 escalas
+                    mapRes('res_limp_5x1_07', 0, data.reservas.limpeza);
+                    mapRes('res_limp_12x36_06', 3, data.reservas.limpeza);
+                    mapRes('res_limp_coringa', 4, data.reservas.limpeza);
+                }
             }
             if (data.reservas.portariaDia) {
                 mapRes('res_portdia_par', 0, data.reservas.portariaDia);
@@ -231,7 +247,7 @@ async function loadMonthData() {
         stateTopClientesDemissoesPerc = [];
 
         renderDemissoesGridTabela({});
-        const resIds = ['res_limp_diurno', 'res_limp_vesp', 'res_limp_5x2', 'res_limp_12x36', 'res_limp_coringa', 'res_portdia_par', 'res_portdia_impar', 'res_portdia_manu', 'res_portdia_zel', 'res_portdia_coringa', 'res_portnoite_par', 'res_portnoite_impar', 'res_portnoite_limp', 'res_portnoite_coringa'];
+        const resIds = ['res_limp_5x1_07', 'res_limp_12x36_06', 'res_limp_12x36_07', 'res_limp_12x36_10', 'res_limp_12x36_11', 'res_limp_coringa', 'res_portdia_par', 'res_portdia_impar', 'res_portdia_manu', 'res_portdia_zel', 'res_portdia_coringa', 'res_portnoite_par', 'res_portnoite_impar', 'res_portnoite_limp', 'res_portnoite_coringa'];
         resIds.forEach(id => {
             const a = document.getElementById(id + '_atual');
             const i = document.getElementById(id + '_ideal');
@@ -751,11 +767,12 @@ async function saveMonthData(e) {
 
     payload.reservas = {
         limpeza: [
-            getRes('res_limp_diurno', 'Auxiliar de limpeza 5x1 diurno'),
-            getRes('res_limp_vesp', 'Auxiliar de limpeza 5x1 vespertino'),
-            getRes('res_limp_5x2', 'Auxiliar de limpeza 5x2'),
-            getRes('res_limp_12x36', 'Auxiliar de limpeza 12x36'),
-            getRes('res_limp_coringa', 'Coringas')
+            getRes('res_limp_5x1_07', 'Auxiliar de limpeza 5x1 das 07x15h20'),
+            getRes('res_limp_12x36_06', 'Auxiliar de limpeza 12x36 das 06x18'),
+            getRes('res_limp_12x36_07', 'Auxiliar de limpeza 12x36 das 07x19'),
+            getRes('res_limp_12x36_10', 'Auxiliar de limpeza 12x36 das 10x22'),
+            getRes('res_limp_12x36_11', 'Auxiliar de limpeza 12x36 das 11x23'),
+            getRes('res_limp_coringa', 'Auxiliar de limpeza Coringas')
         ],
         portariaDia: [
             getRes('res_portdia_par', 'Porteiro Par'),

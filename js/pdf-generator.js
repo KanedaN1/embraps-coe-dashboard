@@ -574,7 +574,17 @@ async function renderReservaGeralSlide(container, currentData) {
     container.style.height = '100%';
 
     const renderCard = (title, type, icon, headerBg) => {
-        const dados = currentData.reservas[type] || [];
+        let dados = currentData.reservas[type] || [];
+        if (type === 'limpeza' && dados.length !== 6) {
+            dados = [
+                { escala: 'Auxiliar de limpeza 5x1 das 07x15h20', atual: dados[0]?.atual || 0, ideal: dados[0]?.ideal || 0 },
+                { escala: 'Auxiliar de limpeza 12x36 das 06x18', atual: dados[3]?.atual || 0, ideal: dados[3]?.ideal || 0 },
+                { escala: 'Auxiliar de limpeza 12x36 das 07x19', atual: 0, ideal: 0 },
+                { escala: 'Auxiliar de limpeza 12x36 das 10x22', atual: 0, ideal: 0 },
+                { escala: 'Auxiliar de limpeza 12x36 das 11x23', atual: 0, ideal: 0 },
+                { escala: 'Auxiliar de limpeza Coringas', atual: dados[4]?.atual || 0, ideal: dados[4]?.ideal || 0 }
+            ];
+        }
         let totalA = 0, totalI = 0, rows = '';
         
         dados.forEach(item => {

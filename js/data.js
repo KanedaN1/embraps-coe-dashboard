@@ -114,11 +114,12 @@ function generateMockData() {
             ],
             reservas: {
                 limpeza: [
-                    { escala: 'Auxiliar de limpeza 5x1 diurno', atual: Math.floor(Math.random() * 15), ideal: 9 },
-                    { escala: 'Auxiliar de limpeza 5x1 vespertino', atual: Math.floor(Math.random() * 5), ideal: 3 },
-                    { escala: 'Auxiliar de limpeza 5x2', atual: Math.floor(Math.random() * 3), ideal: 2 },
-                    { escala: 'Auxiliar de limpeza 12x36', atual: Math.floor(Math.random() * 3), ideal: 2 },
-                    { escala: 'Coringas', atual: Math.floor(Math.random() * 8), ideal: 7 }
+                    { escala: 'Auxiliar de limpeza 5x1 das 07x15h20', atual: Math.floor(Math.random() * 15), ideal: 9 },
+                    { escala: 'Auxiliar de limpeza 12x36 das 06x18', atual: Math.floor(Math.random() * 5), ideal: 3 },
+                    { escala: 'Auxiliar de limpeza 12x36 das 07x19', atual: Math.floor(Math.random() * 3), ideal: 2 },
+                    { escala: 'Auxiliar de limpeza 12x36 das 10x22', atual: Math.floor(Math.random() * 3), ideal: 2 },
+                    { escala: 'Auxiliar de limpeza 12x36 das 11x23', atual: Math.floor(Math.random() * 3), ideal: 2 },
+                    { escala: 'Auxiliar de limpeza Coringas', atual: Math.floor(Math.random() * 8), ideal: 7 }
                 ],
                 portariaDia: [
                     { escala: 'Porteiro Par', atual: Math.floor(Math.random() * 12), ideal: 8 },
